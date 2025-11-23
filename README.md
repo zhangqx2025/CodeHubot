@@ -129,13 +129,15 @@
 | **[🤖 智能体平台](https://github.com/codehubot/agent-platform)** | AI 智能体构建、对话、知识库 | ![Stars](https://img.shields.io/github/stars/codehubot/agent-platform?style=social) |
 | **[🔌 固件仓库](https://github.com/codehubot/firmware)** | ESP32 固件、PCB 设计、硬件资料 | ![Stars](https://img.shields.io/github/stars/codehubot/firmware?style=social) |
 
+
+</div>
+
+
 **如何选择？**
 - 📊 **只需要管理设备**？→ 克隆主仓库
 - 🤖 **想开发 AI 智能体**？→ 克隆智能体平台
 - 🔧 **需要硬件开发**？→ 克隆固件仓库
 - 🎓 **完整教学使用**？→ 三个仓库都需要
-
-</div>
 
 ## 💻 技术栈
 
