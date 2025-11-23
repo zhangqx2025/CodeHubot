@@ -29,23 +29,6 @@
 
 **CodeHubot** 是一个**跨学科项目制**的 AI-IoT 智能教学平台。
 
-### 📦 多仓库架构
-
-为了更好的模块化管理，本项目采用多仓库架构：
-
-| 仓库 | 说明 | 链接 |
-|------|------|------|
-| **🏠 主仓库** | 管理后台、后端 API、文档 | [codehubot/codehubot](https://github.com/codehubot/codehubot) |
-| **🤖 智能体平台** | AI 智能体构建、对话、知识库 | [codehubot/agent-platform](https://github.com/codehubot/agent-platform)  |
-| **🔌 固件仓库** | ESP32 固件、PCB 设计、硬件资料 | [codehubot/firmware](https://github.com/codehubot/firmware)  |
-
-**为什么分仓库？**
-- ✅ **模块独立**：各模块可以独立开发和维护
-- ✅ **版本管理**：固件和智能体平台有独立的版本号
-- ✅ **易于使用**：只需要某个功能的用户可以只下载对应仓库
-- ✅ **降低复杂度**：避免单个仓库过于庞大
-- ✅ **专注性强**：硬件开发者、AI 开发者可以专注各自领域
-
 ### 🎯 学习理念
 
 - **🚀 动手做项目**：不只是学知识点，而是完成一个个真实的小项目
@@ -61,6 +44,46 @@
 | ❌ 不知道学了有什么用 | ✅ 做出能演示的智能设备 |
 | ❌ 一堆理论公式 | ✅ 边做边学，立刻看到效果 |
 | ❌ 考完就忘 | ✅ 有自己的作品，有成就感 |
+
+
+### 📦 多仓库架构
+
+为了更好的模块化管理，本项目采用多仓库架构：
+
+
+| 仓库 | 说明 | Stars |
+|------|------|-------|
+| **[🏠 主仓库](https://github.com/codehubot/codehubot)** | 管理后台、后端 API、插件、系统服务 | ![Stars](https://img.shields.io/github/stars/codehubot/codehubot?style=social) |
+| **[🤖 智能体平台](https://github.com/codehubot/agent-platform)** | AI 智能体构建、工作流、知识库 | ![Stars](https://img.shields.io/github/stars/codehubot/agent-platform?style=social) |
+| **[🔌 固件仓库](https://github.com/codehubot/firmware)** | ESP32 固件、硬件资料 | ![Stars](https://img.shields.io/github/stars/codehubot/firmware?style=social) |
+
+
+
+**如何选择？**
+- 📊 **只需要管理设备**？→ 克隆主仓库
+- 🤖 **想开发 AI 智能体**？→ 克隆智能体平台
+- 🔧 **需要硬件开发**？→ 克隆固件仓库
+- 🎓 **完整教学使用**？→ 三个仓库都需要
+
+**为什么分仓库？**
+- ✅ **模块独立**：各模块可以独立开发和维护
+- ✅ **版本管理**：固件和智能体平台有独立的版本号
+- ✅ **易于使用**：只需要某个功能的用户可以只下载对应仓库
+- ✅ **降低复杂度**：避免单个仓库过于庞大
+- ✅ **专注性强**：硬件开发者、AI 开发者可以专注各自领域
+
+## 💻 技术栈
+
+| 模块 | 技术 | 说明 |
+|------|-----|------|
+| **前端** | Vue 3 + Element Plus | 现代化 UI |
+| **后端** | FastAPI + SQLAlchemy | 高性能 Python |
+| **AI** | OpenAI/Claude/千问 + LangChain | 多模型支持 |
+| **固件** | ESP-IDF + FreeRTOS | 乐鑫官方框架 |
+| **数据库** | MySQL + Redis | 数据持久化和缓存 |
+| **通信** | MQTT (Mosquitto) | 物联网标准协议 |
+| **部署** | Docker + Nginx | 容器化部署 |
+
 
 
 
@@ -93,56 +116,12 @@
 - **自动化场景**：说一句话就能设置"回家自动开灯"
 - **预测功能**：根据历史数据预测明天的温度
 
-### 🌐 真实硬件支持
-- **💾 开源固件**：所有固件代码完全开源
-  - 基于 ESP-IDF 5.4 开发
-  - 支持 OTA 在线升级
-  - 详细注释，易于学习
-- **🎛️ 丰富外设**：
-  - 传感器：DHT11、DS18B20、光敏、超声波等
-  - 执行器：LED、继电器、舵机、电机等
-  - 显示：LCD 屏幕、OLED 等
-- **🔧 易于制作**：
-  - 提供物料清单（BOM）
-  - 焊接难度低，适合初学者
-  - 成本可控，适合批量制作
-
 
 ## 🎬 案例展示
 
 
 
 
-## 🔗 相关仓库
-
-
-| 仓库 | 说明 | Stars |
-|------|------|-------|
-| **[🏠 主仓库](https://github.com/codehubot/codehubot)** | 管理后台、后端 API、插件、系统服务 | ![Stars](https://img.shields.io/github/stars/codehubot/codehubot?style=social) |
-| **[🤖 智能体平台](https://github.com/codehubot/agent-platform)** | AI 智能体构建、工作流、知识库 | ![Stars](https://img.shields.io/github/stars/codehubot/agent-platform?style=social) |
-| **[🔌 固件仓库](https://github.com/codehubot/firmware)** | ESP32 固件、硬件资料 | ![Stars](https://img.shields.io/github/stars/codehubot/firmware?style=social) |
-
-
-
-**如何选择？**
-- 📊 **只需要管理设备**？→ 克隆主仓库
-- 🤖 **想开发 AI 智能体**？→ 克隆智能体平台
-- 🔧 **需要硬件开发**？→ 克隆固件仓库
-- 🎓 **完整教学使用**？→ 三个仓库都需要
-
-
-
-## 💻 技术栈
-
-| 模块 | 技术 | 说明 |
-|------|-----|------|
-| **前端** | Vue 3 + Element Plus | 现代化 UI |
-| **后端** | FastAPI + SQLAlchemy | 高性能 Python |
-| **AI** | OpenAI/Claude/千问 + LangChain | 多模型支持 |
-| **固件** | ESP-IDF + FreeRTOS | 乐鑫官方框架 |
-| **数据库** | MySQL + Redis | 数据持久化和缓存 |
-| **通信** | MQTT (Mosquitto) | 物联网标准协议 |
-| **部署** | Docker + Nginx | 容器化部署 |
 
 ## 🤝 参与贡献
 
