@@ -1,4 +1,4 @@
-<h1 align="center" style="border-bottom: none;">🤖 Code哈博特</h1>
+<h1 align="center" style="border-bottom: none;">🤖 CodeHubot</h1>
 
 <h3 align="center">AI-IoT 智能教学平台 | 跨学科项目制学习 | 软硬件全开源⚡️</h3>
 
@@ -19,6 +19,7 @@
   <a href="https://github.com/codehubot/codehubot/issues">
     <img alt="GitHub issues" src="https://img.shields.io/github/issues/codehubot/codehubot?style=flat-square">
   </a>
+
 </p>
 
 
@@ -26,7 +27,7 @@
 
 ## 📖 项目简介
 
-**Code哈博特（CodeHubot）** 是一个**跨学科项目制**的 AI-IoT 智能教学平台。
+**CodeHubot** 是一个**跨学科项目制**的 AI-IoT 智能教学平台。
 
 ### 📦 多仓库架构
 
@@ -35,8 +36,8 @@
 | 仓库 | 说明 | 链接 |
 |------|------|------|
 | **🏠 主仓库** | 管理后台、后端 API、文档 | [codehubot/codehubot](https://github.com/codehubot/codehubot) |
-| **🤖 智能体平台** | AI 智能体构建、对话、知识库 | [codehubot/agent-platform](https://github.com/codehubot/agent-platform) _(独立仓库)_ |
-| **🔌 固件仓库** | ESP32 固件、PCB 设计、硬件资料 | [codehubot/firmware](https://github.com/codehubot/firmware) _(独立仓库)_ |
+| **🤖 智能体平台** | AI 智能体构建、对话、知识库 | [codehubot/agent-platform](https://github.com/codehubot/agent-platform)  |
+| **🔌 固件仓库** | ESP32 固件、PCB 设计、硬件资料 | [codehubot/firmware](https://github.com/codehubot/firmware)  |
 
 **为什么分仓库？**
 - ✅ **模块独立**：各模块可以独立开发和维护
@@ -73,7 +74,7 @@
 - **培养能力**：学会分析问题、动手解决问题
 
 ### 🔀 融合多学科知识
-- **📘 信息技术**：学编程（Python、C）、做网页、设计数据库
+- **📘 信息技术**：学编程、做网页、设计数据库
 - **📗 物理知识**：认识传感器、连接电路、理解电磁通信
 - **📕 数学应用**：数据统计分析、绘制图表、算法设计
 - **📙 生物实践**：监测植物生长环境、理解温湿度影响
@@ -87,12 +88,12 @@
 - **完全免费开源**：可以随意修改和使用
 
 ### 🤖 能做什么？（AI 功能）
-- **对话控制设备**：对着手机说"把灯调亮一点"，灯就真的变亮了
+- **对话控制设备**：对着智能体说"把灯打开"，灯就真的亮了
 - **智能分析**：AI 自动分析温度数据，告诉你规律
 - **自动化场景**：说一句话就能设置"回家自动开灯"
 - **预测功能**：根据历史数据预测明天的温度
 
-### 🌐 真实硬件支持（全部开源）
+### 🌐 真实硬件支持
 - **💾 开源固件**：所有固件代码完全开源
   - 基于 ESP-IDF 5.4 开发
   - 支持 OTA 在线升级
@@ -114,16 +115,14 @@
 
 ## 🔗 相关仓库
 
-<div align="center">
-
-### 快速访问
 
 | 仓库 | 说明 | Stars |
 |------|------|-------|
-| **[🏠 主仓库](https://github.com/codehubot/codehubot)** | 管理后台、后端 API、系统文档 | ![Stars](https://img.shields.io/github/stars/codehubot/codehubot?style=social) |
-| **[🤖 智能体平台](https://github.com/codehubot/agent-platform)** | AI 智能体构建、对话、知识库 | ![Stars](https://img.shields.io/github/stars/codehubot/agent-platform?style=social) |
-| **[🔌 固件仓库](https://github.com/codehubot/firmware)** | ESP32 固件、PCB 设计、硬件资料 | ![Stars](https://img.shields.io/github/stars/codehubot/firmware?style=social) |
-</div>
+| **[🏠 主仓库](https://github.com/codehubot/codehubot)** | 管理后台、后端 API、插件、系统服务 | ![Stars](https://img.shields.io/github/stars/codehubot/codehubot?style=social) |
+| **[🤖 智能体平台](https://github.com/codehubot/agent-platform)** | AI 智能体构建、工作流、知识库 | ![Stars](https://img.shields.io/github/stars/codehubot/agent-platform?style=social) |
+| **[🔌 固件仓库](https://github.com/codehubot/firmware)** | ESP32 固件、硬件资料 | ![Stars](https://img.shields.io/github/stars/codehubot/firmware?style=social) |
+
+
 
 **如何选择？**
 - 📊 **只需要管理设备**？→ 克隆主仓库
@@ -154,6 +153,7 @@
 - 🔬 **分享实验**：分享你设计的教学实验
 - 🐛 **报告问题**：提交 [Issues](https://github.com/codehubot/codehubot/issues)
 - 💻 **贡献代码**：提交 Pull Request
+- 💬 **交流讨论**：加入以下QQ交流群
 
 ### 贡献者
 感谢所有为本项目做出贡献的教师、学生和开发者！
@@ -180,7 +180,7 @@
 
 **让更多教师发现这个平台，一起推动 AI 教育 🚀**
 
-**Code哈博特（CodeHubot）** - 让 AI 教学不再纸上谈兵
+**CodeHubot** - 让 AI 教学不再纸上谈兵
 
 Made with ❤️ for AI Education
 
