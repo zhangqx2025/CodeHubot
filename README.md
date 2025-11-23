@@ -19,15 +19,6 @@
   <a href="https://github.com/codehubot/codehubot/issues">
     <img alt="GitHub issues" src="https://img.shields.io/github/issues/codehubot/codehubot?style=flat-square">
   </a>
-  <a href="#">
-    <img alt="Open Hardware" src="https://img.shields.io/badge/hardware-开源-blue.svg">
-  </a>
-  <a href="#">
-    <img alt="Open Source Firmware" src="https://img.shields.io/badge/固件-开源-orange.svg">
-  </a>
-  <a href="#">
-    <img alt="PCB Design" src="https://img.shields.io/badge/PCB-开源-red.svg">
-  </a>
 </p>
 
 
