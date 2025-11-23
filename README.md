@@ -95,11 +95,11 @@
 为了更好的模块化管理，本项目采用多仓库架构：
 
 
-| 仓库 | 说明 | Stars |
-|------|------|-------|
-| **[🏠 主仓库](https://github.com/codehubot/codehubot)** | 管理后台、后端 API、插件、系统服务 | ![Stars](https://img.shields.io/github/stars/codehubot/codehubot?style=social) |
-| **[🤖 智能体平台](https://github.com/codehubot/agent-platform)** | AI 智能体构建、工作流、知识库 | ![Stars](https://img.shields.io/github/stars/codehubot/agent-platform?style=social) |
-| **[🔌 固件仓库](https://github.com/codehubot/firmware)** | ESP32 固件、硬件资料 | ![Stars](https://img.shields.io/github/stars/codehubot/firmware?style=social) |
+| 仓库 | 说明 |
+|------|------|
+| **[🏠 主仓库](https://github.com/codehubot/codehubot)** | 管理后台、后端 API、插件、系统服务 | 
+| **[🤖 智能体平台](https://github.com/codehubot/agent-platform)** | AI 智能体构建、工作流、知识库 | 
+| **[🔌 固件仓库](https://github.com/codehubot/firmware)** | ESP32 固件、硬件资料 | 
 
 
 
