@@ -80,7 +80,36 @@
 | **反向代理** | Nginx | Web 服务器和负载均衡 |
 | **容器化** | Docker + Docker Compose | 容器化部署方案 |
 
+## 🚀 一键部署
 
+### 前置要求
+
+- Docker 20.10+ 和 Docker Compose 2.0+
+- 至少 4GB 内存和 20GB 磁盘空间
+
+### 快速开始
+
+```bash
+# 1. 克隆项目
+git clone <repository-url> CodeHubot
+cd CodeHubot
+
+# 2. 配置环境变量
+cd docker
+cp .env.example .env
+# 编辑 .env 文件，设置 SECRET_KEY 和 INTERNAL_API_KEY
+
+# 3. 一键部署
+cd ..
+./deploy.sh deploy
+```
+
+部署完成后访问：
+- **前端**: http://localhost
+- **后端 API**: http://localhost:8000
+- **API 文档**: http://localhost:8000/docs
+
+📖 详细部署文档请查看 [deploy/docs/docker-deployment.md](deploy/docs/docker-deployment.md)
 
 ---
 

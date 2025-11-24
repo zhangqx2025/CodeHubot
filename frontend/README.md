@@ -127,7 +127,7 @@ npm run build
 sudo cp -r dist/* /var/www/aiot-admin/
 ```
 
-3. 配置 Nginx（参考 `../nginx/README.md`）
+3. 配置 Nginx（参考 Docker 部署文档或使用 `nginx.conf` 作为参考）
 
 ### 环境配置
 
@@ -176,7 +176,7 @@ npm run preview
 
 #### 1. 路由刷新 404
 
-确保 Web 服务器配置了 History 模式支持（参考 `../nginx/README.md`）
+确保 Web 服务器配置了 History 模式支持（参考 `nginx.conf` 中的配置）
 
 #### 2. API 请求跨域
 

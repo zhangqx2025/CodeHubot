@@ -7,35 +7,49 @@
 ```
 deploy/
 ├── docs/                    # 部署文档
-│   ├── deployment-guide.md  # 生产环境部署指南
-│   ├── local-development.md # 本地开发环境部署指南
+│   ├── docker-deployment.md # Docker 容器化部署指南（推荐）
+│   ├── manual-deployment.md # 手动部署指南（传统方式）
+│   ├── development-guide.md # 开发环境指南
 │   └── quick-reference.md   # 快速参考文档
 └── README.md                # 本文件
 ```
 
 ## 快速开始
 
-### 选择部署环境
+### 选择部署方式
 
-- **本地开发环境**: 查看 [本地开发环境部署指南](./docs/local-development.md)
-- **生产环境**: 查看 [生产环境部署指南](./docs/deployment-guide.md)
+- **Docker 容器化部署**（推荐）: 查看 [Docker 部署指南](./docs/docker-deployment.md)
+- **手动部署**（传统方式）: 查看 [手动部署指南](./docs/manual-deployment.md)
+- **开发环境配置**: 查看 [开发环境指南](./docs/development-guide.md)
 
-### 本地开发环境
+### Docker 容器化部署（推荐）
 
-适用于在本地机器上开发和测试系统：
+使用 Docker 一键部署所有服务，适用于本地和生产环境：
 
 ```bash
-# 查看本地开发指南
-cat docs/local-development.md
+# 查看 Docker 部署指南
+cat docs/docker-deployment.md
+
+# 或直接执行部署脚本
+./deploy.sh deploy
 ```
 
-### 生产环境部署
+### 手动部署（传统方式）
 
-适用于部署到服务器环境：
+手动安装和配置所有服务，适用于需要精细控制的场景：
 
 ```bash
-# 查看生产环境部署指南
-cat docs/deployment-guide.md
+# 查看手动部署指南
+cat docs/manual-deployment.md
+```
+
+### 开发环境配置
+
+配置本地开发环境，基础服务用 Docker，应用服务本地运行：
+
+```bash
+# 查看开发环境指南
+cat docs/development-guide.md
 ```
 
 **部署顺序**：
@@ -48,29 +62,35 @@ cat docs/deployment-guide.md
 
 ## 文档说明
 
-### deployment-guide.md
+### docker-deployment.md
 
-生产环境完整部署指南，包含：
-- 环境准备
-- 详细的部署步骤
-- 配置说明
+**Docker 容器化自动部署指南**（推荐使用），包含：
+- 使用 Docker Compose 一键部署所有服务
+- 适用于本地和生产环境
+- 自动化部署脚本使用说明
+- 服务管理和故障排查
+
+### manual-deployment.md
+
+**手动部署指南**（传统方式），包含：
+- 手动安装和配置所有服务
+- 适用于需要精细控制的场景
 - Nginx 反向代理配置
 - 系统服务配置
-- 故障排查
 
-### local-development.md
+### development-guide.md
 
-本地开发环境部署指南，包含：
-- 快速开始步骤
-- 开发环境配置
+**开发环境指南**，包含：
+- 本地开发环境配置
+- 基础服务用 Docker，应用服务本地运行
 - 开发工具推荐
 - 调试技巧
 - 常见问题解决
 
 ### quick-reference.md
 
-快速参考文档，包含：
-- 常用命令
+**快速参考文档**，包含：
+- 常用命令速查
 - 配置文件位置
 - 环境变量说明
 - 故障排查要点
@@ -84,7 +104,7 @@ cat docs/deployment-guide.md
 ## 支持
 
 如遇到问题，请：
-1. 查看 [部署指南](./docs/deployment-guide.md) 中的常见问题部分
+1. 查看 [Docker 部署指南](./docs/docker-deployment.md) 或 [手动部署指南](./docs/manual-deployment.md) 中的常见问题部分
 2. 查看服务日志（参考快速参考文档中的命令）
 3. 检查服务状态（参考快速参考文档中的命令）
 

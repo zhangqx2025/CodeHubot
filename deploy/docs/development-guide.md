@@ -767,7 +767,7 @@ git push origin feature/your-feature-name
 - **API 文档**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 - **项目 README**: 查看项目根目录的 README.md
-- **部署指南**: 查看 `deploy/docs/deployment-guide.md`
+- **手动部署指南**: 查看 `deploy/docs/manual-deployment.md`
 
 ---
 

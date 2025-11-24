@@ -136,4 +136,6 @@ mysql -u aiot_user -p
 
 ---
 
-更多详细信息请参考 [完整部署指南](./deployment-guide.md)
+更多详细信息请参考：
+- [Docker 部署指南](./docker-deployment.md) - 推荐使用
+- [手动部署指南](./manual-deployment.md) - 传统方式
