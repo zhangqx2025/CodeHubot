@@ -1,12 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError, HTTPException
 from contextlib import asynccontextmanager
 from app.api import api_router
 from app.core.config import settings
 from app.core.database import engine
+from app.core.response import StandardResponse, ErrorResponse, success_response, error_response
 from app.models import user, device, product, firmware
 from app.services.mqtt_service import mqtt_service
 import logging
@@ -80,6 +82,93 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 统一响应格式中间件
+from starlette.responses import StreamingResponse
+import json
+
+@app.middleware("http")
+async def response_middleware(request: Request, call_next):
+    """统一响应格式中间件，自动包装所有响应"""
+    # 跳过静态文件、文档和健康检查端点
+    skip_paths = ["/static", "/docs", "/openapi.json", "/redoc"]
+    if any(request.url.path.startswith(path) for path in skip_paths) or request.url.path in ["/", "/health"]:
+        response = await call_next(request)
+        return response
+    
+    response = await call_next(request)
+    
+    # 只处理 JSON 响应
+    if isinstance(response, JSONResponse) and 200 <= response.status_code < 300:
+        # 读取响应体
+        body = b""
+        async for chunk in response.body_iterator:
+            body += chunk
+        
+        try:
+            # 解析 JSON
+            data = json.loads(body.decode('utf-8'))
+            
+            # 如果响应已经是标准格式（有 code 字段），直接返回
+            if isinstance(data, dict) and "code" in data:
+                # 重新创建响应
+                return JSONResponse(
+                    content=data,
+                    status_code=response.status_code,
+                    headers=dict(response.headers)
+                )
+            
+            # 包装为标准格式
+            wrapped_data = success_response(data=data, message="操作成功")
+            return JSONResponse(
+                content=wrapped_data.model_dump(),
+                status_code=response.status_code,
+                headers=dict(response.headers)
+            )
+        except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+            # 如果不是 JSON 或解析失败，返回原响应
+            return JSONResponse(
+                content=body.decode('utf-8', errors='ignore'),
+                status_code=response.status_code,
+                headers=dict(response.headers)
+            )
+    
+    return response
+
+# 全局异常处理器
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """HTTP 异常处理器，统一错误响应格式"""
+    # 跳过文档和静态文件
+    skip_paths = ["/static", "/docs", "/openapi.json", "/redoc"]
+    if any(request.url.path.startswith(path) for path in skip_paths) or request.url.path in ["/", "/health"]:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail}
+        )
+    
+    error_resp = error_response(
+        code=exc.status_code,
+        message=exc.detail if isinstance(exc.detail, str) else "请求失败",
+        detail=str(exc.detail) if not isinstance(exc.detail, str) else None
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_resp.model_dump()
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """请求验证异常处理器"""
+    error_resp = error_response(
+        code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        message="请求参数验证失败",
+        detail=str(exc.errors())
+    )
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=error_resp.model_dump()
+    )
 
 # 注册路由
 app.include_router(api_router, prefix="/api")

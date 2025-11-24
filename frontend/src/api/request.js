@@ -83,6 +83,19 @@ const processQueue = (error, token = null) => {
 request.interceptors.response.use(
   response => {
     logger.apiResponse(response.status, response.config.url, response.data)
+    
+    // 统一响应格式处理：如果响应包含 code 字段，提取 data 字段
+    if (response.data && typeof response.data === 'object' && 'code' in response.data) {
+      // 标准响应格式：{ code, message, data }
+      if (response.data.code === 200) {
+        // 成功响应，将 data 字段提升到顶层，保持向后兼容
+        response.data = response.data.data
+      } else {
+        // 非 200 的 code，可能是业务错误，保持原格式
+        // 这种情况通常不应该发生（HTTP 200 但 code 非 200），但为了兼容性保留
+      }
+    }
+    
     return response
   },
   async error => {
@@ -166,10 +179,25 @@ request.interceptors.response.use(
     } else if (status >= 500) {
       ElMessage.error('服务器错误，请稍后重试')
     } else if (status >= 400) {
+      // 统一错误响应格式处理
+      const errorData = error.response?.data
+      let errorMessage = '请求失败'
+      
+      if (errorData) {
+        // 标准错误格式：{ code, message, detail }
+        if (typeof errorData === 'object' && 'message' in errorData) {
+          errorMessage = errorData.message || errorData.detail || '请求失败'
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail
+        }
+      }
+      
       // 对于注册接口，不在这里显示错误，让 store 中的错误处理来处理
       // 这样可以避免注册成功但显示错误的问题
       if (!url?.includes('/auth/register')) {
-        ElMessage.error(error.response?.data?.detail || '请求失败')
+        ElMessage.error(errorMessage)
       }
     }
     
