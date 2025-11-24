@@ -514,6 +514,8 @@ nano .env
 
 如果需要通过域名访问，可以配置 Nginx：
 
+**HTTP 配置**：
+
 ```nginx
 server {
     listen 80;
@@ -527,6 +529,54 @@ server {
     }
 }
 ```
+
+**HTTPS 配置（推荐，用于生产环境）**：
+
+如果使用 HTTPS，需要添加以下完整的反向代理配置：
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name plugin.your-domain.com;
+
+    # SSL 证书配置
+    ssl_certificate /path/to/your/certificate.crt;
+    ssl_certificate_key /path/to/your/private.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:9000;
+        proxy_set_header Host 127.0.0.1:$server_port;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header REMOTE-HOST $remote_addr;
+        add_header X-Cache $upstream_cache_status;
+        proxy_set_header X-Host $host:$server_port;
+        proxy_set_header X-Scheme $scheme;
+        
+        # 超时配置
+        proxy_connect_timeout 30s;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 30s;
+        
+        # WebSocket 支持
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+# HTTP 自动跳转到 HTTPS
+server {
+    listen 80;
+    server_name plugin.your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+```
+
+**配置说明**：
+- `proxy_read_timeout 86400s`: 设置为 24 小时，适用于长时间连接（如 WebSocket）
+- `proxy_set_header Host 127.0.0.1:$server_port`: 将 Host 设置为本地地址，避免插件服务获取到外部域名
+- 其他配置项用于正确传递客户端信息和支持 WebSocket 连接
 
 ---
 
