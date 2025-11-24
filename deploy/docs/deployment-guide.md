@@ -18,7 +18,6 @@
 
 ## 环境准备
 
-### 系统要求
 
 - **操作系统**: Linux (推荐 Ubuntu 20.04+ 或 CentOS 7+)
 - **Python**: 3.11+
@@ -29,63 +28,7 @@
 - **Redis**: 6.0+ (可选，用于缓存)
 - **MQTT Broker**: Mosquitto 2.0+ (通过 Docker 容器部署)
 
-### 必需软件安装
 
-```bash
-# 更新系统
-sudo apt update && sudo apt upgrade -y
-
-# 安装 Python 3.11
-sudo apt install python3.11 python3.11-venv python3-pip -y
-
-# 安装 Node.js 18
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
-
-# 安装 MySQL (如果不用 Docker 部署)
-# 注意：需要 MySQL 5.7.8+ 或 8.0+ 以支持 JSON 数据类型
-# Ubuntu 默认安装的 MySQL 版本可能较旧，建议使用官方源安装
-sudo apt install mysql-server -y
-
-# 验证 MySQL 版本（需要 >= 5.7.8）
-mysql --version
-
-# 安装 Docker 和 Docker Compose
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
-
-# 安装 Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
-# 安装 Redis (可选)
-sudo apt install redis-server -y
-
-# 安装 Nginx (用于反向代理)
-sudo apt install nginx -y
-
-# 安装 Git
-sudo apt install git -y
-
-# 注意：安装 Docker 后需要重新登录或执行以下命令使权限生效
-newgrp docker
-```
-
-### 创建项目目录
-
-```bash
-# 创建项目根目录
-sudo mkdir -p /opt/codehubot
-sudo chown $USER:$USER /opt/codehubot
-cd /opt/codehubot
-
-# 克隆项目（或上传项目文件）
-git clone <your-repo-url> .
-# 或使用 scp/sftp 上传项目文件
-```
-
----
 
 ## 数据库部署
 
