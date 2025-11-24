@@ -7,15 +7,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
-    # 数据库配置（支持两种方式：独立配置项或直接URL）
-    # 方式一：独立配置项（推荐）
-    db_host: Optional[str] = None
-    db_port: Optional[int] = None
-    db_user: Optional[str] = None
-    db_password: Optional[str] = None
-    db_name: Optional[str] = None
+    # 数据库配置（必须配置）
+    db_host: str
+    db_port: int = 3306
+    db_user: str
+    db_password: str
+    db_name: str
     
-    # 方式二：直接URL（向后兼容）
+    # 数据库连接URL（自动构建，无需手动配置）
     database_url: Optional[str] = None
     
     # Redis配置
@@ -84,18 +83,9 @@ class Settings(BaseSettings):
     
     @model_validator(mode='after')
     def build_database_url(self):
-        """构建数据库URL（如果使用独立配置项）"""
-        # 如果已经提供了 database_url，直接使用
-        if self.database_url:
-            return self
-        
-        # 如果提供了所有独立配置项，构建 URL
-        if all([self.db_host, self.db_port, self.db_user, self.db_password, self.db_name]):
-            self.database_url = f"mysql+pymysql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
-            return self
-        
-        # 如果都没有提供，抛出错误
-        raise ValueError("数据库配置不完整：请提供 DATABASE_URL 或完整的 DB_HOST、DB_PORT、DB_USER、DB_PASSWORD、DB_NAME")
+        """从独立配置项构建数据库URL"""
+        self.database_url = f"mysql+pymysql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+        return self
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

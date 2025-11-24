@@ -35,24 +35,17 @@ logger = logging.getLogger(__name__)
 
 # ==================== 配置 ====================
 # 从环境变量读取配置
-# 支持两种方式：独立配置项或直接URL
-def get_database_url():
-    """获取数据库连接URL"""
-    # 方式一：直接使用URL（向后兼容）
-    url = os.getenv("PROVISIONING_DB_URL")
-    if url:
-        return url
-    
-    # 方式二：从独立配置项构建URL
-    db_host = os.getenv("DB_HOST", "localhost")
-    db_port = os.getenv("DB_PORT", "3306")
-    db_user = os.getenv("DB_USER", "root")
-    db_password = os.getenv("DB_PASSWORD", "password")
-    db_name = os.getenv("DB_NAME", "aiot_device")
-    
-    return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+# 从独立配置项构建数据库连接URL
+db_host = os.getenv("DB_HOST")
+db_port = os.getenv("DB_PORT", "3306")
+db_user = os.getenv("DB_USER")
+db_password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")
 
-DATABASE_URL = get_database_url()
+if not all([db_host, db_user, db_password, db_name]):
+    raise ValueError("数据库配置不完整：请提供 DB_HOST、DB_USER、DB_PASSWORD、DB_NAME（DB_PORT 可选，默认 3306）")
+
+DATABASE_URL = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mqtt.example.com")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 MQTT_USE_SSL = os.getenv("MQTT_USE_SSL", "false").lower() == "true"
