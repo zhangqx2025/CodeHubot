@@ -145,6 +145,7 @@ certs/
 # ==========================================
 .vscode/
 .idea/
+.cursor/
 *.sublime-project
 *.sublime-workspace
 *.code-workspace
