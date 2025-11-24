@@ -63,7 +63,38 @@
 --    - aiot_workflow_triggers        # 工作流触发器表
 --    - aiot_workflow_variables       # 工作流变量表
 -- 
--- 6. 其他扩展业务模块（使用 aiot_* 前缀）:
+-- 6. 大模型配置（LLM）相关表（扩展功能，使用 aiot_llm_* 前缀）:
+--    - aiot_llm_providers            # 大模型提供商表（如 OpenAI、Claude、通义千问等）
+--    - aiot_llm_models               # 大模型配置表（模型名称、参数配置等）
+--    - aiot_llm_api_keys             # 大模型 API 密钥表（加密存储）
+--    - aiot_llm_usage_logs           # 大模型使用日志表（记录调用次数、费用等）
+--    - aiot_llm_prompts              # 提示词模板表
+--    - aiot_llm_prompt_templates     # 提示词模板库表
+--    - aiot_llm_configs              # 大模型全局配置表（默认模型、温度等参数）
+-- 
+-- 7. 插件（Plugin）相关表（扩展功能，使用 aiot_plugin_* 前缀）:
+--    - aiot_plugins                  # 插件表（插件基本信息）
+--    - aiot_plugin_configs           # 插件配置表（插件参数配置）
+--    - aiot_plugin_versions          # 插件版本表（版本管理）
+--    - aiot_plugin_installations     # 插件安装记录表（安装状态、安装时间等）
+--    - aiot_plugin_executions        # 插件执行记录表（执行日志、结果等）
+--    - aiot_plugin_permissions       # 插件权限表（插件所需权限配置）
+--    - aiot_plugin_dependencies      # 插件依赖表（插件之间的依赖关系）
+--    - aiot_plugin_events            # 插件事件表（插件触发的事件配置）
+-- 
+-- 8. 团队管理（Team/Organization）相关表（扩展功能，使用 aiot_team_* 前缀）:
+--    - aiot_teams                    # 团队表（团队基本信息）
+--    - aiot_team_members             # 团队成员表（成员关系、角色等）
+--    - aiot_team_roles               # 团队角色表（角色定义、权限等）
+--    - aiot_team_permissions         # 团队权限表（权限配置）
+--    - aiot_team_invitations         # 团队邀请表（邀请记录、状态等）
+--    - aiot_team_devices             # 团队设备关联表（设备归属、共享等）
+--    - aiot_team_projects            # 团队项目表（项目信息）
+--    - aiot_team_resources           # 团队资源表（资源配额、使用情况等）
+--    - aiot_organizations            # 组织表（多级组织架构）
+--    - aiot_organization_members     # 组织成员表
+-- 
+-- 9. 其他扩展业务模块（使用 aiot_* 前缀）:
 --    - aiot_notifications            # 通知表
 --    - aiot_notification_templates   # 通知模板表
 --    - aiot_alerts                   # 告警表
@@ -92,7 +123,7 @@
 -- 扩展表识别标准:
 --   - 用于审计、日志、统计等辅助功能的表
 --   - 历史记录、分析报表等非核心业务表
---   - 可选功能模块相关的表（如智能体、知识库、工作流等）
+--   - 可选功能模块相关的表（如智能体、知识库、工作流、大模型配置、插件、团队管理等）
 -- 
 -- MySQL 版本要求:
 --   - 最低版本: MySQL 5.7.8+ (需要支持 JSON 数据类型)
