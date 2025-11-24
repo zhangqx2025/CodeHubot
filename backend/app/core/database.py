@@ -34,7 +34,9 @@ else:
         "pool_timeout": DB_POOL_TIMEOUT,  # 获取连接的超时时间（秒）
         "connect_args": {
             "connect_timeout": 10,  # 连接超时
-            "charset": "utf8mb4"  # 使用utf8mb4编码
+            "charset": "utf8mb4",  # 使用utf8mb4编码
+            # 兼容 MySQL 5.7 和 8.0
+            # MySQL 5.7 需要 5.7.8+ 版本以支持 JSON 数据类型
         }
     })
 

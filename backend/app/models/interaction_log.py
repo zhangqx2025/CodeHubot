@@ -19,7 +19,8 @@ class InteractionLog(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     
     # 时间戳 - 时序数据库的分区键
-    timestamp = Column(DateTime(timezone=True), nullable=False, default=func.now(), index=True)
+    # 注意：使用 DateTime 而非 DateTime(timezone=True) 以兼容 MySQL 5.7
+    timestamp = Column(DateTime, nullable=False, default=func.now(), index=True)
     
     # 设备信息
     device_id = Column(String(50), nullable=False, index=True)
@@ -56,7 +57,7 @@ class InteractionLog(Base):
     session_id = Column(String(100))
     
     # 创建时间
-    created_at = Column(DateTime(timezone=True), default=func.now())
+    created_at = Column(DateTime, default=func.now())
     
     def __repr__(self):
         return f"<InteractionLog(id={self.id}, device_id='{self.device_id}', type='{self.interaction_type}', status='{self.status}')>"
@@ -89,7 +90,7 @@ class InteractionStatsHourly(Base):
     __tablename__ = "interaction_stats_hourly"
     
     # 复合主键
-    timestamp = Column(DateTime(timezone=True), primary_key=True)
+    timestamp = Column(DateTime, primary_key=True)
     device_id = Column(String(50), primary_key=True)
     interaction_type = Column(String(20), primary_key=True)
     
@@ -109,7 +110,7 @@ class InteractionStatsHourly(Base):
     avg_data_size = Column(BigInteger, default=0)
     
     # 更新时间
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
     def __repr__(self):
         return f"<InteractionStatsHourly(timestamp={self.timestamp}, device_id='{self.device_id}', type='{self.interaction_type}')>"
@@ -147,7 +148,7 @@ class InteractionStatsDaily(Base):
     __tablename__ = "interaction_stats_daily"
     
     # 复合主键
-    date = Column(DateTime(timezone=True), primary_key=True)
+    date = Column(DateTime, primary_key=True)
     device_id = Column(String(50), primary_key=True)
     
     # 统计数据
@@ -169,7 +170,7 @@ class InteractionStatsDaily(Base):
     online_duration = Column(Integer, default=0)
     
     # 更新时间
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
     def __repr__(self):
         return f"<InteractionStatsDaily(date={self.date}, device_id='{self.device_id}')>"

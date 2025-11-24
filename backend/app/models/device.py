@@ -45,7 +45,7 @@ class Device(Base):
     )
     is_online = Column(Boolean, default=False, comment="是否在线")
     is_active = Column(Boolean, default=True, comment="是否激活")
-    last_seen = Column(DateTime(timezone=True), comment="最后在线时间")
+    last_seen = Column(DateTime, comment="最后在线时间")
     
     # 动态产品绑定信息
     product_code = Column(String(100), comment="设备上报的产品编码/产品标识符（对应固件端product_id）")
