@@ -44,3 +44,10 @@ export const changePassword = (data) => {
 export const getUserStats = () => {
   return request.get('/users/stats')
 }
+
+// 刷新 access token
+export const refreshToken = (refresh_token) => {
+  return request.post('/auth/refresh', {
+    refresh_token
+  })
+}

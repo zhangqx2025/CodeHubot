@@ -47,16 +47,21 @@ def get_password_hash(password: str) -> str:
         raise ValueError("密码哈希失败")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """创建access token"""
+    """创建access token
+    
+    注意：如果 data 中已包含 "type" 字段，将使用该值，否则默认为 "access"
+    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
-    to_encode.update({
-        "exp": expire,
-        "type": "access"
-    })
+    
+    # 如果 data 中没有 type 字段，才设置为 "access"
+    if "type" not in to_encode:
+        to_encode["type"] = "access"
+    
+    to_encode["exp"] = expire
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
@@ -82,12 +87,12 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
-def verify_token(token: str, token_type: str = "access") -> dict:
+def verify_token(token: str, token_type: Optional[str] = "access") -> dict:
     """验证token
     
     Args:
         token: JWT token
-        token_type: token类型（access或refresh）
+        token_type: token类型（access、refresh、password_reset 等）。如果为 None，则不验证类型
         
     Returns:
         dict: token payload
@@ -98,15 +103,20 @@ def verify_token(token: str, token_type: str = "access") -> dict:
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         
-        # 验证token类型
-        if payload.get("type") != token_type:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"无效的token类型，期望: {token_type}",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        # 如果指定了 token_type，验证类型是否匹配
+        if token_type is not None:
+            payload_type = payload.get("type")
+            if payload_type != token_type:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"无效的token类型，期望: {token_type}，实际: {payload_type}",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
         
         return payload
+    except HTTPException:
+        # 重新抛出 HTTPException（类型不匹配）
+        raise
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

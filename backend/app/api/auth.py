@@ -153,16 +153,29 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )
     
     try:
-        payload = verify_token(token)
+        # 验证 access token（默认类型）
+        payload = verify_token(token, token_type="access")
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
+    except HTTPException:
+        # 重新抛出 HTTPException（token 类型不匹配或已过期）
+        raise
     except JWTError:
         raise credentials_exception
     
     user = db.query(User).filter(User.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
+    
+    # 检查用户是否被禁用
+    if not user.is_active:
+        logger.warning(f"用户尝试使用已禁用的账户: {user.email} (ID: {user.id})")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorMessages.ACCOUNT_DISABLED
+        )
+    
     return user
 
 
@@ -276,24 +289,20 @@ async def reset_password(
     try:
         # 验证重置令牌
         try:
-            payload = verify_token(reset_confirm.token)
-            token_type = payload.get("type")
+            # 指定 token_type 为 "password_reset" 进行验证
+            payload = verify_token(reset_confirm.token, token_type="password_reset")
             user_id = payload.get("sub")
             
-            # 验证token类型
-            if token_type != "password_reset":
-                logger.warning(f"密码重置失败：无效的令牌类型 - {token_type}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="无效的重置令牌"
-                )
-            
             if not user_id:
+                logger.warning(f"密码重置失败：令牌中缺少用户ID")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="无效的重置令牌"
                 )
                 
+        except HTTPException:
+            # 重新抛出 HTTPException（类型不匹配或已过期）
+            raise
         except JWTError as e:
             logger.warning(f"密码重置失败：令牌验证失败 - {e}")
             raise HTTPException(
@@ -345,11 +354,21 @@ async def refresh_access_token(request: RefreshTokenRequest, db: Session = Depen
         新的access token和refresh token
     """
     try:
-        # 验证refresh token
-        payload = verify_token(request.refresh_token, token_type="refresh")
+        # 验证refresh token（verify_token 会自动检查过期时间）
+        try:
+            payload = verify_token(request.refresh_token, token_type="refresh")
+        except HTTPException as e:
+            # refresh token 无效或已过期
+            logger.warning(f"Refresh token验证失败: {e.detail}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token无效或已过期，请重新登录"
+            )
+        
         user_id: str = payload.get("sub")
         
         if user_id is None:
+            logger.warning("Refresh token中缺少用户ID")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="无效的refresh token"
@@ -367,7 +386,7 @@ async def refresh_access_token(request: RefreshTokenRequest, db: Session = Depen
         if not user.is_active:
             logger.warning(f"Refresh token失败：账户已禁用 - {user.email}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail=ErrorMessages.ACCOUNT_DISABLED
             )
         
@@ -390,8 +409,8 @@ async def refresh_access_token(request: RefreshTokenRequest, db: Session = Depen
     except Exception as e:
         logger.error(f"❌ Token刷新失败: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token刷新失败"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Token刷新失败，请稍后重试"
         )
 
 @router.get("/user-info", response_model=UserResponse)

@@ -40,18 +40,37 @@ request.interceptors.request.use(
         return Promise.reject(new Error('Token format invalid'))
       }
       
-      // 检查token是否过期
-      if (userStore.isTokenExpired) {
-        logger.warn('Token已过期，尝试自动刷新')
-        // 不阻塞请求，让响应拦截器处理401并自动刷新
-      } else {
-        config.headers.Authorization = `Bearer ${userStore.token}`
-        logger.debug('已添加Authorization头')
+      // 检查token是否即将过期，如果是则主动刷新
+      if (userStore.isTokenExpiringSoon && !userStore.isRefreshing) {
+        logger.warn('Token即将过期，主动刷新')
+        // 异步刷新，不阻塞当前请求
+        userStore.proactiveRefreshToken().then(success => {
+          if (success) {
+            logger.info('Token主动刷新成功')
+          }
+        })
       }
       
-      // 即使过期也添加header，让后端返回401触发自动刷新
-      if (!config.headers.Authorization) {
+      // 检查token是否过期
+      if (userStore.isTokenExpired) {
+        // 如果 refresh token 也过期了，直接登出
+        if (userStore.isRefreshTokenExpired) {
+          logger.error('Access token 和 Refresh token 都已过期，执行登出')
+          userStore.logout('Token已过期')
+          ElMessage.error('登录已过期，请重新登录')
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
+          }
+          return Promise.reject(new Error('Token expired'))
+        }
+        logger.warn('Token已过期，尝试自动刷新')
+        // 不阻塞请求，让响应拦截器处理401并自动刷新
+      }
+      
+      // 添加 Authorization header
+      if (userStore.token) {
         config.headers.Authorization = `Bearer ${userStore.token}`
+        logger.debug('已添加Authorization头')
       }
     } else {
       logger.debug('未找到token，匿名请求')
@@ -153,6 +172,11 @@ request.interceptors.response.use(
           logger.info('✅ Token刷新成功，重试原请求')
           originalRequest.headers.Authorization = `Bearer ${newToken}`
           processQueue(null, newToken)
+          
+          // 重试原请求
+          // 注意：如果重试时又返回 401，响应拦截器会再次处理
+          // 但由于 _retry 已经设置为 true，不会再次刷新，会直接进入错误处理
+          // 这是合理的，因为新 token 应该有效，如果无效说明服务器或配置有问题
           return request(originalRequest)
         } else {
           // 刷新失败，登出

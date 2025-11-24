@@ -25,11 +25,11 @@ const startTokenMonitoring = () => {
     })
     
     if (userStore.token) {
-      // 检查token是否过期
-      if (userStore.isTokenExpired) {
-        logger.warn('TokenMonitor: 检测到token过期，执行登出')
+      // 检查 refresh token 是否过期
+      if (userStore.isRefreshTokenExpired) {
+        logger.warn('TokenMonitor: Refresh token已过期，执行登出')
         ElMessage.warning('登录已过期，请重新登录')
-        userStore.logout('TokenMonitor检测到token过期')
+        userStore.logout('Refresh token已过期')
         if (router.currentRoute.value.path !== '/login') {
           logger.info('TokenMonitor: 重定向到登录页')
           router.push('/login')
@@ -37,14 +37,30 @@ const startTokenMonitoring = () => {
         return
       }
       
-      // 检查token是否即将过期（提前5分钟提醒）
-      if (userStore.isTokenExpiringSoon) {
-        logger.warn('TokenMonitor: 检测到token即将过期，显示警告')
-        ElMessage({
-          message: '您的登录即将在5分钟内过期，请注意保存工作',
-          type: 'warning',
-          duration: 10000,
-          showClose: true
+      // 检查token是否过期
+      if (userStore.isTokenExpired) {
+        logger.warn('TokenMonitor: 检测到token过期，尝试刷新')
+        // 尝试刷新 token
+        userStore.refreshAccessToken().then(success => {
+          if (!success) {
+            ElMessage.warning('登录已过期，请重新登录')
+            if (router.currentRoute.value.path !== '/login') {
+              router.push('/login')
+            }
+          }
+        })
+        return
+      }
+      
+      // 检查token是否即将过期（提前3分钟），主动刷新
+      if (userStore.isTokenExpiringSoon && !userStore.isRefreshing) {
+        logger.info('TokenMonitor: 检测到token即将过期，主动刷新')
+        userStore.proactiveRefreshToken().then(success => {
+          if (success) {
+            logger.info('TokenMonitor: Token主动刷新成功')
+          } else {
+            logger.warn('TokenMonitor: Token主动刷新失败')
+          }
         })
       }
     } else {

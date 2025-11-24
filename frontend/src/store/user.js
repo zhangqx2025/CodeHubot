@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { login, register, resetPassword, getUserInfo } from '../api/auth'
+import { login, register, resetPassword, getUserInfo, refreshToken } from '../api/auth'
 import { ElMessage } from 'element-plus'
 import logger from '../utils/logger'
 
@@ -113,20 +113,32 @@ export const useUserStore = defineStore('user', () => {
     return expired
   })
 
-  // 检查token是否即将过期（5分钟内）
+  // 检查token是否即将过期（3分钟内，用于主动刷新）
   const isTokenExpiringSoon = computed(() => {
     if (!tokenExpiry.value) {
       return false
     }
-    const fiveMinutes = 5 * 60 * 1000
+    const threeMinutes = 3 * 60 * 1000 // 提前3分钟刷新
     const now = Date.now()
-    const expiringSoon = now >= (tokenExpiry.value - fiveMinutes)
+    const expiringSoon = now >= (tokenExpiry.value - threeMinutes)
     
     if (expiringSoon) {
       logger.warn('Token即将过期')
     }
     
     return expiringSoon
+  })
+
+  // 检查 refresh token 是否过期
+  const isRefreshTokenExpired = computed(() => {
+    if (!refreshToken.value) {
+      return true
+    }
+    const expiry = parseTokenExpiry(refreshToken.value)
+    if (!expiry) {
+      return true
+    }
+    return Date.now() >= expiry
   })
 
   // 设置token过期时间（从JWT token中获取）
@@ -186,29 +198,26 @@ export const useUserStore = defineStore('user', () => {
       return null
     }
     
+    // 检查refresh token是否过期
+    if (isRefreshTokenExpired.value) {
+      logger.error('Refresh token已过期，清除并登出')
+      logout('Refresh token已过期')
+      return null
+    }
+    
     try {
       isRefreshing.value = true
       logger.info('开始刷新access token')
       
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          refresh_token: refreshToken.value
-        })
-      })
+      // 使用 axios 而不是 fetch，以便经过拦截器处理响应格式
+      const response = await refreshToken(refreshToken.value)
       
-      if (!response.ok) {
-        throw new Error('刷新token失败')
-      }
-      
-      const data = await response.json()
+      // 处理标准响应格式 {code, message, data}
+      const responseData = response.data || response
       
       // 更新tokens
-      token.value = data.access_token
-      refreshToken.value = data.refresh_token
+      token.value = responseData.access_token
+      refreshToken.value = responseData.refresh_token
       
       // 更新localStorage
       localStorage.setItem('token', token.value)
@@ -217,7 +226,7 @@ export const useUserStore = defineStore('user', () => {
       setTokenExpiry()
       
       logger.info('✅ Access token刷新成功')
-      return data.access_token
+      return responseData.access_token
     } catch (error) {
       logger.error('Token刷新失败:', error)
       // 刷新失败，清除认证信息
@@ -226,6 +235,22 @@ export const useUserStore = defineStore('user', () => {
     } finally {
       isRefreshing.value = false
     }
+  }
+
+  // 主动刷新 token（在即将过期时）
+  const proactiveRefreshToken = async () => {
+    if (isRefreshing.value) {
+      return false
+    }
+    
+    // 如果 token 即将过期且 refresh token 有效，主动刷新
+    if (isTokenExpiringSoon.value && !isRefreshTokenExpired.value) {
+      logger.info('Token即将过期，主动刷新')
+      const newToken = await refreshAccessToken()
+      return !!newToken
+    }
+    
+    return false
   }
 
   // 注册
@@ -328,7 +353,9 @@ export const useUserStore = defineStore('user', () => {
     isSuperUser,
     isTokenExpired,
     isTokenExpiringSoon,
+    isRefreshTokenExpired,
     isRefreshing,
+    proactiveRefreshToken,
     initializeAuth,
     loginUser,
     registerUser,
