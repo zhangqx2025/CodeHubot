@@ -98,40 +98,46 @@ async def response_middleware(request: Request, call_next):
     
     response = await call_next(request)
     
-    # 只处理 JSON 响应
-    if isinstance(response, JSONResponse) and 200 <= response.status_code < 300:
-        # 读取响应体
-        body = b""
-        async for chunk in response.body_iterator:
-            body += chunk
+    # 只处理成功的 JSON 响应（200-299）
+    if 200 <= response.status_code < 300:
+        # 检查 content-type 是否为 JSON
+        content_type = response.headers.get("content-type", "")
+        is_json = "application/json" in content_type or isinstance(response, JSONResponse)
         
-        try:
-            # 解析 JSON
-            data = json.loads(body.decode('utf-8'))
+        if is_json:
+            # 读取响应体
+            body = b""
+            async for chunk in response.body_iterator:
+                body += chunk
             
-            # 如果响应已经是标准格式（有 code 字段），直接返回
-            if isinstance(data, dict) and "code" in data:
-                # 重新创建响应
-                return JSONResponse(
-                    content=data,
+            try:
+                # 解析 JSON
+                data = json.loads(body.decode('utf-8'))
+                
+                # 准备新的响应头（移除 Content-Length，让 FastAPI 自动计算）
+                new_headers = dict(response.headers)
+                new_headers.pop("content-length", None)  # 移除旧的 Content-Length
+                
+                # 如果响应已经是标准格式（有 code 字段），直接返回
+                if isinstance(data, dict) and "code" in data:
+                    # 重新创建响应
+                    return CustomJSONResponse(
+                        content=data,
+                        status_code=response.status_code,
+                        headers=new_headers
+                    )
+                
+                # 包装为标准格式
+                wrapped_data = success_response(data=data, message="操作成功")
+                return CustomJSONResponse(
+                    content=wrapped_data.model_dump(),
                     status_code=response.status_code,
-                    headers=dict(response.headers)
+                    headers=new_headers
                 )
-            
-            # 包装为标准格式
-            wrapped_data = success_response(data=data, message="操作成功")
-            return JSONResponse(
-                content=wrapped_data.model_dump(),
-                status_code=response.status_code,
-                headers=dict(response.headers)
-            )
-        except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
-            # 如果不是 JSON 或解析失败，返回原响应
-            return JSONResponse(
-                content=body.decode('utf-8', errors='ignore'),
-                status_code=response.status_code,
-                headers=dict(response.headers)
-            )
+            except (json.JSONDecodeError, UnicodeDecodeError, AttributeError) as e:
+                # 如果不是 JSON 或解析失败，返回原响应
+                logger.warning(f"响应解析失败: {e}, 路径: {request.url.path}")
+                return response
     
     return response
 
