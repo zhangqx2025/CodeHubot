@@ -1,0 +1,518 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "智能家居IoT设备控制插件",
+    "description": "这是一个智能家居设备控制插件，可以帮助用户查询传感器数据（温度、湿度）和控制智能设备（LED灯、继电器、舵机、PWM等）。\n\n**核心功能**：\n- 🌡️ 实时传感器数据查询（温度、湿度、DS18B20）\n- 💡 智能设备控制（LED、继电器、舵机、PWM）\n- 🎭 预设指令执行（闪烁、流水灯、摆动、呼吸灯等8种预设）\n- 🏷️ 设备别名支持（使用\"客厅灯\"等友好名称）\n\n**使用方式**：\n- 无需JWT认证，只需提供设备UUID\n- 实时硬件控制，命令立即执行\n- 支持中文自然语言识别\n\n**版本更新**：\nv1.1.0 (2025-11-11)\n- ✅ 修复控制命令格式，确保硬件设备正确响应\n- ✅ 增强描述信息，明确实时硬件控制特性\n- ✅ 添加更多使用场景和故障排查提示",
+    "version": "1.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://plugin.aiot.hello1023.com",
+      "description": "生产服务器（请替换为实际的公网地址）"
+    }
+  ],
+  "paths": {
+    "/plugin/device-aliases": {
+      "get": {
+        "summary": "获取设备的别名配置",
+        "description": "**重要：优先调用此接口！**\n\n当用户使用友好的别名（如\"客厅灯\"、\"卧室灯\"、\"风扇\"等）来控制设备时，必须先调用此接口获取别名配置，然后根据别名找到对应的实际端口信息。\n\n**使用流程（AI必须遵循）**：\n1. 用户说：\"打开客厅灯\"\n2. AI识别到\"客厅灯\"不是标准的LED1/LED2\n3. **首先调用此接口**获取设备的别名配置\n4. 在返回的control_aliases中查找\"客厅灯\"\n5. 找到对应：{\"port_type\": \"led\", \"port_id\": 1}\n6. 然后调用/plugin/control接口，使用找到的参数\n\n**别名示例**：\n- \"客厅灯\" → LED1\n- \"卧室灯\" → LED2\n- \"风扇\" → 继电器1\n- \"加湿器\" → 继电器2\n- \"窗帘\" → 舵机1\n- \"快速闪烁\" → led_blink预设\n- \"彩虹灯\" → led_wave预设\n\n**响应数据说明**：\n- control_aliases: 端口别名字典，key是别名，value包含port_type和port_id\n- preset_aliases: 预设别名字典，key是别名，value包含preset_name和parameters",
+        "operationId": "getDeviceAliases",
+        "tags": ["设备配置"],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "query",
+            "description": "设备UUID。🧪 测试时使用：test（调试模式，返回模拟数据）",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "test",
+              "example": "test"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取别名配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string",
+                      "example": "获取设备别名配置成功"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "device_uuid": {
+                          "type": "string"
+                        },
+                        "control_aliases": {
+                          "type": "object",
+                          "description": "端口别名配置。key是别名（如'客厅灯'），value包含port_type和port_id",
+                          "additionalProperties": {
+                            "type": "object",
+                            "properties": {
+                              "port_type": {"type": "string", "example": "led"},
+                              "port_id": {"type": "integer", "example": 1},
+                              "description": {"type": "string"},
+                              "enabled": {"type": "boolean"}
+                            }
+                          }
+                        },
+                        "preset_aliases": {
+                          "type": "object",
+                          "description": "预设别名配置。key是别名（如'快速闪烁'），value包含preset_name和parameters",
+                          "additionalProperties": {
+                            "type": "object",
+                            "properties": {
+                              "preset_name": {"type": "string"},
+                              "device_type": {"type": "string"},
+                              "device_id": {"type": "integer"},
+                              "preset_type": {"type": "string"},
+                              "parameters": {"type": "object"},
+                              "description": {"type": "string"}
+                            }
+                          }
+                        },
+                        "total_control_aliases": {
+                          "type": "integer",
+                          "description": "端口别名总数"
+                        },
+                        "total_preset_aliases": {
+                          "type": "integer",
+                          "description": "预设别名总数"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "code": 200,
+                  "msg": "获取设备别名配置成功",
+                  "data": {
+                    "device_uuid": "cbeb5cb6-8cb4-44d6-86ed-43b357e0adf5",
+                    "control_aliases": {
+                      "客厅灯": {
+                        "port_type": "led",
+                        "port_id": 1,
+                        "description": "客厅主灯",
+                        "enabled": true
+                      },
+                      "卧室灯": {
+                        "port_type": "led",
+                        "port_id": 2,
+                        "description": "卧室灯",
+                        "enabled": true
+                      },
+                      "风扇": {
+                        "port_type": "relay",
+                        "port_id": 1,
+                        "description": "客厅风扇",
+                        "enabled": true
+                      }
+                    },
+                    "preset_aliases": {
+                      "快速闪烁": {
+                        "preset_name": "led_blink",
+                        "device_type": "led",
+                        "device_id": 1,
+                        "preset_type": "blink",
+                        "parameters": {"count": 5, "on_time": 200, "off_time": 200},
+                        "description": "LED快速闪烁5次"
+                      }
+                    },
+                    "total_control_aliases": 3,
+                    "total_preset_aliases": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugin/sensor-data": {
+      "get": {
+        "summary": "查询传感器实时数据",
+        "description": "当用户询问温度、湿度等传感器数据时，使用此接口获取实时数据。支持查询DHT11温度传感器、DHT11湿度传感器和DS18B20温度传感器。\n\n使用场景举例：\n- 用户问：\"现在温度多少度？\" → 调用此接口，sensor参数填\"温度\"\n- 用户问：\"湿度是多少？\" → 调用此接口，sensor参数填\"湿度\"\n- 用户问：\"DS18B20显示多少度？\" → 调用此接口，sensor参数填\"DS18B20\"",
+        "operationId": "getSensorData",
+        "tags": ["传感器查询"],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "query",
+            "description": "设备的唯一标识符UUID。🧪 测试时使用：test（调试模式，返回模拟数据）",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "test",
+              "example": "test"
+            }
+          },
+          {
+            "name": "sensor",
+            "in": "query",
+            "description": "传感器名称。请根据用户的问题选择对应的传感器：\n- 当用户问温度、多少度、热不热时，填写\"温度\"\n- 当用户问湿度、潮湿、干燥时，填写\"湿度\"\n- 当用户问DS18B20或指定DS18B20传感器时，填写\"DS18B20\"",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["温度", "湿度", "DS18B20"],
+              "example": "温度"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取传感器数据。响应中data.value是传感器的数值，data.unit是单位。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "状态码，200表示成功",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "响应消息",
+                      "example": "获取传感器数据成功"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "传感器数据",
+                      "properties": {
+                        "device_uuid": {
+                          "type": "string",
+                          "description": "设备UUID",
+                          "example": "df13f23c-71c9-46ab-8eb1-715f3127fce2"
+                        },
+                        "sensor_name": {
+                          "type": "string",
+                          "description": "传感器完整名称",
+                          "example": "DHT11温度"
+                        },
+                        "value": {
+                          "type": "number",
+                          "description": "传感器数值（这是最重要的数据，告诉用户这个值）",
+                          "example": 24.5
+                        },
+                        "unit": {
+                          "type": "string",
+                          "description": "数值单位",
+                          "example": "°C"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "description": "数据采集时间",
+                          "example": "2025-11-11T08:30:00Z"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "code": 200,
+                  "msg": "获取传感器数据成功",
+                  "data": {
+                    "device_uuid": "df13f23c-71c9-46ab-8eb1-715f3127fce2",
+                    "sensor_name": "DHT11温度",
+                    "value": 24.5,
+                    "unit": "°C",
+                    "timestamp": "2025-11-11T08:30:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在或传感器未找到",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string",
+                      "example": "设备不存在或未找到传感器数据"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugin/control": {
+      "post": {
+        "summary": "控制智能设备",
+        "description": "**实时硬件控制接口**：此接口会立即操作真实的物理设备！\n\n❗❗❗**重要提示：参数类型必须正确**❗❗❗\n- port_type 必须是字符串：\"led\"、\"relay\"、\"servo\"、\"pwm\"（不是数字1、2、3、4！）\n- action 必须是字符串：\"on\"、\"off\"、\"set\"（不是数字1、0！）\n- port_id 必须是整数：1、2、3、4（这个才是数字！）\n\n**正确示例**：\n```json\n{\n  \"device_uuid\": \"test\",\n  \"port_type\": \"led\",    // ✅ 字符串\n  \"port_id\": 1,           // ✅ 数字\n  \"action\": \"on\"          // ✅ 字符串\n}\n```\n\n**错误示例（不要这样）**：\n```json\n{\n  \"port_type\": \"1\",      // ❌ 错误！应该是\"led\"\n  \"action\": \"1\"           // ❌ 错误！应该是\"on\"\n}\n```\n\n**使用场景举例**：\n- 用户说：\"打开LED1\" → port_type=\"led\", port_id=1, action=\"on\"\n- 用户说：\"关闭第2个灯\" → port_type=\"led\", port_id=2, action=\"off\"\n- 用户说：\"把舵机转到90度\" → port_type=\"servo\", port_id=1, action=\"set\", value=90\n- 用户说：\"打开继电器\" → port_type=\"relay\", port_id=1, action=\"on\"\n\n**参数填写规则**：\n1. port_type识别：灯/LED→\"led\"，继电器/开关→\"relay\"，舵机/伺服→\"servo\"，PWM→\"pwm\"\n2. port_id识别：LED有1-4个，继电器有1-2个，舵机只有1个(填1)，PWM只有通道2(填2)\n3. action识别：打开/开启/点亮→\"on\"，关闭/关掉/熄灭→\"off\"，设置/转到→\"set\"\n4. value只在action=\"set\"时需要，舵机填角度(0-180)，PWM填占空比(0-100)",
+        "operationId": "controlDevice",
+        "tags": ["设备控制"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["device_uuid", "port_type", "port_id", "action"],
+                "properties": {
+                  "device_uuid": {
+                    "type": "string",
+                    "description": "设备UUID（唯一标识符）。🧪 测试时使用：test（调试模式）",
+                    "default": "test",
+                    "example": "test"
+                  },
+                  "port_type": {
+                    "type": "string",
+                    "description": "❗必须填字符串类型❗端口类型。根据用户的意图选择：\n- \"led\": 用户说灯、LED、照明\n- \"relay\": 用户说继电器、开关、电源\n- \"servo\": 用户说舵机、伺服、角度、旋转\n- \"pwm\": 用户说PWM、占空比\n\n⚠️注意：必须填写英文字符串，不是数字！例如\"led\"而不是1",
+                    "enum": ["led", "relay", "servo", "pwm"],
+                    "example": "led"
+                  },
+                  "port_id": {
+                    "type": "integer",
+                    "description": "端口编号。LED支持1-4，继电器支持1-2，舵机固定为1，PWM固定为2。\n如果用户说\"第一个LED\"则填1，\"第二个继电器\"则填2。",
+                    "minimum": 1,
+                    "maximum": 4,
+                    "example": 1
+                  },
+                  "action": {
+                    "type": "string",
+                    "description": "❗必须填字符串类型❗控制动作。根据用户意图选择：\n- \"on\"（推荐）或\"开启\"、\"打开\"、\"启动\": 用户说打开、开启、点亮、接通\n- \"off\"（推荐）或\"关闭\"、\"关掉\"、\"停止\": 用户说关闭、关掉、熄灭、断开\n- \"set\"（推荐）或\"设置\"、\"调整\": 用户说设置、调到、转到（需要配合value参数）\n\n⚠️注意：\n1. 建议使用英文值（\"on\"/\"off\"/\"set\"）\n2. 也支持中文值（\"开启\"/\"关闭\"/\"设置\"），系统会自动转换\n3. 不是数字！例如\"on\"而不是1",
+                    "enum": ["on", "off", "set", "开启", "关闭", "设置"],
+                    "example": "on"
+                  },
+                  "value": {
+                    "type": "integer",
+                    "description": "设置值（仅当action=set时需要）。\n- 舵机控制：填写角度值0-180度\n- PWM控制：填写占空比0-100%\n例如：用户说\"舵机转到90度\"，则value=90",
+                    "minimum": 0,
+                    "maximum": 180,
+                    "example": 90
+                  }
+                }
+              },
+              "examples": {
+                "打开LED1": {
+                  "summary": "打开LED1（注意：port_type是字符串\"led\"，action是字符串\"on\"）",
+                  "value": {
+                    "device_uuid": "test",
+                    "port_type": "led",
+                    "port_id": 1,
+                    "action": "on"
+                  }
+                },
+                "关闭LED2": {
+                  "summary": "关闭LED2（注意：port_type是字符串\"led\"，action是字符串\"off\"）",
+                  "value": {
+                    "device_uuid": "test",
+                    "port_type": "led",
+                    "port_id": 2,
+                    "action": "off"
+                  }
+                },
+                "打开继电器1": {
+                  "summary": "打开继电器1（注意：port_type是字符串\"relay\"，不是数字1）",
+                  "value": {
+                    "device_uuid": "test",
+                    "port_type": "relay",
+                    "port_id": 1,
+                    "action": "on"
+                  }
+                },
+                "设置舵机角度为90度": {
+                  "summary": "设置舵机角度为90度（注意：port_type是字符串\"servo\"，action是字符串\"set\"）",
+                  "value": {
+                    "device_uuid": "test",
+                    "port_type": "servo",
+                    "port_id": 1,
+                    "action": "set",
+                    "value": 90
+                  }
+                },
+                "设置PWM占空比为50": {
+                  "summary": "设置PWM占空比为50%（注意：port_type是字符串\"pwm\"）",
+                  "value": {
+                    "device_uuid": "test",
+                    "port_type": "pwm",
+                    "port_id": 2,
+                    "action": "set",
+                    "value": 50
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "控制命令发送成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string",
+                      "example": "控制命令发送成功"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "device_uuid": {"type": "string"},
+                        "port_type": {"type": "string"},
+                        "port_id": {"type": "integer"},
+                        "action": {"type": "string"},
+                        "value": {"type": "integer", "nullable": true},
+                        "result": {"type": "string", "example": "success"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugin/preset": {
+      "post": {
+        "summary": "执行预设控制指令",
+        "description": "**复杂动作序列控制接口**：执行预先编程的复杂控制序列，硬件设备会按照预设的动作模式执行！\n\n当用户要求执行复杂的控制序列时使用此接口，如LED闪烁、流水灯、舵机摆动等。与单次控制不同，预设指令会执行一系列连续的动作。\n\n**使用场景举例**：\n- 用户说：\"让LED闪烁3次\" → preset_name=led_blink, parameters={\"led_id\":1, \"count\":3} → **LED会闪烁3次（开-关-开-关-开-关）**\n- 用户说：\"播放流水灯效果\" → preset_name=led_wave → **4个LED会依次点亮形成流水效果**\n- 用户说：\"舵机摆动5次\" → preset_name=servo_swing, parameters={\"cycles\":5} → **舵机会左右摆动5次**\n- 用户说：\"继电器定时5秒\" → preset_name=relay_timed, parameters={\"duration_ms\":5000} → **继电器打开5秒后自动关闭**\n\n**预设名称识别规则**：\n- 闪烁/闪一下/提醒 → led_blink（LED快速闪烁N次）\n- 流水灯/跑马灯/波浪 → led_wave（4个LED依次点亮）\n- 定时/开X秒/自动关闭 → relay_timed（继电器定时开关）\n- 旋转/转动/扫描 → servo_rotate（舵机从A角度转到B角度）\n- 摆动/摇/摇尾巴 → servo_swing（舵机左右摆动）\n- 渐变/淡入淡出 → pwm_fade（PWM输出缓慢变化）\n- 呼吸/呼吸灯 → pwm_breathe（PWM周期性渐变）\n- 脉冲/闪动 → pwm_pulse（PWM快速高低切换）\n\n**与/plugin/control的区别**：\n- /plugin/control：单次控制（开/关/设置值）\n- /plugin/preset：复杂序列（多次动作组合）",
+        "operationId": "executePreset",
+        "tags": ["预设指令"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["device_uuid", "preset_name"],
+                "properties": {
+                  "device_uuid": {
+                    "type": "string",
+                    "description": "设备UUID。🧪 测试时使用：test（调试模式）",
+                    "default": "test",
+                    "example": "test"
+                  },
+                  "preset_name": {
+                    "type": "string",
+                    "description": "预设指令名称。根据用户的描述选择：\n- led_blink: LED闪烁\n- led_wave: LED流水灯\n- relay_timed: 继电器定时开关\n- servo_rotate: 舵机旋转\n- servo_swing: 舵机摆动\n- pwm_fade: PWM渐变\n- pwm_breathe: PWM呼吸灯\n- pwm_pulse: PWM脉冲",
+                    "enum": [
+                      "led_blink",
+                      "led_wave",
+                      "relay_timed",
+                      "servo_rotate",
+                      "servo_swing",
+                      "pwm_fade",
+                      "pwm_breathe",
+                      "pwm_pulse"
+                    ],
+                    "example": "led_blink"
+                  },
+                  "parameters": {
+                    "type": "object",
+                    "description": "预设指令的参数（可选）。常用参数说明：\n\nLED闪烁(led_blink)：\n- led_id: LED编号1-4\n- count: 闪烁次数（默认3）\n- on_time: 亮灯时间毫秒（默认500）\n- off_time: 灭灯时间毫秒（默认500）\n\nLED流水灯(led_wave)：\n- interval_ms: 间隔时间毫秒（默认200）\n- cycles: 循环次数（默认3）\n- reverse: 是否反向（默认false）\n\n继电器定时(relay_timed)：\n- relay_id: 继电器编号1-2\n- duration_ms: 持续时间毫秒（默认5000）\n\n舵机旋转(servo_rotate)：\n- servo_id: 舵机编号（固定1）\n- start_angle: 起始角度0-180\n- end_angle: 结束角度0-180\n- duration_ms: 持续时间毫秒\n\n舵机摆动(servo_swing)：\n- servo_id: 舵机编号（固定1）\n- center_angle: 中心角度（默认90）\n- swing_range: 摆动幅度（默认30）\n- speed: 摆动速度毫秒（默认100）\n- cycles: 摆动次数（默认5）\n\n如果用户没有明确指定参数，可以省略parameters字段，系统会使用默认值。",
+                    "additionalProperties": true,
+                    "example": {
+                      "led_id": 1,
+                      "count": 5,
+                      "on_time": 500,
+                      "off_time": 500
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "LED闪烁": {
+                  "summary": "LED闪烁5次",
+                  "value": {
+                    "device_uuid": "df13f23c-71c9-46ab-8eb1-715f3127fce2",
+                    "preset_name": "led_blink",
+                    "parameters": {
+                      "led_id": 1,
+                      "count": 5,
+                      "on_time": 500,
+                      "off_time": 500
+                    }
+                  }
+                },
+                "舵机摆动": {
+                  "summary": "舵机摆动5次",
+                  "value": {
+                    "device_uuid": "df13f23c-71c9-46ab-8eb1-715f3127fce2",
+                    "preset_name": "servo_swing",
+                    "parameters": {
+                      "servo_id": 1,
+                      "center_angle": 90,
+                      "swing_range": 30,
+                      "speed": 100,
+                      "cycles": 5
+                    }
+                  }
+                },
+                "LED流水灯": {
+                  "summary": "LED流水灯效果",
+                  "value": {
+                    "device_uuid": "df13f23c-71c9-46ab-8eb1-715f3127fce2",
+                    "preset_name": "led_wave",
+                    "parameters": {
+                      "interval_ms": 200,
+                      "cycles": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "预设指令执行成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string",
+                      "example": "预设指令执行成功"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "device_uuid": {"type": "string"},
+                        "preset_name": {"type": "string"},
+                        "device_type": {"type": "string"},
+                        "device_id": {"type": "integer"},
+                        "parameters": {"type": "object"},
+                        "result": {"type": "string", "example": "success"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

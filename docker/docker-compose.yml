@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: aiot_admin
+      MYSQL_USER: aiot_user
+      MYSQL_PASSWORD: aiot_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password --innodb-use-native-aio=0
+    networks:
+      - aiot-network
+
+  # MQTT服务
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mqtt_data:/mosquitto/data
+      - mqtt_logs:/mosquitto/log
+    networks:
+      - aiot-network
+
+
+volumes:
+  mysql_data:
+  mqtt_data:
+  mqtt_logs:
+
+networks:
+  aiot-network:
+    driver: bridge
