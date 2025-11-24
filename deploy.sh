@@ -145,11 +145,45 @@ stop_services() {
     fi
 }
 
+# 清理卷（删除所有数据卷）
+clean_volumes() {
+    log_warn "警告：此操作将删除所有数据卷，包括数据库、Redis、MQTT 的所有数据！"
+    read -p "确认删除所有数据卷？(yes/no): " confirm
+    
+    if [ "${confirm}" != "yes" ]; then
+        log_info "已取消操作"
+        return
+    fi
+    
+    log_info "停止服务..."
+    stop_services
+    
+    log_info "删除数据卷..."
+    cd "${DOCKER_DIR}"
+    
+    if [ -f "docker-compose.prod.yml" ]; then
+        docker-compose -f docker-compose.prod.yml down -v 2>/dev/null || true
+        log_info "已删除所有数据卷"
+    fi
+    
+    # 手动删除卷（如果 docker-compose down -v 没有完全删除）
+    log_info "清理残留卷..."
+    docker volume ls | grep -E "(docker_mysql_data|docker_redis_data|docker_mqtt_data|docker_mqtt_logs)" | awk '{print $2}' | xargs -r docker volume rm 2>/dev/null || true
+    
+    log_info "数据卷清理完成 ✓"
+}
+
 # 构建镜像
 build_images() {
     log_info "构建 Docker 镜像..."
     
     cd "${DOCKER_DIR}"
+    
+    # 检查是否使用国内镜像源
+    source "${DOCKER_DIR}/.env" 2>/dev/null || true
+    if [ "${USE_CHINA_MIRROR:-false}" = "true" ]; then
+        log_info "使用国内镜像源加速构建..."
+    fi
     
     log_info "构建后端服务镜像..."
     docker-compose -f docker-compose.prod.yml build backend
@@ -346,8 +380,12 @@ main() {
             cd "${DOCKER_DIR}"
             docker-compose -f docker-compose.prod.yml logs -f "${2:-}"
             ;;
+        clean)
+            check_dependencies
+            clean_volumes
+            ;;
         *)
-            echo "用法: $0 {deploy|build|start|stop|restart|status|logs [服务名]}"
+            echo "用法: $0 {deploy|build|start|stop|restart|status|logs [服务名]|clean}"
             echo ""
             echo "命令说明："
             echo "  deploy  - 完整部署（停止、构建、启动）"
@@ -357,6 +395,7 @@ main() {
             echo "  restart - 重启服务"
             echo "  status  - 查看服务状态"
             echo "  logs    - 查看日志（可指定服务名）"
+            echo "  clean   - 删除所有数据卷（会清空所有数据）"
             exit 1
             ;;
     esac

@@ -184,6 +184,19 @@ ENVIRONMENT=production  # 环境：development/production/testing
 LOG_LEVEL=INFO         # 日志级别：DEBUG/INFO/WARNING/ERROR
 ```
 
+#### 构建加速配置（可选）
+
+```bash
+# 如果构建镜像时网络较慢，可以启用国内镜像源加速
+USE_CHINA_MIRROR=true  # 设置为 true 使用清华大学镜像源
+
+# 或使用自定义镜像源
+# PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+# PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
+```
+
+**注意**: 如果不在中国，使用国内镜像源可能反而变慢，建议保持 `USE_CHINA_MIRROR=false`
+
 #### 插件服务配置
 
 ```bash
@@ -448,6 +461,7 @@ docker-compose -f docker-compose.prod.yml up -d [服务名]
 
 - [开发环境指南](./development-guide.md) - 本地开发环境配置（基础服务Docker，应用服务本地运行）
 - [手动部署指南](./manual-deployment.md) - 传统手动部署方式（不使用Docker容器化）
+- [构建优化指南](./build-optimization.md) - Docker 镜像构建速度优化
 - [快速参考](./quick-reference.md) - 常用命令和配置速查
 
 ## 🆘 获取帮助
