@@ -13,7 +13,7 @@ from ..core.database import Base
 class InteractionLog(Base):
     """交互日志表 - 时序数据优化"""
     
-    __tablename__ = "interaction_logs"
+    __tablename__ = "aiot_interaction_logs"
     
     # 主键
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -87,7 +87,7 @@ class InteractionLog(Base):
 class InteractionStatsHourly(Base):
     """小时级交互统计表"""
     
-    __tablename__ = "interaction_stats_hourly"
+    __tablename__ = "aiot_interaction_stats_hourly"
     
     # 复合主键
     timestamp = Column(DateTime, primary_key=True)
@@ -145,7 +145,7 @@ class InteractionStatsHourly(Base):
 class InteractionStatsDaily(Base):
     """日级交互统计表"""
     
-    __tablename__ = "interaction_stats_daily"
+    __tablename__ = "aiot_interaction_stats_daily"
     
     # 复合主键
     date = Column(DateTime, primary_key=True)

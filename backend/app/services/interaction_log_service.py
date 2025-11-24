@@ -351,7 +351,7 @@ class InteractionLogService:
                 AVG(response_time) as avg_response_time,
                 SUM(data_size) as total_data_size,
                 COUNT(DISTINCT device_id) as unique_devices
-            FROM interaction_logs
+            FROM aiot_interaction_logs
             WHERE 1=1
             """
             
@@ -417,7 +417,7 @@ class InteractionLogService:
             if count > 0:
                 # 删除旧记录
                 delete_query = text(
-                    "DELETE FROM interaction_logs WHERE timestamp < :cutoff_date"
+                    "DELETE FROM aiot_interaction_logs WHERE timestamp < :cutoff_date"
                 )
                 await session.execute(delete_query, {'cutoff_date': cutoff_date})
                 await session.commit()

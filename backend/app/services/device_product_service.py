@@ -284,7 +284,7 @@ class DeviceProductService:
             
             # 插入产品切换历史记录
             insert_query = text("""
-                INSERT INTO device_product_history 
+                INSERT INTO aiot_device_product_history 
                 (device_id, old_product_id, new_product_id, switch_reason, 
                  old_config, new_config, switched_at)
                 VALUES (:device_id, :old_product_id, :new_product_id, :switch_reason,

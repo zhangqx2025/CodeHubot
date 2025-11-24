@@ -5,6 +5,10 @@
 -- 说明: 基于backend实际使用的表结构，仅包含backend需要的8张核心表
 -- 注意: 已删除未使用的表（device_data_logs, access_logs）
 -- 
+-- 表命名规范:
+--   - 所有表名统一使用 aiot_ 前缀，便于区分不同业务模块的表
+--   - 后续智能体相关表也应遵循此规范，如: aiot_agents, aiot_agent_conversations 等
+-- 
 -- MySQL 版本要求:
 --   - 最低版本: MySQL 5.7.8+ (需要支持 JSON 数据类型)
 --   - 推荐版本: MySQL 8.0+
@@ -19,7 +23,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 1. 创建用户表
 -- ============================================================================
 
-CREATE TABLE `users` (
+CREATE TABLE `aiot_users` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `email` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '邮箱',
   `username` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
@@ -42,7 +46,7 @@ CREATE TABLE `users` (
 -- 2. 创建产品表
 -- ============================================================================
 
-CREATE TABLE `products` (
+CREATE TABLE `aiot_products` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `product_code` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '产品代码',
   `name` VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '产品名称',
@@ -72,14 +76,14 @@ CREATE TABLE `products` (
   KEY `idx_name` (`name`),
   KEY `idx_category` (`category`),
   KEY `idx_creator_id` (`creator_id`),
-  FOREIGN KEY (`creator_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  FOREIGN KEY (`creator_id`) REFERENCES `aiot_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='产品表';
 
 -- ============================================================================
 -- 3. 创建设备表
 -- ============================================================================
 
-CREATE TABLE `devices` (
+CREATE TABLE `aiot_devices` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `uuid` VARCHAR(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备UUID',
   `device_id` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备ID',
@@ -129,15 +133,15 @@ CREATE TABLE `devices` (
   KEY `idx_device_status` (`device_status`),
   KEY `idx_is_online` (`is_online`),
   KEY `idx_mac_address` (`mac_address`),
-  FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  FOREIGN KEY (`product_id`) REFERENCES `aiot_products` (`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`user_id`) REFERENCES `aiot_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='设备表';
 
 -- ============================================================================
 -- 4. 创建固件版本表
 -- ============================================================================
 
-CREATE TABLE `firmware_versions` (
+CREATE TABLE `aiot_firmware_versions` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `product_code` VARCHAR(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '产品编码',
   `version` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '版本号',
@@ -160,7 +164,7 @@ CREATE TABLE `firmware_versions` (
 -- 5. 创建设备绑定历史表
 -- ============================================================================
 
-CREATE TABLE `device_binding_history` (
+CREATE TABLE `aiot_device_binding_history` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `mac_address` VARCHAR(17) NOT NULL COMMENT '设备MAC地址',
   `device_uuid` VARCHAR(36) DEFAULT NULL COMMENT '设备UUID（解绑后可能为空）',
@@ -184,15 +188,15 @@ CREATE TABLE `device_binding_history` (
   KEY `ix_device_binding_history_id` (`id`),
   KEY `ix_device_binding_history_user_id` (`user_id`),
   KEY `idx_mac_action_time` (`mac_address`,`action_time`),
-  CONSTRAINT `device_binding_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `device_binding_history_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
+  CONSTRAINT `device_binding_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `aiot_users` (`id`),
+  CONSTRAINT `device_binding_history_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `aiot_products` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备绑定历史表';
 
 -- ============================================================================
 -- 6. 创建交互日志表（根据backend/models/interaction_log.py定义）
 -- ============================================================================
 
-CREATE TABLE `interaction_logs` (
+CREATE TABLE `aiot_interaction_logs` (
   `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
   `timestamp` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '时间戳',
   `device_id` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备ID',
@@ -220,7 +224,7 @@ CREATE TABLE `interaction_logs` (
 -- 7. 创建交互统计表（每小时，根据backend/models/interaction_log.py定义）
 -- ============================================================================
 
-CREATE TABLE `interaction_stats_hourly` (
+CREATE TABLE `aiot_interaction_stats_hourly` (
   `timestamp` DATETIME NOT NULL COMMENT '统计小时',
   `device_id` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备ID',
   `interaction_type` VARCHAR(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '交互类型',
@@ -243,7 +247,7 @@ CREATE TABLE `interaction_stats_hourly` (
 -- 8. 创建交互统计表（每日，根据backend/models/interaction_log.py定义）
 -- ============================================================================
 
-CREATE TABLE `interaction_stats_daily` (
+CREATE TABLE `aiot_interaction_stats_daily` (
   `date` DATETIME NOT NULL COMMENT '统计日期',
   `device_id` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备ID',
   `total_interactions` INT(11) DEFAULT '0' COMMENT '总交互次数',
@@ -268,11 +272,11 @@ CREATE TABLE `interaction_stats_daily` (
 
 -- 9.1 插入管理员用户
 -- 密码: admin123 (使用 pbkdf2-sha256 加密)
-INSERT INTO `users` (`id`, `email`, `username`, `name`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
+INSERT INTO `aiot_users` (`id`, `email`, `username`, `name`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'admin@aiot.com', 'admin', '系统管理员', '$pbkdf2-sha256$29000$dK6Vcm4tReg9B0DImTMmRA$sxi6IZom9C17tDagKrVkE/4PBVBLClSBZDdSGVmystM', 'admin', 1, NOW(), NOW());
 
 -- 9.2 插入产品信息（ESP32-S3开发板）
-INSERT INTO `products` (
+INSERT INTO `aiot_products` (
   `id`,
   `product_code`,
   `name`,
