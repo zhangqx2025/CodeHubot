@@ -246,7 +246,7 @@ def get_product_categories(
     """获取所有产品类别"""
     categories = db.execute(text("""
         SELECT DISTINCT category, COUNT(*) as count
-        FROM aiot_products 
+        FROM aiot_core_products 
         WHERE category IS NOT NULL
         GROUP BY category
         ORDER BY count DESC, category
@@ -342,7 +342,7 @@ def delete_product(
     
     # 检查是否有关联的设备
     device_count = db.execute(text("""
-        SELECT COUNT(*) FROM aiot_devices WHERE product_id = :product_id
+        SELECT COUNT(*) FROM aiot_core_devices WHERE product_id = :product_id
     """), {"product_id": product_id}).scalar()
     
     if device_count > 0:
@@ -382,7 +382,7 @@ def get_product_devices(
     devices = db.execute(text("""
         SELECT id, name, uuid, is_online, is_active, 
                last_seen, location, group_name, error_count, created_at
-        FROM aiot_devices 
+        FROM aiot_core_devices 
         WHERE product_id = :product_id
         ORDER BY created_at DESC
         LIMIT :limit OFFSET :skip

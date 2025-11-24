@@ -429,7 +429,7 @@ def get_devices_statistics(
                     SUM(CASE WHEN is_online = 1 THEN 1 ELSE 0 END) as online_devices,
                     SUM(CASE WHEN error_count > 0 THEN 1 ELSE 0 END) as error_devices,
                     AVG(error_count) as avg_error_count
-                FROM aiot_devices
+                FROM aiot_core_devices
             """)).fetchone()
         else:
             stats = db.execute(text("""
@@ -439,7 +439,7 @@ def get_devices_statistics(
                     SUM(CASE WHEN is_online = 1 THEN 1 ELSE 0 END) as online_devices,
                     SUM(CASE WHEN error_count > 0 THEN 1 ELSE 0 END) as error_devices,
                     AVG(error_count) as avg_error_count
-                FROM aiot_devices
+                FROM aiot_core_devices
                 WHERE user_id = :user_id
             """), {"user_id": current_user.id}).fetchone()
         
@@ -496,7 +496,7 @@ def get_devices_by_product(
     if is_admin_user(current_user):
         devices = db.execute(text("""
             SELECT d.*
-            FROM aiot_devices d
+            FROM aiot_core_devices d
             WHERE d.product_id = :product_id
             ORDER BY d.created_at DESC
             LIMIT :limit OFFSET :skip
@@ -504,7 +504,7 @@ def get_devices_by_product(
     else:
         devices = db.execute(text("""
             SELECT d.*
-            FROM aiot_devices d
+            FROM aiot_core_devices d
             WHERE d.product_id = :product_id AND d.user_id = :user_id
             ORDER BY d.created_at DESC
             LIMIT :limit OFFSET :skip
@@ -574,7 +574,7 @@ def get_device_product_info(
             p.id as product_id, p.name as product_name, p.product_code,
             p.category as product_category, p.firmware_version, p.hardware_version
         FROM devices d
-        LEFT JOIN aiot_products p ON d.product_id = p.id
+        LEFT JOIN aiot_core_products p ON d.product_id = p.id
         WHERE d.uuid = :device_uuid
     """), {"device_uuid": device_uuid}).fetchone()
     
@@ -914,7 +914,7 @@ async def get_device_full_config(
             p.sensor_types, p.control_ports, p.device_capabilities as product_capabilities,
             p.default_device_config, p.category, p.manufacturer
         FROM devices d
-        LEFT JOIN aiot_products p ON d.product_id = p.id
+        LEFT JOIN aiot_core_products p ON d.product_id = p.id
         WHERE d.uuid = :device_uuid
     """), {"device_uuid": device_uuid}).fetchone()
     
@@ -1231,8 +1231,8 @@ async def get_device_product_history(
             p_old.name as old_product_name,
             p_new.name as new_product_name
         FROM aiot_device_product_history dph
-        LEFT JOIN aiot_products p_old ON dph.old_product_id = p_old.id
-        LEFT JOIN aiot_products p_new ON dph.new_product_id = p_new.id
+        LEFT JOIN aiot_core_products p_old ON dph.old_product_id = p_old.id
+        LEFT JOIN aiot_core_products p_new ON dph.new_product_id = p_new.id
         WHERE dph.device_id = :device_id
         ORDER BY dph.switched_at DESC
     """)

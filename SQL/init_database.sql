@@ -2,14 +2,6 @@
 -- CodeHubot AI-IoT 智能教学平台 - 数据库初始化SQL脚本
 -- 版本: 1.2.0
 -- 日期: 2025-11-24
--- 说明: 基于backend实际使用的表结构，仅包含backend需要的8张核心表
--- 注意: 已删除未使用的表（device_data_logs, access_logs）
--- 
--- 重要说明:
---   当前脚本中的表名（aiot_users, aiot_products, aiot_devices, aiot_firmware_versions）
---   实际上是核心表，按照新的命名规范应该使用 aiot_core_* 前缀。
---   为了保持向后兼容，当前仍使用 aiot_* 前缀，但未来版本将迁移为 aiot_core_* 前缀。
---   扩展表（如 aiot_device_binding_history, aiot_interaction_logs 等）保持 aiot_* 前缀。
 -- 
 -- 表命名规范:
 --   - 所有表名统一使用 aiot_ 前缀，便于区分不同业务模块的表
@@ -24,16 +16,11 @@
 -- 
 -- 各业务模块表命名示例:
 -- 
--- 1. 核心业务表（最小系统必需，应使用 aiot_core_ 前缀）:
---    注意：当前版本为保持兼容性，仍使用 aiot_* 前缀，未来将迁移为 aiot_core_* 前缀
+-- 1. 核心业务表（最小系统必需，使用 aiot_core_ 前缀）:
 --    - aiot_core_users              # 用户表（必需：认证和授权）
---                                    # 当前表名: aiot_users（待迁移）
---    - aiot_core_products            # 产品表（必需：设备需要关联产品）
---                                    # 当前表名: aiot_products（待迁移）
+--    - aiot_core_products           # 产品表（必需：设备需要关联产品）
 --    - aiot_core_devices            # 设备表（必需：核心业务实体）
---                                    # 当前表名: aiot_devices（待迁移）
 --    - aiot_core_firmware_versions  # 固件版本表（必需：设备需要固件信息）
---                                    # 当前表名: aiot_firmware_versions（待迁移）
 -- 
 --    最小系统表清单（4张核心表）:
 --    ✓ aiot_core_users              - 用户认证和授权
@@ -121,7 +108,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 1. 创建用户表
 -- ============================================================================
 
-CREATE TABLE `aiot_users` (
+CREATE TABLE `aiot_core_users` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `email` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '邮箱',
   `username` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
@@ -144,7 +131,7 @@ CREATE TABLE `aiot_users` (
 -- 2. 创建产品表
 -- ============================================================================
 
-CREATE TABLE `aiot_products` (
+CREATE TABLE `aiot_core_products` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `product_code` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '产品代码',
   `name` VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '产品名称',
@@ -174,14 +161,14 @@ CREATE TABLE `aiot_products` (
   KEY `idx_name` (`name`),
   KEY `idx_category` (`category`),
   KEY `idx_creator_id` (`creator_id`),
-  FOREIGN KEY (`creator_id`) REFERENCES `aiot_users` (`id`) ON DELETE SET NULL
+  FOREIGN KEY (`creator_id`) REFERENCES `aiot_core_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='产品表';
 
 -- ============================================================================
 -- 3. 创建设备表
 -- ============================================================================
 
-CREATE TABLE `aiot_devices` (
+CREATE TABLE `aiot_core_devices` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `uuid` VARCHAR(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备UUID',
   `device_id` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备ID',
@@ -231,15 +218,15 @@ CREATE TABLE `aiot_devices` (
   KEY `idx_device_status` (`device_status`),
   KEY `idx_is_online` (`is_online`),
   KEY `idx_mac_address` (`mac_address`),
-  FOREIGN KEY (`product_id`) REFERENCES `aiot_products` (`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`user_id`) REFERENCES `aiot_users` (`id`) ON DELETE SET NULL
+  FOREIGN KEY (`product_id`) REFERENCES `aiot_core_products` (`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`user_id`) REFERENCES `aiot_core_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='设备表';
 
 -- ============================================================================
 -- 4. 创建固件版本表
 -- ============================================================================
 
-CREATE TABLE `aiot_firmware_versions` (
+CREATE TABLE `aiot_core_firmware_versions` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `product_code` VARCHAR(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '产品编码',
   `version` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '版本号',
@@ -286,8 +273,8 @@ CREATE TABLE `aiot_device_binding_history` (
   KEY `ix_device_binding_history_id` (`id`),
   KEY `ix_device_binding_history_user_id` (`user_id`),
   KEY `idx_mac_action_time` (`mac_address`,`action_time`),
-  CONSTRAINT `device_binding_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `aiot_users` (`id`),
-  CONSTRAINT `device_binding_history_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `aiot_products` (`id`)
+  CONSTRAINT `device_binding_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `aiot_core_users` (`id`),
+  CONSTRAINT `device_binding_history_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `aiot_core_products` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备绑定历史表';
 
 -- ============================================================================
@@ -370,11 +357,11 @@ CREATE TABLE `aiot_interaction_stats_daily` (
 
 -- 9.1 插入管理员用户
 -- 密码: admin123 (使用 pbkdf2-sha256 加密)
-INSERT INTO `aiot_users` (`id`, `email`, `username`, `name`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
+INSERT INTO `aiot_core_users` (`id`, `email`, `username`, `name`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'admin@aiot.com', 'admin', '系统管理员', '$pbkdf2-sha256$29000$dK6Vcm4tReg9B0DImTMmRA$sxi6IZom9C17tDagKrVkE/4PBVBLClSBZDdSGVmystM', 'admin', 1, NOW(), NOW());
 
 -- 9.2 插入产品信息（ESP32-S3开发板）
-INSERT INTO `aiot_products` (
+INSERT INTO `aiot_core_products` (
   `id`,
   `product_code`,
   `name`,
