@@ -131,6 +131,20 @@ const routes = [
         component: () => import('../views/DataReports.vue'),
         meta: { requiresAuth: true }
       },
+      // 智能体管理
+      {
+        path: 'agents',
+        name: 'Agents',
+        component: () => import('../views/Agents.vue'),
+        meta: { requiresAuth: true }
+      },
+      // 插件管理
+      {
+        path: 'plugins',
+        name: 'Plugins',
+        component: () => import('../views/Plugins.vue'),
+        meta: { requiresAuth: true }
+      },
       // 用户管理
       {
         path: 'users',

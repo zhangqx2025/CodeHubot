@@ -443,6 +443,51 @@ INSERT INTO `aiot_core_products` (
 );
 
 -- ============================================================================
+-- 7. 创建插件表
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS `aiot_core_plugins` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '插件名称',
+  `description` TEXT COLLATE utf8mb4_unicode_ci COMMENT '插件描述',
+  `openapi_spec` JSON NOT NULL COMMENT 'OpenAPI 3.0.0 规范（JSON）',
+  `user_id` INT(11) NOT NULL COMMENT '创建用户 ID',
+  `is_active` INT(11) DEFAULT '1' COMMENT '是否激活（1=激活，0=禁用）',
+  `is_system` INT(11) DEFAULT '0' COMMENT '是否系统内置（1=是，0=否）',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_name` (`name`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_is_active` (`is_active`),
+  KEY `idx_is_system` (`is_system`),
+  CONSTRAINT `fk_plugin_user` FOREIGN KEY (`user_id`) REFERENCES `aiot_core_users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='插件表';
+
+-- ============================================================================
+-- 8. 创建智能体表
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS `aiot_core_agents` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '智能体名称',
+  `description` TEXT COLLATE utf8mb4_unicode_ci COMMENT '智能体描述',
+  `system_prompt` TEXT COLLATE utf8mb4_unicode_ci COMMENT '系统提示词',
+  `plugin_ids` JSON DEFAULT NULL COMMENT '关联的插件 ID 列表',
+  `user_id` INT(11) NOT NULL COMMENT '创建用户 ID',
+  `is_active` INT(11) DEFAULT '1' COMMENT '是否激活（1=激活，0=禁用）',
+  `is_system` INT(11) DEFAULT '0' COMMENT '是否系统内置（1=是，0=否）',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_name` (`name`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_is_active` (`is_active`),
+  KEY `idx_is_system` (`is_system`),
+  CONSTRAINT `fk_agent_user` FOREIGN KEY (`user_id`) REFERENCES `aiot_core_users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='智能体表';
+
+-- ============================================================================
 -- 10. 恢复外键检查
 -- ============================================================================
 
@@ -467,5 +512,4 @@ SET FOREIGN_KEY_CHECKS = 1;
 --   1. 请先创建数据库：CREATE DATABASE aiot_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 --   2. 使用数据库：USE aiot_admin;
 --   3. 执行此脚本：mysql -u root -p aiot_admin < init_database.sql
---   4. 如果需要AI智能体功能，请先执行 agent_tables.sql
---   5. 字符集：utf8mb4
+--   4. 字符集：utf8mb4

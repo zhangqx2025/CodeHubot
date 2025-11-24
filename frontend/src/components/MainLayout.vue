@@ -113,6 +113,42 @@
             </div>
           </div>
 
+          <!-- AI 智能体管理区域 -->
+          <div class="nav-section">
+            <div class="section-label" v-if="!sidebarCollapsed">AI 智能体</div>
+            <div class="nav-items">
+              <div 
+                class="nav-item"
+                :class="{ active: $route.path === '/agents' }"
+                @click="handleNavItemClick({route: '/agents'}, $event)"
+              >
+                <div class="item-icon">
+                  <el-icon size="20"><ChatDotRound /></el-icon>
+                </div>
+                <div class="item-content" v-if="!sidebarCollapsed">
+                  <span class="item-title">智能体管理</span>
+                  <span class="item-desc">创建和管理AI智能体</span>
+                </div>
+                <div class="item-indicator"></div>
+              </div>
+
+              <div 
+                class="nav-item"
+                :class="{ active: $route.path === '/plugins' }"
+                @click="handleNavItemClick({route: '/plugins'}, $event)"
+              >
+                <div class="item-icon">
+                  <el-icon size="20"><Connection /></el-icon>
+                </div>
+                <div class="item-content" v-if="!sidebarCollapsed">
+                  <span class="item-title">插件管理</span>
+                  <span class="item-desc">管理OpenAPI插件</span>
+                </div>
+                <div class="item-indicator"></div>
+              </div>
+            </div>
+          </div>
+
           <!-- 数据分析区域 (暂时隐藏) -->
           <!-- <div class="nav-section">
             <div class="section-label" v-if="!sidebarCollapsed">数据分析</div>
@@ -285,7 +321,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   House, Monitor, User, ArrowRight, ArrowDown, Setting, SwitchButton,
   Fold, Expand, Menu, TrendCharts, UserFilled, Plus, List, Box, Collection,
-  InfoFilled
+  InfoFilled, ChatDotRound, Connection
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
