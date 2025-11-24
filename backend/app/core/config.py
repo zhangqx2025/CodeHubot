@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator, model_validator
 from typing import Optional
 import secrets
 import logging
@@ -6,8 +7,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
-    # 数据库配置（必须从环境变量读取）
-    database_url: str
+    # 数据库配置（支持两种方式：独立配置项或直接URL）
+    # 方式一：独立配置项（推荐）
+    db_host: Optional[str] = None
+    db_port: Optional[int] = None
+    db_user: Optional[str] = None
+    db_password: Optional[str] = None
+    db_name: Optional[str] = None
+    
+    # 方式二：直接URL（向后兼容）
+    database_url: Optional[str] = None
     
     # Redis配置
     redis_url: str = "redis://localhost:6379"
@@ -72,6 +81,21 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
         extra = "ignore"  # 忽略额外的环境变量，避免部署时出错
+    
+    @model_validator(mode='after')
+    def build_database_url(self):
+        """构建数据库URL（如果使用独立配置项）"""
+        # 如果已经提供了 database_url，直接使用
+        if self.database_url:
+            return self
+        
+        # 如果提供了所有独立配置项，构建 URL
+        if all([self.db_host, self.db_port, self.db_user, self.db_password, self.db_name]):
+            self.database_url = f"mysql+pymysql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+            return self
+        
+        # 如果都没有提供，抛出错误
+        raise ValueError("数据库配置不完整：请提供 DATABASE_URL 或完整的 DB_HOST、DB_PORT、DB_USER、DB_PASSWORD、DB_NAME")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
