@@ -55,9 +55,9 @@ services:
     networks:
       - aiot-network
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 1883 || exit 1"]
+      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-t", "health/check", "-m", "ping", "-i", "health-check-client"]
       interval: 10s
-      timeout: 3s
+      timeout: 5s
       retries: 5
       start_period: 10s
     restart: unless-stopped
