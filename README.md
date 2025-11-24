@@ -98,7 +98,6 @@
 | 仓库 | 说明 |
 |------|------|
 | **[🏠 主仓库](https://github.com/codehubot/codehubot)** | 管理后台、后端 API、插件、系统服务 | 
-| **[🤖 智能体平台](https://github.com/codehubot/agent-platform)** | AI 智能体构建、工作流、知识库 | 
 | **[🔌 固件仓库](https://github.com/codehubot/firmware)** | ESP32 固件、硬件资料 | 
 
 
