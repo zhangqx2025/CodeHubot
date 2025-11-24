@@ -7,17 +7,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/codehubot/codehubot/blob/main/LICENSE">
+  <a href="https://github.com/CodeHubot/CodeHubot/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="license">
   </a>
-  <a href="https://github.com/codehubot/codehubot/releases/latest">
-    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/codehubot/codehubot.svg">
+  <a href="https://github.com/CodeHubot/CodeHubot/releases/latest">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/CodeHubot/CodeHubot.svg">
   </a>
-  <a href="https://github.com/codehubot/codehubot/stargazers">
-    <img alt="GitHub stars" src="https://img.shields.io/github/stars/codehubot/codehubot?style=flat-square">
+  <a href="https://github.com/CodeHubot/CodeHubot/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/CodeHubot/CodeHubot?style=flat-square">
   </a>
-  <a href="https://github.com/codehubot/codehubot/issues">
-    <img alt="GitHub issues" src="https://img.shields.io/github/issues/codehubot/codehubot?style=flat-square">
+  <a href="https://github.com/CodeHubot/CodeHubot/issues">
+    <img alt="GitHub issues" src="https://img.shields.io/github/issues/CodeHubot/CodeHubot?style=flat-square">
   </a>
 
 </p>
@@ -91,7 +91,7 @@
 
 ```bash
 # 1. 克隆项目
-git clone <repository-url> CodeHubot
+git clone https://github.com/CodeHubot/CodeHubot.git CodeHubot
 cd CodeHubot
 
 # 2. 配置环境变量
@@ -126,7 +126,7 @@ cd ..
 ### 如何贡献
 - 📝 **完善文档**：改进教程、修正错误
 - 🔬 **分享实验**：分享你设计的教学实验
-- 🐛 **报告问题**：提交 [Issues](https://github.com/codehubot/codehubot/issues)
+- 🐛 **报告问题**：提交 [Issues](https://github.com/CodeHubot/CodeHubot/issues)
 - 💻 **贡献代码**：提交 Pull Request
 
 ### 贡献者
@@ -135,7 +135,7 @@ cd ..
 
 ## 📄 开源协议
 
-本项目所有**软件代码**采用 [MIT License](https://github.com/codehubot/codehubot/blob/main/LICENSE)
+本项目所有**软件代码**采用 [MIT License](https://github.com/CodeHubot/CodeHubot/blob/main/LICENSE)
 
 - ✅ 前端代码（Vue 3）
 - ✅ 后端代码（FastAPI）
