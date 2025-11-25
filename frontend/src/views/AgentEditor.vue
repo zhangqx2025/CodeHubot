@@ -342,7 +342,7 @@ const loadAgent = async () => {
 // 加载可用插件
 const loadPlugins = async () => {
   try {
-    const response = await getPlugins({ limit: 9999 })
+    const response = await getPlugins({ limit: 1000 })
     availablePlugins.value = response.data.items
   } catch (error) {
     ElMessage.error('加载插件列表失败')
