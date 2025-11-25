@@ -107,9 +107,10 @@ cd ..
 ```
 
 部署完成后访问：
-- **前端**: http://localhost
+- **前端**: http://localhost:8080
 - **后端 API**: http://localhost:8000
 - **API 文档**: http://localhost:8000/docs
+- **数据库管理**: http://localhost:8081 (phpMyAdmin)
 
 📖 详细部署文档请查看 [deploy/docs/docker-deployment.md](deploy/docs/docker-deployment.md)
 

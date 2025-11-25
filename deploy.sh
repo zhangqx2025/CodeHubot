@@ -251,8 +251,8 @@ start_services() {
     fi
     
     # 启动应用服务
-    log_info "启动应用服务（后端、配置服务、前端、插件服务）..."
-    docker-compose -f docker-compose.prod.yml up -d backend config-service frontend plugin-service
+    log_info "启动应用服务（后端、配置服务、前端、插件服务、phpMyAdmin）..."
+    docker-compose -f docker-compose.prod.yml up -d backend config-service frontend plugin-service phpmyadmin
     
     log_info "所有服务启动完成 ✓"
 }
@@ -298,6 +298,13 @@ check_services() {
     else
         log_warn "插件服务: ✗ 未响应（可能需要等待服务完全启动）"
     fi
+    
+    # 检查 phpMyAdmin 服务
+    if curl -f http://localhost:${PHPMYADMIN_PORT:-8081}/ &>/dev/null; then
+        log_info "phpMyAdmin: ✓ 健康"
+    else
+        log_warn "phpMyAdmin: ✗ 未响应（可能需要等待服务完全启动）"
+    fi
 }
 
 # 显示服务信息
@@ -315,6 +322,7 @@ show_info() {
     log_info "  后端API:    http://localhost:${BACKEND_PORT:-8000}"
     log_info "  配置服务:   http://localhost:${CONFIG_SERVICE_PORT:-8001}"
     log_info "  插件服务:   http://localhost:${PLUGIN_SERVICE_PORT:-9000}"
+    log_info "  phpMyAdmin: http://localhost:${PHPMYADMIN_PORT:-8081}"
     log_info ""
     log_info "数据库："
     log_info "  MySQL:    localhost:${MYSQL_PORT:-3306}"
