@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 import logging
 from datetime import datetime
 import json
-from sqlalchemy import create_engine, desc, Column, Integer, String, DateTime, Boolean, Text, JSON
+from sqlalchemy import create_engine, desc, Column, Integer, String, DateTime, Boolean, Text, JSON, text
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 import paho.mqtt.client as mqtt
 import os
@@ -58,16 +58,35 @@ logger.info("=" * 60)
 logger.info("  AIOT 插件后端服务配置")
 logger.info("=" * 60)
 logger.info(f"  服务地址: http://{SERVICE_HOST}:{SERVICE_PORT}")
+logger.info("")
 
-# 隐藏密码的数据库信息显示
+# 详细的数据库配置信息
+logger.info("  📊 数据库配置:")
+if os.getenv("DATABASE_URL"):
+    logger.info("    配置方式: DATABASE_URL（完整连接字符串）")
+else:
+    logger.info("    配置方式: 单独配置项")
+    logger.info(f"    DB_HOST = {os.getenv('DB_HOST', 'localhost')}")
+    logger.info(f"    DB_PORT = {os.getenv('DB_PORT', '3306')}")
+    logger.info(f"    DB_NAME = {os.getenv('DB_NAME', 'aiot')}")
+    logger.info(f"    DB_USER = {os.getenv('DB_USER', 'aiot_user')}")
+    password = os.getenv('DB_PASSWORD', 'password')
+    logger.info(f"    DB_PASSWORD = {'*' * len(password)} ({len(password)}字符)")
+
+# 显示最终的连接信息（隐藏密码）
 if '@' in DATABASE_URL:
     db_info = DATABASE_URL.split('@')[1]  # 显示 host:port/db
     db_user = DATABASE_URL.split('://')[1].split(':')[0]  # 提取用户名
-    logger.info(f"  数据库: {db_user}@{db_info}")
+    logger.info(f"    连接地址: {db_user}@{db_info}")
 else:
-    logger.info("  数据库: 未配置")
+    logger.info("    状态: 未配置")
 
-logger.info(f"  MQTT: {MQTT_BROKER}:{MQTT_PORT}")
+logger.info("")
+logger.info(f"  📡 MQTT配置: {MQTT_BROKER}:{MQTT_PORT}")
+if MQTT_USERNAME:
+    logger.info(f"    认证模式: 用户名密码")
+else:
+    logger.info(f"    认证模式: 匿名访问")
 logger.info("=" * 60 + "\n")
 
 # ============================================================
@@ -101,12 +120,38 @@ class InteractionLog(Base):
 # 数据库连接
 # ============================================================
 
+logger.info("🔄 正在连接数据库...")
 try:
     engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=3600)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
+    # 测试连接
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    
     logger.info("✅ 数据库连接成功")
 except Exception as e:
-    logger.error(f"❌ 数据库连接失败: {e}")
+    logger.error("=" * 60)
+    logger.error("❌ 数据库连接失败")
+    logger.error("=" * 60)
+    logger.error(f"错误类型: {type(e).__name__}")
+    logger.error(f"错误信息: {str(e)}")
+    logger.error("")
+    logger.error("💡 常见原因和解决方案：")
+    logger.error("  1. 密码错误 → 检查 .env 中的 DB_PASSWORD")
+    logger.error("  2. 数据库不存在 → 检查 DB_NAME 是否正确")
+    logger.error("  3. 用户不存在 → 检查 DB_USER 是否正确")
+    logger.error("  4. MySQL未运行 → 执行: sudo systemctl start mysql")
+    logger.error("  5. 主机错误 → 检查 DB_HOST (Docker环境用容器名)")
+    logger.error("")
+    logger.error("🔍 快速诊断命令：")
+    if not os.getenv("DATABASE_URL"):
+        db_host = os.getenv('DB_HOST', 'localhost')
+        db_port = os.getenv('DB_PORT', '3306')
+        db_user = os.getenv('DB_USER', 'aiot_user')
+        db_name = os.getenv('DB_NAME', 'aiot')
+        logger.error(f"  mysql -h {db_host} -P {db_port} -u {db_user} -p {db_name}")
+    logger.error("=" * 60)
     SessionLocal = None
 
 def get_db():
