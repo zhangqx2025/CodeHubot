@@ -171,50 +171,6 @@ def get_internal_headers() -> dict:
     return headers
 
 
-async def verify_device_exists(device_uuid: str) -> bool:
-    """验证设备是否存在
-    
-    通过调用设备配置接口验证设备存在性
-    该接口已支持内部API密钥认证
-    """
-    try:
-        headers = get_internal_headers()
-        url = f"{BACKEND_URL}/api/devices/{device_uuid}/config"
-        logger.info(f"🔍 验证设备: {device_uuid}")
-        logger.debug(f"🔗 请求URL: {url}")
-        logger.debug(f"📋 请求头: {headers}")
-        
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            # 调用设备配置接口（已支持内部API密钥）
-            response = await client.get(url, headers=headers)
-            
-            logger.info(f"📡 后端响应状态: {response.status_code}")
-            
-            # 200表示设备存在，404表示设备不存在
-            if response.status_code == 200:
-                logger.info(f"✅ 设备验证成功: {device_uuid}")
-                return True
-            elif response.status_code == 404:
-                logger.warning(f"⚠️ 设备不存在(404): {device_uuid}")
-                return False
-            else:
-                # 其他错误（如401认证失败）也返回False
-                logger.error(f"❌ 验证设备时返回异常状态码 {response.status_code}: {response.text[:200]}")
-                return False
-    except httpx.TimeoutException as e:
-        logger.error(f"❌ 验证设备超时: {e}, URL: {BACKEND_URL}")
-        return False
-    except httpx.ConnectError as e:
-        logger.error(f"❌ 无法连接到后端服务: {e}, URL: {BACKEND_URL}")
-        logger.error(f"💡 请检查: 1) 后端服务是否运行 2) BACKEND_URL配置是否正确")
-        return False
-    except Exception as e:
-        logger.error(f"❌ 验证设备失败: {type(e).__name__}: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        return False
-
-
 def map_sensor_key(sensor_name: str) -> str:
     """映射传感器名称到数据库键"""
     sensor_map = {
@@ -278,10 +234,8 @@ async def get_device_aliases(
             data=mock_aliases
         )
     
-    # 验证设备
-    if not await verify_device_exists(uuid):
-        logger.warning(f"❌ 设备不存在: {uuid}")
-        raise HTTPException(status_code=404, detail=f"设备 {uuid} 不存在")
+    # 注意：不需要预先验证设备，后端 API 会自己验证
+    # 如果设备不存在，后端会返回 404 错误
     
     try:
         # 调用后端API获取设备配置（使用内部API密钥）
@@ -649,10 +603,8 @@ async def execute_preset(request: PresetRequest, raw_request: Request):
             data={"result": "success"}
         )
     
-    # 验证设备
-    if not await verify_device_exists(request.device_uuid):
-        logger.warning(f"❌ 设备不存在: {request.device_uuid}")
-        raise HTTPException(status_code=404, detail=f"设备 {request.device_uuid} 不存在")
+    # 注意：不需要在这里验证设备，plugin-backend-service 会自己验证
+    # 这样可以避免额外的网络请求，提高性能
     
     try:
         # 调用 plugin-backend-service 执行预设
