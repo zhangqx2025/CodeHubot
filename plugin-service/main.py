@@ -207,7 +207,7 @@ async def verify_device_exists(device_uuid: str) -> bool:
     except httpx.ConnectError as e:
         logger.error(f"❌ 无法连接到后端服务: {e}, URL: {BACKEND_URL}")
         logger.error(f"💡 请检查: 1) 后端服务是否运行 2) BACKEND_URL配置是否正确")
-                return False
+        return False
     except Exception as e:
         logger.error(f"❌ 验证设备失败: {type(e).__name__}: {e}")
         import traceback
