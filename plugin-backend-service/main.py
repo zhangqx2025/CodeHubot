@@ -487,10 +487,11 @@ async def control_device(request: ControlRequest):
         else:
             raise HTTPException(status_code=400, detail=f"不支持的端口类型: {request.port_type}")
         
-        # 发送MQTT命令
-        topic = f"device/{device.device_id}/control"
+        # 发送MQTT命令（使用 UUID）
+        topic = f"device/{device.uuid}/control"
         mqtt_client.publish(topic, control_cmd)
         
+        logger.info(f"📤 MQTT主题: {topic}")
         logger.info(f"✅ 控制成功: {request.port_type}{request.port_id} -> {request.action}")
         
         return StandardResponse(
