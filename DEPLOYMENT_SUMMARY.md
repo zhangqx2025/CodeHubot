@@ -109,7 +109,7 @@ cd ..
 | Config-Service | codehubot-config-service | 8001 | 配置服务 |
 | Frontend | codehubot-frontend | 80 | 前端 Web |
 | Plugin-Service | codehubot-plugin-service | 9000 | 插件服务（对外接口） |
-| **Plugin-Backend-Service** | **codehubot-plugin-backend** | **9001** | **插件后端服务（直接访问数据库和MQTT）** |
+| **Plugin-Backend-Service** | **codehubot-plugin-backend** | **9002** | **插件后端服务（直接访问数据库和MQTT）** |
 
 ## 🔧 配置要点
 

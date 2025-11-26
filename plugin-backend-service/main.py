@@ -50,7 +50,7 @@ MQTT_USERNAME = os.getenv("MQTT_USERNAME", "")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "")
 
 # 服务配置
-SERVICE_PORT = int(os.getenv("SERVICE_PORT", "9001"))
+SERVICE_PORT = int(os.getenv("SERVICE_PORT", "9002"))  # 默认 9002（9001 被 MQTT WebSocket 占用）
 SERVICE_HOST = os.getenv("SERVICE_HOST", "0.0.0.0")
 
 # 显示配置信息
