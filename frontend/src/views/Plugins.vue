@@ -33,58 +33,76 @@
       </el-row>
     </div>
 
-    <!-- 插件列表 -->
-    <el-table
-      v-loading="loading"
-      :data="plugins"
-      style="width: 100%"
-    >
-      <el-table-column prop="name" label="插件名称" min-width="200" />
-      <el-table-column prop="description" label="描述" min-width="250" show-overflow-tooltip />
-      <el-table-column label="OpenAPI版本" width="150">
-        <template #default="scope">
-          <el-tag>{{ scope.row.openapi_spec?.openapi || 'N/A' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="API数量" width="120">
-        <template #default="scope">
-          <el-tag>{{ Object.keys(scope.row.openapi_spec?.paths || {}).length }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" width="80">
-        <template #default="scope">
-          <el-tag :type="scope.row.is_active === 1 ? 'success' : 'danger'">
-            {{ scope.row.is_active === 1 ? '激活' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="created_at" label="创建时间" width="160">
-        <template #default="scope">
-          {{ formatDate(scope.row.created_at) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="类型" width="120">
-        <template #default="scope">
-          <el-tag :type="scope.row.is_system === 1 ? 'warning' : 'info'" size="small">
-            {{ scope.row.is_system === 1 ? '系统内置' : '用户创建' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="250" fixed="right">
-        <template #default="scope">
-          <el-button size="small" @click="viewPlugin(scope.row)">查看</el-button>
-          <el-button size="small" @click="editPlugin(scope.row)">编辑</el-button>
+    <!-- 插件列表 - 卡片形式 -->
+    <div v-loading="loading" class="plugins-grid">
+      <el-empty v-if="plugins.length === 0 && !loading" description="暂无插件">
+        <el-button type="primary" @click="addPlugin">创建第一个插件</el-button>
+      </el-empty>
+      
+      <el-card
+        v-for="plugin in plugins"
+        :key="plugin.id"
+        class="plugin-card"
+        shadow="hover"
+        :body-style="{ padding: '0' }"
+      >
+        <div class="card-header">
+          <div class="header-top">
+            <div class="plugin-icon">
+              <el-icon size="24"><Connection /></el-icon>
+            </div>
+            <div class="plugin-info">
+              <h3 class="plugin-name">{{ plugin.name }}</h3>
+              <div class="plugin-badges">
+                <el-tag :type="plugin.is_active === 1 ? 'success' : 'info'" size="small">
+                  {{ plugin.is_active === 1 ? '激活' : '禁用' }}
+                </el-tag>
+                <el-tag v-if="plugin.is_system === 1" type="warning" size="small">系统内置</el-tag>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <p class="plugin-description">{{ plugin.description || '暂无描述' }}</p>
+          
+          <div class="plugin-stats">
+            <div class="stat-item">
+              <el-icon><Document /></el-icon>
+              <span>{{ plugin.openapi_spec?.openapi || 'N/A' }}</span>
+            </div>
+            <div class="stat-item">
+              <el-icon><Link /></el-icon>
+              <span>{{ Object.keys(plugin.openapi_spec?.paths || {}).length }} 个API</span>
+            </div>
+            <div class="stat-item">
+              <el-icon><Clock /></el-icon>
+              <span>{{ formatDate(plugin.created_at) }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-footer">
+          <el-button size="small" @click="viewPlugin(plugin)">
+            <el-icon><View /></el-icon>
+            查看
+          </el-button>
+          <el-button type="primary" size="small" @click="editPlugin(plugin)">
+            <el-icon><Edit /></el-icon>
+            编辑
+          </el-button>
           <el-button
-            size="small"
             type="danger"
-            @click="handleDelete(scope.row)"
-            :disabled="scope.row.is_system === 1"
+            size="small"
+            @click="handleDelete(plugin)"
+            :disabled="plugin.is_system === 1"
           >
+            <el-icon><Delete /></el-icon>
             删除
           </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+        </div>
+      </el-card>
+    </div>
 
     <!-- 分页 -->
     <el-pagination
@@ -182,9 +200,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, Upload } from '@element-plus/icons-vue'
+import { Search, Plus, Upload, Connection, Document, Link, Clock, View, Edit, Delete } from '@element-plus/icons-vue'
 import { getPlugins, createPlugin, updatePlugin, deletePlugin } from '../api/plugin'
+
+const router = useRouter()
 
 const loading = ref(false)
 const searchQuery = ref('')
@@ -302,20 +323,13 @@ const addPlugin = () => {
 }
 
 // 编辑插件
-const editPlugin = (row) => {
-  dialogTitle.value = '编辑插件'
-  form.id = row.id
-  form.name = row.name
-  form.description = row.description || ''
-  form.openapi_spec = JSON.parse(JSON.stringify(row.openapi_spec))
-  form.is_active = row.is_active
-  dialogVisible.value = true
+const editPlugin = (plugin) => {
+  router.push(`/plugins/${plugin.uuid}/edit`)
 }
 
 // 查看插件
-const viewPlugin = (row) => {
-  viewPluginData.value = row
-  viewDialogVisible.value = true
+const viewPlugin = (plugin) => {
+  router.push(`/plugins/${plugin.uuid}/view`)
 }
 
 // 删除插件
@@ -330,7 +344,7 @@ const handleDelete = async (row) => {
         type: 'warning'
       }
     )
-    await deletePlugin(row.id)
+    await deletePlugin(row.uuid)
     ElMessage.success('删除成功')
     loadPlugins()
   } catch (error) {
@@ -493,6 +507,138 @@ pre {
   font-family: 'Courier New', monospace;
   font-size: 12px;
   line-height: 1.5;
+}
+
+/* 卡片网格布局 */
+.plugins-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+/* 插件卡片 */
+.plugin-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e4e7ed;
+}
+
+.plugin-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* 卡片头部 */
+.card-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.plugin-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.plugin-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.plugin-name {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plugin-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 卡片主体 */
+.card-body {
+  padding: 20px;
+  background: #ffffff;
+}
+
+.plugin-description {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+  min-height: 44px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plugin-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.stat-item .el-icon {
+  font-size: 16px;
+}
+
+/* 卡片底部 */
+.card-footer {
+  padding: 12px 20px;
+  background: #f5f7fa;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid #e4e7ed;
+}
+
+.card-footer .el-button {
+  flex: 1;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .plugins-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .plugins-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 

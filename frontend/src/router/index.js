@@ -5,7 +5,7 @@ import logger from '../utils/logger'
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard'
+    redirect: '/agents'
   },
   {
     path: '/login',
@@ -139,9 +139,15 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
-        path: 'agents/:id/edit',
+        path: 'agents/:uuid/edit',
         name: 'AgentEditor',
         component: () => import('../views/AgentEditor.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'agents/:uuid/chat',
+        name: 'Chat',
+        component: () => import('../views/Chat.vue'),
         meta: { requiresAuth: true }
       },
       // 插件管理
@@ -150,6 +156,25 @@ const routes = [
         name: 'Plugins',
         component: () => import('../views/Plugins.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'plugins/:uuid/view',
+        name: 'PluginViewer',
+        component: () => import('../views/PluginViewer.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'plugins/:uuid/edit',
+        name: 'PluginEditor',
+        component: () => import('../views/PluginEditor.vue'),
+        meta: { requiresAuth: true }
+      },
+      // 模型配置
+      {
+        path: 'llm-models',
+        name: 'LLMModels',
+        component: () => import('../views/LLMModels.vue'),
+        meta: { requiresAuth: true, requiresRole: 'admin' }
       },
       // 用户管理
       {
@@ -210,31 +235,85 @@ router.beforeEach(async (to, from, next) => {
     userRole: userStore.userInfo?.role
   })
   
-  // 如果有token但没有用户信息，尝试获取用户信息
-  if (userStore.token && !userStore.userInfo) {
-    logger.debug('有token但没有用户信息，尝试获取')
-    try {
-      await userStore.fetchUserInfo()
-      logger.debug('用户信息获取成功')
-    } catch (error) {
-      logger.warn('用户信息获取失败，执行登出:', error)
-      userStore.logout()
+  // 需要认证的路由
+  if (to.meta.requiresAuth) {
+    // 检查是否已登录（有有效的 token 和用户信息）
+    if (userStore.isLoggedIn) {
+      // 已登录，检查权限
+      if (to.meta.requiresRole && userStore.userInfo?.role !== to.meta.requiresRole) {
+        logger.warn('权限不足，重定向到首页')
+        next('/agents')
+        return
+      }
+      logger.debug('已登录，路由守卫检查通过')
+      next()
+      return
     }
-  }
-  
-  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+    
+    // 未登录，但有 token（可能没有用户信息）
+    if (userStore.token && !userStore.userInfo) {
+      logger.debug('有token但没有用户信息，尝试获取')
+      try {
+        await userStore.fetchUserInfo()
+        logger.debug('用户信息获取成功')
+        // 获取成功后，检查权限
+        if (to.meta.requiresRole && userStore.userInfo?.role !== to.meta.requiresRole) {
+          logger.warn('权限不足，重定向到仪表盘')
+          next('/dashboard')
+          return
+        }
+        next()
+        return
+      } catch (error) {
+        logger.warn('用户信息获取失败:', error)
+        // 继续尝试使用 refreshToken
+      }
+    }
+    
+    // 未登录，但有有效的 refreshToken，尝试刷新
+    if (userStore.refreshToken && !userStore.isRefreshTokenExpired) {
+      logger.info('用户未登录但有有效的 refreshToken，尝试刷新 token')
+      try {
+        const newToken = await userStore.refreshAccessToken()
+        if (newToken) {
+          logger.info('✅ Token 刷新成功，尝试获取用户信息')
+          // 刷新成功后，尝试获取用户信息
+          try {
+            await userStore.fetchUserInfo()
+            logger.info('✅ 用户信息获取成功，继续访问目标页面')
+            // 检查权限
+            if (to.meta.requiresRole && userStore.userInfo?.role !== to.meta.requiresRole) {
+              logger.warn('权限不足，重定向到仪表盘')
+              next('/dashboard')
+              return
+            }
+            next() // 继续访问目标页面
+            return
+          } catch (error) {
+            logger.warn('获取用户信息失败:', error)
+          }
+        }
+      } catch (error) {
+        logger.error('Token 刷新失败:', error)
+      }
+    }
+    
+    // 所有尝试都失败，跳转到登录页
     logger.info('需要认证但用户未登录，重定向到登录页')
     next('/login')
-  } else if ((to.name === 'Login' || to.name === 'Register') && userStore.isLoggedIn) {
-    logger.debug('已登录用户访问登录/注册页，重定向到仪表盘')
-    next('/dashboard')
-  } else if (to.meta.requiresRole && userStore.userInfo?.role !== to.meta.requiresRole) {
-    logger.warn('权限不足，重定向到仪表盘')
-    next('/dashboard')
-  } else {
+    return
+  }
+  
+  // 已登录用户访问登录/注册页，重定向到仪表盘
+  if ((to.name === 'Login' || to.name === 'Register') && userStore.isLoggedIn) {
+    logger.debug('已登录用户访问登录/注册页，重定向到首页')
+    next('/agents')
+    return
+  }
+  
+  // 不需要认证的路由，直接通过
     logger.debug('路由守卫检查通过')
     next()
-  }
 })
 
 export default router

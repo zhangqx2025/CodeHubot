@@ -225,13 +225,12 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
-      # 允许任意服务器连接
+      # 允许任意服务器连接（不预填密码）
       PMA_ARBITRARY: 1
       # 上传大小限制
       UPLOAD_LIMIT: 50M
+      # 隐藏数据库（可选，提高安全性）
+      # PMA_HIDE_DB: information_schema|performance_schema|mysql|sys
     ports:
       - "${PHPMYADMIN_PORT:-8081}:80"
     networks:

@@ -32,47 +32,55 @@
 
         <!-- 新的导航菜单 -->
         <div class="new-navigation">
-          <!-- 快速访问区域 -->
+          <!-- AI 智能体管理区域 -->
           <div class="nav-section">
-            <div class="section-label" v-if="!sidebarCollapsed">快速访问</div>
-            <div class="nav-items">
-              <div 
-                class="nav-item dashboard-item"
-                :class="{ active: $route.path === '/dashboard' }"
-                @click="handleNavItemClick({route: '/dashboard'}, $event)"
-              >
-                <div class="item-icon">
-                  <el-icon size="20"><House /></el-icon>
-                </div>
-                <div class="item-content" v-if="!sidebarCollapsed">
-                  <span class="item-title">仪表盘</span>
-                  <span class="item-desc">系统概览</span>
-                </div>
-                <div class="item-indicator"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 产品管理区域 -->
-          <div class="nav-section">
-            <div class="section-label" v-if="!sidebarCollapsed">产品管理</div>
+            <div class="section-label" v-if="!sidebarCollapsed">AI 智能体</div>
             <div class="nav-items">
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/products' }"
-                @click="handleNavItemClick({route: '/products'}, $event)"
+                :class="{ active: $route.path === '/agents' }"
+                @click="handleNavItemClick({route: '/agents'}, $event)"
               >
                 <div class="item-icon">
-                  <el-icon size="20"><Box /></el-icon>
+                  <el-icon size="20"><ChatDotRound /></el-icon>
                 </div>
                 <div class="item-content" v-if="!sidebarCollapsed">
-                  <span class="item-title">产品管理</span>
-                  <span class="item-desc">产品类型配置</span>
+                  <span class="item-title">智能体管理</span>
+                  <span class="item-desc">创建和管理AI智能体</span>
                 </div>
                 <div class="item-indicator"></div>
               </div>
 
+              <div 
+                class="nav-item"
+                :class="{ active: $route.path === '/plugins' }"
+                @click="handleNavItemClick({route: '/plugins'}, $event)"
+              >
+                <div class="item-icon">
+                  <el-icon size="20"><Connection /></el-icon>
+                </div>
+                <div class="item-content" v-if="!sidebarCollapsed">
+                  <span class="item-title">插件管理</span>
+                  <span class="item-desc">管理OpenAPI插件</span>
+                </div>
+                <div class="item-indicator"></div>
+              </div>
 
+              <div 
+                v-if="canAccessLLMModels"
+                class="nav-item"
+                :class="{ active: $route.path === '/llm-models' }"
+                @click="handleNavItemClick({route: '/llm-models'}, $event)"
+              >
+                <div class="item-icon">
+                  <el-icon size="20"><TrendCharts /></el-icon>
+                </div>
+                <div class="item-content" v-if="!sidebarCollapsed">
+                  <span class="item-title">模型配置</span>
+                  <span class="item-desc">管理大语言模型</span>
+                </div>
+                <div class="item-indicator"></div>
+              </div>
             </div>
           </div>
 
@@ -113,39 +121,26 @@
             </div>
           </div>
 
-          <!-- AI 智能体管理区域 -->
+          <!-- 产品管理区域 -->
           <div class="nav-section">
-            <div class="section-label" v-if="!sidebarCollapsed">AI 智能体</div>
+            <div class="section-label" v-if="!sidebarCollapsed">产品管理</div>
             <div class="nav-items">
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/agents' }"
-                @click="handleNavItemClick({route: '/agents'}, $event)"
+                :class="{ active: $route.path === '/products' }"
+                @click="handleNavItemClick({route: '/products'}, $event)"
               >
                 <div class="item-icon">
-                  <el-icon size="20"><ChatDotRound /></el-icon>
+                  <el-icon size="20"><Box /></el-icon>
                 </div>
                 <div class="item-content" v-if="!sidebarCollapsed">
-                  <span class="item-title">智能体管理</span>
-                  <span class="item-desc">创建和管理AI智能体</span>
+                  <span class="item-title">产品管理</span>
+                  <span class="item-desc">产品类型配置</span>
                 </div>
                 <div class="item-indicator"></div>
               </div>
 
-              <div 
-                class="nav-item"
-                :class="{ active: $route.path === '/plugins' }"
-                @click="handleNavItemClick({route: '/plugins'}, $event)"
-              >
-                <div class="item-icon">
-                  <el-icon size="20"><Connection /></el-icon>
-                </div>
-                <div class="item-content" v-if="!sidebarCollapsed">
-                  <span class="item-title">插件管理</span>
-                  <span class="item-desc">管理OpenAPI插件</span>
-                </div>
-                <div class="item-indicator"></div>
-              </div>
+
             </div>
           </div>
 
@@ -346,6 +341,13 @@ const pageConfig = {
   '/devices': { title: '设备列表', icon: 'List', color: '#409EFF' },
   '/device': { title: '设备详情', icon: 'Monitor', color: '#409EFF' },
 
+  // AI 智能体
+  '/agents': { title: '智能体管理', icon: 'ChatDotRound', color: '#409EFF' },
+  '/plugins': { title: '插件管理', icon: 'Connection', color: '#409EFF' },
+  '/plugin': { title: '插件详情', icon: 'Connection', color: '#409EFF' },
+  '/llm-models': { title: '模型配置', icon: 'TrendCharts', color: '#409EFF' },
+  '/agents/.*/chat': { title: '智能体对话', icon: 'ChatDotSquare', color: '#67C23A' },
+
   // '/data-overview': { title: '数据概览', icon: 'TrendCharts', color: '#67C23A' }, // 暂时隐藏
   '/users': { title: '用户列表', icon: 'UserFilled', color: '#E6A23C' },
   '/roles': { title: '角色管理', icon: 'UserFilled', color: '#E6A23C' },
@@ -402,6 +404,18 @@ const breadcrumbs = computed(() => {
     crumbs.push('数据分析', '数据图表')
   } else if (path.startsWith('/data-reports')) {
     crumbs.push('数据分析', '数据报告')
+  } else if (path.includes('/agents/') && path.includes('/chat')) {
+    crumbs.push('AI 智能体', '智能体管理', '智能体对话')
+  } else if (path.startsWith('/agents')) {
+    crumbs.push('AI 智能体', '智能体管理')
+  } else if (path.includes('/plugins/') && path.includes('/view')) {
+    crumbs.push('AI 智能体', '插件管理', '查看插件')
+  } else if (path.includes('/plugins/') && path.includes('/edit')) {
+    crumbs.push('AI 智能体', '插件管理', '编辑插件')
+  } else if (path.startsWith('/plugins')) {
+    crumbs.push('AI 智能体', '插件管理')
+  } else if (path.startsWith('/llm-models')) {
+    crumbs.push('AI 智能体', '模型配置')
   } else if (path.startsWith('/users')) {
     crumbs.push('用户管理', '用户列表')
   } else if (path.startsWith('/roles')) {
@@ -427,6 +441,7 @@ const userAvatar = computed(() => {
 // 权限检查
 const canAccessUserManagement = computed(() => userStore.isAdmin || userStore.isSuperUser)
 const canAccessSystemManagement = computed(() => userStore.isSuperUser)
+const canAccessLLMModels = computed(() => userStore.isAdmin || userStore.isSuperUser)
 
 // 切换侧边栏
 const toggleSidebar = () => {
@@ -1063,20 +1078,6 @@ onUnmounted(() => {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
 }
 
-
-
-.dashboard-item .item-icon {
-  background: rgba(6, 182, 212, 0.1) !important;
-}
-
-.dashboard-item .item-icon .el-icon {
-  color: #06b6d4 !important;
-}
-
-.nav-item.dashboard-item:hover .item-icon,
-.nav-item.dashboard-item.active .item-icon {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
-}
 
 
 

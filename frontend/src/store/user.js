@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { login, register, resetPassword, getUserInfo, refreshToken } from '../api/auth'
+import { login, register, resetPassword, getUserInfo, refreshToken as refreshTokenApi } from '../api/auth'
 import { ElMessage } from 'element-plus'
 import logger from '../utils/logger'
 
@@ -210,7 +210,7 @@ export const useUserStore = defineStore('user', () => {
       logger.info('开始刷新access token')
       
       // 使用 axios 而不是 fetch，以便经过拦截器处理响应格式
-      const response = await refreshToken(refreshToken.value)
+      const response = await refreshTokenApi(refreshToken.value)
       
       // 处理标准响应格式 {code, message, data}
       const responseData = response.data || response
@@ -308,9 +308,10 @@ export const useUserStore = defineStore('user', () => {
       }
       
       // 检查token是否即将过期
-      if (isTokenExpiringSoon.value) {
-        ElMessage.info('登录即将过期，请注意保存工作')
-      }
+      // 注释掉提示，因为系统会自动刷新token，不需要提醒用户
+      // if (isTokenExpiringSoon.value) {
+      //   ElMessage.info('登录即将过期，请注意保存工作')
+      // }
       
       try {
         await fetchUserInfo()

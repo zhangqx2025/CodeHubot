@@ -147,7 +147,7 @@ const handleLogin = async () => {
         ElMessage.success('登录成功！')
         
         // 使用 nextTick 确保状态更新完成后再跳转
-        await router.push('/dashboard')
+        await router.push('/agents')
       } catch (error) {
         logger.error('登录失败:', error)
         ElMessage.error('登录失败，请检查用户名/邮箱和密码')

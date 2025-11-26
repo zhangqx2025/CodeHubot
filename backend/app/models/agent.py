@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime
+import uuid as uuid_lib
 
 class Agent(Base):
     """
@@ -11,6 +12,7 @@ class Agent(Base):
     __tablename__ = "aiot_agents"
     
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String(36), unique=True, index=True, default=lambda: str(uuid_lib.uuid4()), comment="唯一标识UUID")
     name = Column(String(100), nullable=False, comment="智能体名称")
     description = Column(Text, comment="智能体描述")
     
@@ -19,6 +21,9 @@ class Agent(Base):
     
     # 关联的插件（JSON 数组，存储插件 ID）
     plugin_ids = Column(JSON, default=list, comment="关联的插件 ID 列表")
+    
+    # 关联的大模型
+    llm_model_id = Column(Integer, ForeignKey("aiot_llm_models.id"), comment="关联的大模型ID")
     
     # 用户关联
     user_id = Column(Integer, ForeignKey("aiot_core_users.id"), nullable=False, comment="创建用户 ID")

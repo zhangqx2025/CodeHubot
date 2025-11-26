@@ -124,14 +124,14 @@ def get_agents(
     return AgentList(total=total, items=agents)
 
 
-@router.get("/{agent_id}", response_model=AgentResponse)
+@router.get("/{agent_uuid}", response_model=AgentResponse)
 def get_agent(
-    agent_id: int,
+    agent_uuid: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """获取智能体详情"""
-    agent = db.query(Agent).filter(Agent.id == agent_id).first()
+    """获取智能体详情（通过UUID）"""
+    agent = db.query(Agent).filter(Agent.uuid == agent_uuid).first()
     
     if not agent:
         raise HTTPException(status_code=404, detail="智能体不存在")
@@ -142,15 +142,15 @@ def get_agent(
     return agent
 
 
-@router.put("/{agent_id}", response_model=AgentResponse)
+@router.put("/{agent_uuid}", response_model=AgentResponse)
 def update_agent(
-    agent_id: int,
+    agent_uuid: str,
     agent_update: AgentUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """更新智能体"""
-    agent = db.query(Agent).filter(Agent.id == agent_id).first()
+    """更新智能体（通过UUID）"""
+    agent = db.query(Agent).filter(Agent.uuid == agent_uuid).first()
     
     if not agent:
         raise HTTPException(status_code=404, detail="智能体不存在")
@@ -181,14 +181,14 @@ def update_agent(
     return agent
 
 
-@router.delete("/{agent_id}")
+@router.delete("/{agent_uuid}")
 def delete_agent(
-    agent_id: int,
+    agent_uuid: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """删除智能体"""
-    agent = db.query(Agent).filter(Agent.id == agent_id).first()
+    """删除智能体（通过UUID）"""
+    agent = db.query(Agent).filter(Agent.uuid == agent_uuid).first()
     
     if not agent:
         raise HTTPException(status_code=404, detail="智能体不存在")

@@ -26,15 +26,18 @@ class AgentUpdate(BaseModel):
     description: Optional[str] = Field(None, description="智能体描述")
     system_prompt: Optional[str] = Field(None, description="系统提示词")
     plugin_ids: Optional[List[int]] = Field(None, description="关联的插件 ID 列表")
+    llm_model_id: Optional[int] = Field(None, description="关联的大模型ID")
     is_active: Optional[int] = Field(None, description="是否激活（1=激活，0=禁用）")
 
 
 class AgentResponse(AgentBase):
     """智能体响应模式"""
     id: int
+    uuid: str = Field(..., description="唯一标识UUID")
     user_id: int
     is_active: int
     is_system: int
+    llm_model_id: Optional[int] = Field(None, description="关联的大模型ID")
     created_at: datetime
     updated_at: datetime
     

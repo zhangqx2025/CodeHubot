@@ -30,6 +30,7 @@ class PluginUpdate(BaseModel):
 class PluginResponse(PluginBase):
     """插件响应模式"""
     id: int
+    uuid: str = Field(..., description="唯一标识UUID")
     user_id: int
     is_active: int
     is_system: int

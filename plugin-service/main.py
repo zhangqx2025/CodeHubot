@@ -6,6 +6,7 @@ AIOT 外部插件服务
 
 from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 import httpx
@@ -61,6 +62,37 @@ if config.CORS_ENABLED:
 
 # 后端服务地址（从配置读取）
 BACKEND_URL = config.BACKEND_URL
+
+# ==================== 全局异常处理器 ====================
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """统一处理 HTTPException，返回标准格式"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "code": exc.status_code,
+            "msg": "失败" if exc.status_code >= 400 else "成功",
+            "data": {
+                "error": exc.detail
+            }
+        }
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """统一处理所有未捕获的异常"""
+    logger.error(f"未捕获的异常: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "code": 500,
+            "msg": "失败",
+            "data": {
+                "error": "服务器内部错误" if not config.DEBUG_MODE else str(exc)
+            }
+        }
+    )
 
 # ==================== 数据模型 ====================
 

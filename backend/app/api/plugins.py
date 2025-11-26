@@ -141,14 +141,14 @@ def get_plugins(
     return PluginList(total=total, items=plugins)
 
 
-@router.get("/{plugin_id}", response_model=PluginResponse)
+@router.get("/{plugin_uuid}", response_model=PluginResponse)
 def get_plugin(
-    plugin_id: int,
+    plugin_uuid: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """获取插件详情"""
-    plugin = db.query(Plugin).filter(Plugin.id == plugin_id).first()
+    """获取插件详情（通过UUID）"""
+    plugin = db.query(Plugin).filter(Plugin.uuid == plugin_uuid).first()
     
     if not plugin:
         raise HTTPException(status_code=404, detail="插件不存在")
@@ -159,15 +159,15 @@ def get_plugin(
     return plugin
 
 
-@router.put("/{plugin_id}", response_model=PluginResponse)
+@router.put("/{plugin_uuid}", response_model=PluginResponse)
 def update_plugin(
-    plugin_id: int,
+    plugin_uuid: str,
     plugin_update: PluginUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """更新插件"""
-    plugin = db.query(Plugin).filter(Plugin.id == plugin_id).first()
+    """更新插件（通过UUID）"""
+    plugin = db.query(Plugin).filter(Plugin.uuid == plugin_uuid).first()
     
     if not plugin:
         raise HTTPException(status_code=404, detail="插件不存在")
@@ -194,14 +194,14 @@ def update_plugin(
     return plugin
 
 
-@router.delete("/{plugin_id}")
+@router.delete("/{plugin_uuid}")
 def delete_plugin(
-    plugin_id: int,
+    plugin_uuid: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """删除插件"""
-    plugin = db.query(Plugin).filter(Plugin.id == plugin_id).first()
+    """删除插件（通过UUID）"""
+    plugin = db.query(Plugin).filter(Plugin.uuid == plugin_uuid).first()
     
     if not plugin:
         raise HTTPException(status_code=404, detail="插件不存在")
@@ -216,7 +216,7 @@ def delete_plugin(
     # 检查是否有智能体在使用此插件
     from app.models.agent import Agent
     agents_using_plugin = db.query(Agent).filter(
-        Agent.plugin_ids.contains([plugin_id])
+        Agent.plugin_ids.contains([plugin.id])
     ).count()
     
     if agents_using_plugin > 0:

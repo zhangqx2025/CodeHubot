@@ -21,26 +21,26 @@ export const getPlugins = (params) => {
 }
 
 // 获取单个插件详情
-export const getPlugin = (id) => {
+export const getPlugin = (uuid) => {
   return request({
-    url: `/plugins/${id}`,
+    url: `/plugins/${uuid}`,
     method: 'get'
   })
 }
 
 // 更新插件信息
-export const updatePlugin = (id, data) => {
+export const updatePlugin = (uuid, data) => {
   return request({
-    url: `/plugins/${id}`,
+    url: `/plugins/${uuid}`,
     method: 'put',
     data
   })
 }
 
 // 删除插件
-export const deletePlugin = (id) => {
+export const deletePlugin = (uuid) => {
   return request({
-    url: `/plugins/${id}`,
+    url: `/plugins/${uuid}`,
     method: 'delete'
   })
 }

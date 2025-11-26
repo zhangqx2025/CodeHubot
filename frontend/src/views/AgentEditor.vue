@@ -9,46 +9,77 @@
       </template>
     </el-page-header>
 
-    <el-card class="editor-card" v-loading="loading">
-      <el-tabs v-model="activeTab" class="editor-tabs">
-        <!-- 基本信息 -->
-        <el-tab-pane label="基本信息" name="basic">
-          <el-form :model="agentForm" :rules="rules" ref="formRef" label-width="120px">
-            <el-form-item label="智能体名称" prop="name">
-              <el-input v-model="agentForm.name" placeholder="请输入智能体名称" />
-            </el-form-item>
-            <el-form-item label="描述" prop="description">
-              <el-input
-                v-model="agentForm.description"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入智能体描述"
-              />
-            </el-form-item>
-            <el-form-item label="状态" prop="is_active">
-              <el-radio-group v-model="agentForm.is_active">
-                <el-radio :label="1">激活</el-radio>
-                <el-radio :label="0">禁用</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-
-        <!-- 系统提示词 -->
-        <el-tab-pane label="系统提示词" name="prompt">
-          <div class="prompt-editor">
-            <div class="editor-header">
-              <span class="header-title">系统提示词配置</span>
-              <el-button text @click="showPromptTemplates">
-                <el-icon><Document /></el-icon>
-                使用模板
-              </el-button>
-            </div>
+    <div class="editor-content" v-loading="loading">
+      <!-- 基本信息卡片 -->
+      <el-card class="section-card">
+        <template #header>
+          <div class="card-header">
+            <span class="card-title">基本信息</span>
+          </div>
+        </template>
+        <el-form :model="agentForm" :rules="rules" ref="formRef" label-width="120px">
+          <el-form-item label="智能体名称" prop="name">
+            <el-input v-model="agentForm.name" placeholder="请输入智能体名称" style="max-width: 500px;" />
+          </el-form-item>
+          <el-form-item label="描述" prop="description">
             <el-input
-              v-model="agentForm.system_prompt"
+              v-model="agentForm.description"
               type="textarea"
-              :rows="20"
-              placeholder="请输入系统提示词，用于指导 AI 智能体的行为和角色定位
+              :rows="3"
+              placeholder="请输入智能体描述"
+              style="max-width: 800px;"
+            />
+          </el-form-item>
+          <el-form-item label="大模型" prop="llm_model_id">
+            <el-select 
+              v-model="agentForm.llm_model_id" 
+              placeholder="选择大模型" 
+              style="max-width: 500px;"
+              clearable
+              filterable
+            >
+              <el-option
+                v-for="model in availableModels"
+                :key="model.id"
+                :label="model.display_name"
+                :value="model.id"
+              >
+                <span style="float: left">{{ model.display_name }}</span>
+                <span style="float: right; color: var(--el-text-color-secondary); font-size: 13px">
+                  {{ model.provider }}
+                </span>
+              </el-option>
+            </el-select>
+            <div style="margin-top: 5px; font-size: 12px; color: #909399;">
+              选择智能体使用的大语言模型，留空则使用系统默认模型
+            </div>
+          </el-form-item>
+          <el-form-item label="状态" prop="is_active">
+            <el-radio-group v-model="agentForm.is_active">
+              <el-radio :label="1">激活</el-radio>
+              <el-radio :label="0">禁用</el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </el-form>
+      </el-card>
+
+      <!-- 系统提示词卡片 -->
+      <el-card class="section-card">
+        <template #header>
+          <div class="card-header">
+            <span class="card-title">系统提示词配置</span>
+            <el-button text @click="showPromptTemplates">
+              <el-icon><Document /></el-icon>
+              使用模板
+            </el-button>
+          </div>
+        </template>
+        <div class="prompt-editor">
+          <el-input
+            v-model="agentForm.system_prompt"
+            type="textarea"
+            :rows="16"
+            placeholder="请输入系统提示词，用于指导 AI 智能体的行为和角色定位
 
 示例：
 你是一个专业的物联网助手，擅长帮助用户管理和控制智能设备。
@@ -59,74 +90,74 @@
 4. 设置自动化场景
 
 请用友好、专业的语气与用户交流。"
-              class="prompt-textarea"
-            />
-            <div class="prompt-tips">
-              <el-alert
-                title="提示"
-                type="info"
-                :closable="false"
-                show-icon
-              >
-                <ul>
-                  <li>系统提示词用于定义智能体的角色、能力和行为规范</li>
-                  <li>清晰的提示词能让智能体更好地理解用户需求</li>
-                  <li>建议包含：角色定位、主要功能、交互风格等</li>
-                </ul>
-              </el-alert>
-            </div>
+            class="prompt-textarea"
+          />
+          <div class="prompt-tips">
+            <el-alert
+              title="提示"
+              type="info"
+              :closable="false"
+              show-icon
+            >
+              <ul>
+                <li>系统提示词用于定义智能体的角色、能力和行为规范</li>
+                <li>清晰的提示词能让智能体更好地理解用户需求</li>
+                <li>建议包含：角色定位、主要功能、交互风格等</li>
+              </ul>
+            </el-alert>
           </div>
-        </el-tab-pane>
+        </div>
+      </el-card>
 
-        <!-- 插件配置 -->
-        <el-tab-pane label="插件配置" name="plugins">
-          <div class="plugins-config">
-            <div class="plugins-header">
-              <span class="header-title">已关联插件 ({{ agentForm.plugin_ids.length }})</span>
-              <el-button type="primary" @click="showPluginSelector">
-                <el-icon><Plus /></el-icon>
-                添加插件
-              </el-button>
-            </div>
+      <!-- 插件配置卡片 -->
+      <el-card class="section-card">
+        <template #header>
+          <div class="card-header">
+            <span class="card-title">插件配置 ({{ agentForm.plugin_ids.length }})</span>
+            <el-button type="primary" @click="showPluginSelector">
+              <el-icon><Plus /></el-icon>
+              添加插件
+            </el-button>
+          </div>
+        </template>
+        <div class="plugins-config">
+          <el-empty v-if="selectedPlugins.length === 0" description="暂未关联任何插件">
+            <el-button type="primary" @click="showPluginSelector">添加插件</el-button>
+          </el-empty>
 
-            <el-empty v-if="selectedPlugins.length === 0" description="暂未关联任何插件">
-              <el-button type="primary" @click="showPluginSelector">添加插件</el-button>
-            </el-empty>
-
-            <div v-else class="plugins-list">
-              <el-card
-                v-for="plugin in selectedPlugins"
-                :key="plugin.id"
-                class="plugin-card"
-                shadow="hover"
-              >
-                <template #header>
-                  <div class="plugin-card-header">
-                    <span class="plugin-name">{{ plugin.name }}</span>
-                    <el-button
-                      type="danger"
-                      size="small"
-                      text
-                      @click="removePlugin(plugin.id)"
-                    >
-                      <el-icon><Delete /></el-icon>
-                      移除
-                    </el-button>
-                  </div>
-                </template>
-                <div class="plugin-description">{{ plugin.description || '暂无描述' }}</div>
-                <div class="plugin-meta">
-                  <el-tag size="small">{{ plugin.plugin_type }}</el-tag>
-                  <el-tag size="small" :type="plugin.is_active ? 'success' : 'info'">
-                    {{ plugin.is_active ? '激活' : '禁用' }}
-                  </el-tag>
+          <div v-else class="plugins-list">
+            <el-card
+              v-for="plugin in selectedPlugins"
+              :key="plugin.id"
+              class="plugin-card"
+              shadow="hover"
+            >
+              <template #header>
+                <div class="plugin-card-header">
+                  <span class="plugin-name">{{ plugin.name }}</span>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    text
+                    @click="removePlugin(plugin.id)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                    移除
+                  </el-button>
                 </div>
-              </el-card>
-            </div>
+              </template>
+              <div class="plugin-description">{{ plugin.description || '暂无描述' }}</div>
+              <div class="plugin-meta">
+                <el-tag size="small">{{ plugin.plugin_type }}</el-tag>
+                <el-tag size="small" :type="plugin.is_active ? 'success' : 'info'">
+                  {{ plugin.is_active ? '激活' : '禁用' }}
+                </el-tag>
+              </div>
+            </el-card>
           </div>
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
+        </div>
+      </el-card>
+    </div>
 
     <!-- 插件选择对话框 -->
     <el-dialog
@@ -198,29 +229,32 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Plus, Delete, Search } from '@element-plus/icons-vue'
 import { getAgent, updateAgent } from '@/api/agent'
 import { getPlugins } from '@/api/plugin'
+import { getActiveLLMModels } from '@/api/llm-model'
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
 const saving = ref(false)
-const activeTab = ref('basic')
 const formRef = ref(null)
 const pluginSelectorVisible = ref(false)
 const templateDialogVisible = ref(false)
 const pluginSearchQuery = ref('')
 const availablePlugins = ref([])
+const availableModels = ref([])
 const selectedPluginIds = ref([])
 
-const agentId = computed(() => parseInt(route.params.id))
+const agentUuid = computed(() => route.params.uuid)
 const pageTitle = computed(() => agentForm.name || '智能体编排')
 
 const agentForm = reactive({
   id: null,
+  uuid: null,
   name: '',
   description: '',
   system_prompt: '',
   plugin_ids: [],
+  llm_model_id: null,
   is_active: 1
 })
 
@@ -317,18 +351,20 @@ const goBack = () => {
 
 // 加载智能体详情
 const loadAgent = async () => {
-  if (!agentId.value) return
+  if (!agentUuid.value) return
   
   loading.value = true
   try {
-    const response = await getAgent(agentId.value)
+    const response = await getAgent(agentUuid.value)
     const agent = response.data
     Object.assign(agentForm, {
       id: agent.id,
+      uuid: agent.uuid,
       name: agent.name,
       description: agent.description,
       system_prompt: agent.system_prompt || '',
       plugin_ids: agent.plugin_ids || [],
+      llm_model_id: agent.llm_model_id || null,
       is_active: agent.is_active
     })
   } catch (error) {
@@ -350,6 +386,16 @@ const loadPlugins = async () => {
   }
 }
 
+// 加载可用模型
+const loadModels = async () => {
+  try {
+    const response = await getActiveLLMModels()
+    availableModels.value = response.data || response || []
+  } catch (error) {
+    console.error('加载模型列表失败', error)
+  }
+}
+
 // 保存智能体
 const saveAgent = async () => {
   if (!formRef.value) return
@@ -364,7 +410,7 @@ const saveAgent = async () => {
   
   saving.value = true
   try {
-    await updateAgent(agentId.value, agentForm)
+    await updateAgent(agentUuid.value, agentForm)
     ElMessage.success('保存成功')
   } catch (error) {
     ElMessage.error(error.response?.data?.detail || '保存失败')
@@ -430,6 +476,7 @@ const useTemplate = (template) => {
 onMounted(() => {
   loadAgent()
   loadPlugins()
+  loadModels()
 })
 </script>
 
@@ -438,30 +485,35 @@ onMounted(() => {
   padding: 20px;
 }
 
-.editor-card {
+.editor-content {
   margin-top: 20px;
-  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.editor-tabs {
-  min-height: 500px;
+.section-card {
+  transition: box-shadow 0.3s;
 }
 
-.prompt-editor {
-  padding: 20px 0;
+.section-card:hover {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-.editor-header {
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
 }
 
-.header-title {
+.card-title {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   color: #303133;
+}
+
+.prompt-editor {
+  padding: 10px 0;
 }
 
 .prompt-textarea :deep(.el-textarea__inner) {
@@ -470,7 +522,7 @@ onMounted(() => {
 }
 
 .prompt-tips {
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 .prompt-tips ul {
@@ -483,14 +535,7 @@ onMounted(() => {
 }
 
 .plugins-config {
-  padding: 20px 0;
-}
-
-.plugins-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  padding: 10px 0;
 }
 
 .plugins-list {

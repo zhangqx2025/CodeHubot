@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime
+import uuid as uuid_lib
 
 class Plugin(Base):
     """
@@ -10,6 +11,7 @@ class Plugin(Base):
     __tablename__ = "aiot_plugins"
     
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String(36), unique=True, index=True, default=lambda: str(uuid_lib.uuid4()), comment="唯一标识UUID")
     name = Column(String(100), nullable=False, comment="插件名称")
     description = Column(Text, comment="插件描述")
     

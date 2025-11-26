@@ -32,53 +32,72 @@
       </el-row>
     </div>
 
-    <!-- 智能体列表 -->
-    <el-table
-      v-loading="loading"
-      :data="agents"
-      style="width: 100%"
-    >
-      <el-table-column prop="name" label="智能体名称" min-width="200" />
-      <el-table-column prop="description" label="描述" min-width="250" show-overflow-tooltip />
-      <el-table-column label="插件数量" width="120">
-        <template #default="scope">
-          <el-tag>{{ scope.row.plugin_ids?.length || 0 }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" width="80">
-        <template #default="scope">
-          <el-tag :type="scope.row.is_active === 1 ? 'success' : 'danger'">
-            {{ scope.row.is_active === 1 ? '激活' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="created_at" label="创建时间" width="160">
-        <template #default="scope">
-          {{ formatDate(scope.row.created_at) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="类型" width="120">
-        <template #default="scope">
-          <el-tag :type="scope.row.is_system === 1 ? 'warning' : 'info'" size="small">
-            {{ scope.row.is_system === 1 ? '系统内置' : '用户创建' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
-        <template #default="scope">
-          <el-button size="small" type="primary" @click="editAgent(scope.row)">编排</el-button>
-          <el-button size="small" @click="quickEdit(scope.row)">快速编辑</el-button>
+    <!-- 智能体列表 - 卡片形式 -->
+    <div v-loading="loading" class="agents-grid">
+      <el-empty v-if="agents.length === 0 && !loading" description="暂无智能体">
+        <el-button type="primary" @click="addAgent">创建第一个智能体</el-button>
+      </el-empty>
+      
+      <el-card
+        v-for="agent in agents"
+        :key="agent.id"
+        class="agent-card"
+        shadow="hover"
+        :body-style="{ padding: '0' }"
+      >
+        <div class="card-header">
+          <div class="header-top">
+            <div class="agent-icon">
+              <el-icon size="24"><ChatDotRound /></el-icon>
+            </div>
+            <div class="agent-info">
+              <h3 class="agent-name">{{ agent.name }}</h3>
+              <div class="agent-badges">
+                <el-tag :type="agent.is_active === 1 ? 'success' : 'info'" size="small">
+                  {{ agent.is_active === 1 ? '激活' : '禁用' }}
+                </el-tag>
+                <el-tag v-if="agent.is_system === 1" type="warning" size="small">系统内置</el-tag>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <p class="agent-description">{{ agent.description || '暂无描述' }}</p>
+          
+          <div class="agent-stats">
+            <div class="stat-item">
+              <el-icon><Connection /></el-icon>
+              <span>{{ agent.plugin_ids?.length || 0 }} 个插件</span>
+            </div>
+            <div class="stat-item">
+              <el-icon><Clock /></el-icon>
+              <span>{{ formatDate(agent.created_at) }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-footer">
+          <el-button type="success" size="small" @click="useAgent(agent)">
+            <el-icon><ChatDotRound /></el-icon>
+            立即使用
+          </el-button>
+          <el-button type="primary" size="small" @click="editAgent(agent)">
+            <el-icon><Edit /></el-icon>
+            编排
+          </el-button>
           <el-button
-            size="small"
             type="danger"
-            @click="handleDelete(scope.row)"
-            :disabled="scope.row.is_system === 1"
+            size="small"
+            @click="handleDelete(agent)"
+            :disabled="agent.is_system === 1"
           >
+            <el-icon><Delete /></el-icon>
             删除
           </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+        </div>
+      </el-card>
+    </div>
 
     <!-- 分页 -->
     <el-pagination
@@ -125,7 +144,7 @@
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitting">
-          {{ form.id ? '保存' : '创建并编排' }}
+          创建并编排
         </el-button>
       </template>
     </el-dialog>
@@ -136,7 +155,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, ChatDotRound, Connection, Clock, Edit, Delete } from '@element-plus/icons-vue'
 import { getAgents, createAgent, updateAgent, deleteAgent } from '../api/agent'
 
 const router = useRouter()
@@ -222,16 +241,12 @@ const addAgent = () => {
 
 // 跳转到编排页面
 const editAgent = (row) => {
-  router.push(`/agents/${row.id}/edit`)
+  router.push(`/agents/${row.uuid}/edit`)
 }
 
-// 快速编辑（名称和描述）
-const quickEdit = (row) => {
-  dialogTitle.value = '快速编辑'
-  form.id = row.id
-  form.name = row.name
-  form.description = row.description || ''
-  dialogVisible.value = true
+// 立即使用智能体
+const useAgent = (agent) => {
+  router.push(`/agents/${agent.uuid}/chat`)
 }
 
 // 删除智能体
@@ -246,7 +261,7 @@ const handleDelete = async (row) => {
         type: 'warning'
       }
     )
-    await deleteAgent(row.id)
+    await deleteAgent(row.uuid)
     ElMessage.success('删除成功')
     loadAgents()
   } catch (error) {
@@ -268,27 +283,16 @@ const handleSubmit = async () => {
   
   submitting.value = true
   try {
-    if (form.id) {
-      // 快速编辑
-      await updateAgent(form.id, {
-        name: form.name,
-        description: form.description
-      })
-      ElMessage.success('更新成功')
-      dialogVisible.value = false
-      loadAgents()
-    } else {
-      // 创建并跳转到编排页面
-      const response = await createAgent({
-        name: form.name,
-        description: form.description
-      })
-      const newAgentId = response.data.id
+    // 创建并跳转到编排页面
+    const response = await createAgent({
+      name: form.name,
+      description: form.description
+    })
+      const newAgentUuid = response.data.uuid
       ElMessage.success('创建成功，正在跳转到编排页面...')
       dialogVisible.value = false
       // 跳转到编排页面
-      router.push(`/agents/${newAgentId}/edit`)
-    }
+      router.push(`/agents/${newAgentUuid}/edit`)
   } catch (error) {
     ElMessage.error(error.response?.data?.detail || '操作失败')
     console.error(error)
@@ -338,6 +342,136 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   margin-top: 4px;
+}
+
+/* 卡片网格布局 */
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+/* 智能体卡片 */
+.agent-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e4e7ed;
+}
+
+.agent-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* 卡片头部 */
+.card-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.agent-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.agent-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-name {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 卡片主体 */
+.card-body {
+  padding: 20px;
+  background: #ffffff;
+}
+
+.agent-description {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+  min-height: 44px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-stats {
+  display: flex;
+  gap: 20px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.stat-item .el-icon {
+  font-size: 16px;
+}
+
+/* 卡片底部 */
+.card-footer {
+  padding: 12px 20px;
+  background: #f5f7fa;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid #e4e7ed;
+}
+
+.card-footer .el-button {
+  flex: 1;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .agents-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .agents-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 
