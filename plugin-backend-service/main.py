@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from contextlib import asynccontextmanager
 import logging
+import asyncio
 from datetime import datetime
 import json
 from sqlalchemy import create_engine, desc, Column, Integer, String, DateTime, Boolean, Text, JSON, text
@@ -136,6 +137,7 @@ class Device(Base):
     device_status = Column(String(50))
     is_online = Column(Boolean)
     is_active = Column(Boolean)
+    device_settings = Column(JSON)  # 设备配置，包含预设指令
 
 class InteractionLog(Base):
     __tablename__ = "aiot_interaction_logs"
@@ -304,6 +306,12 @@ class ControlRequest(BaseModel):
     port_id: int
     action: str
     value: Optional[int] = None
+
+class PresetRequest(BaseModel):
+    """预设指令请求"""
+    device_uuid: str
+    preset_key: str
+    parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 class StandardResponse(BaseModel):
     code: int
@@ -504,6 +512,177 @@ async def control_device(request: ControlRequest):
         raise
     except Exception as e:
         logger.error(f"❌ 控制设备失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@app.post("/api/preset")
+async def execute_preset(request: PresetRequest):
+    """执行预设指令
+    
+    通过 preset_key 查找并执行设备配置中的预设指令
+    支持序列指令（多步骤、延时）
+    """
+    logger.info(f"🎯 执行预设: uuid={request.device_uuid}, preset_key={request.preset_key}")
+    
+    if SessionLocal is None:
+        raise HTTPException(status_code=500, detail="数据库未连接")
+    
+    if not mqtt_client.connected:
+        raise HTTPException(status_code=500, detail="MQTT未连接")
+    
+    db = SessionLocal()
+    try:
+        # 查询设备
+        device = db.query(Device).filter(Device.uuid == request.device_uuid).first()
+        if not device:
+            raise HTTPException(status_code=404, detail="设备不存在")
+        
+        logger.info(f"📱 设备: {device.name} ({device.device_id})")
+        
+        # 检查设备是否在线
+        if not device.is_online:
+            raise HTTPException(status_code=400, detail="设备离线，无法执行预设")
+        
+        # 从设备配置中查找预设
+        device_settings = device.device_settings or {}
+        preset_commands = device_settings.get("preset_commands", [])
+        
+        logger.info(f"📋 设备共有 {len(preset_commands)} 个预设指令")
+        
+        # 查找匹配的预设
+        target_preset = None
+        for preset in preset_commands:
+            if preset.get("preset_key") == request.preset_key:
+                target_preset = preset
+                break
+        
+        if not target_preset:
+            raise HTTPException(
+                status_code=404,
+                detail=f"未找到预设指令: {request.preset_key}"
+            )
+        
+        preset_name = target_preset.get("name", request.preset_key)
+        preset_type = target_preset.get("type", "single")
+        
+        logger.info(f"✅ 找到预设: {preset_name} (类型: {preset_type})")
+        
+        # 执行预设指令
+        if preset_type == "sequence":
+            # 序列指令：多步骤，支持延时
+            steps = target_preset.get("steps", [])
+            if not steps:
+                raise HTTPException(status_code=400, detail="预设序列为空")
+            
+            logger.info(f"📝 序列包含 {len(steps)} 个步骤")
+            
+            executed_steps = []
+            errors = []
+            
+            for index, step in enumerate(steps, 1):
+                command = step.get("command")
+                if not command:
+                    error_msg = f"步骤 {index} 缺少 command 字段"
+                    logger.error(error_msg)
+                    errors.append({"step": index, "error": error_msg})
+                    continue
+                
+                # 转换命令格式（将 value 转为 action）
+                converted_command = command.copy()
+                cmd_type = converted_command.get("cmd")
+                
+                if cmd_type in ["led", "relay"]:
+                    if "value" in converted_command:
+                        value = converted_command.pop("value")
+                        converted_command["action"] = "on" if value in [1, True] else "off"
+                    converted_command.pop("device_type", None)
+                elif cmd_type == "servo":
+                    converted_command.pop("device_type", None)
+                elif cmd_type == "pwm":
+                    if "device_id" in converted_command:
+                        converted_command["channel"] = converted_command.pop("device_id")
+                    if "duty" in converted_command:
+                        converted_command["duty_cycle"] = converted_command.pop("duty")
+                    converted_command.pop("device_type", None)
+                
+                # 发送MQTT消息
+                try:
+                    topic = f"devices/{device.uuid}/control"
+                    mqtt_client.publish(topic, converted_command)
+                    
+                    delay = step.get("delay", 0)
+                    
+                    logger.info(f"✅ 步骤 {index}/{len(steps)} 执行成功 - 命令: {converted_command}")
+                    
+                    executed_steps.append({
+                        "step": index,
+                        "command": converted_command,
+                        "delay": delay,
+                        "status": "success"
+                    })
+                    
+                    # 如果不是最后一步，执行延迟
+                    if index < len(steps) and delay > 0:
+                        logger.info(f"⏳ 等待 {delay} 秒...")
+                        await asyncio.sleep(delay)
+                        
+                except Exception as e:
+                    error_msg = f"步骤 {index} 执行失败: {str(e)}"
+                    logger.error(error_msg)
+                    errors.append({"step": index, "error": error_msg})
+                    executed_steps.append({
+                        "step": index,
+                        "command": converted_command,
+                        "delay": step.get("delay", 0),
+                        "status": "failed",
+                        "error": error_msg
+                    })
+            
+            # 返回执行结果
+            success_count = sum(1 for s in executed_steps if s.get("status") == "success")
+            failed_count = len(executed_steps) - success_count
+            
+            logger.info(f"🎉 序列执行完成: {success_count} 成功, {failed_count} 失败")
+            
+            return StandardResponse(
+                code=200,
+                msg="成功",
+                data={
+                    "success": failed_count == 0,
+                    "message": f"序列执行完成: {success_count} 成功, {failed_count} 失败",
+                    "preset_name": preset_name,
+                    "total_steps": len(steps),
+                    "executed_steps": executed_steps,
+                    "errors": errors if errors else None
+                }
+            )
+        else:
+            # 单次指令
+            command = target_preset.get("command")
+            if not command:
+                raise HTTPException(status_code=400, detail="预设指令缺少 command 字段")
+            
+            # 发送MQTT命令
+            topic = f"devices/{device.uuid}/control"
+            mqtt_client.publish(topic, command)
+            
+            logger.info(f"✅ 单次预设执行成功: {preset_name}")
+            
+            return StandardResponse(
+                code=200,
+                msg="成功",
+                data={
+                    "success": True,
+                    "message": f"预设 {preset_name} 执行成功",
+                    "preset_name": preset_name
+                }
+            )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 执行预设失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()

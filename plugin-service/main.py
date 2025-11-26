@@ -655,35 +655,40 @@ async def execute_preset(request: PresetRequest, raw_request: Request):
         raise HTTPException(status_code=404, detail=f"设备 {request.device_uuid} 不存在")
     
     try:
-        # 方式1：通过preset_key执行（推荐）
-        # 直接将preset_key发送到后端，由后端查找并执行对应的预设
-        logger.info(f"📤 通过preset_key执行预设: {request.preset_name}")
+        # 调用 plugin-backend-service 执行预设
+        logger.info(f"📤 调用 plugin-backend-service 执行预设: {request.preset_name}")
         
-        # 调用后端API（使用内部API密钥）
-        headers = get_internal_headers()
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
-                f"{BACKEND_URL}/api/devices/{request.device_uuid}/control",
-                json={"preset_key": request.preset_name},  # preset_name其实是preset_key
-                headers=headers
+                f"{PLUGIN_BACKEND_URL}/api/preset",
+                json={
+                    "device_uuid": request.device_uuid,
+                    "preset_key": request.preset_name,  # preset_name其实是preset_key
+                    "parameters": request.parameters or {}
+                }
             )
             
-            if response.status_code == 401 or response.status_code == 403:
-                logger.error(f"❌ 后端API认证失败: {response.status_code}")
-                raise HTTPException(
-                    status_code=500, 
-                    detail="后端API认证失败，请检查BACKEND_API_KEY配置"
-                )
-            
             if response.status_code == 404:
+                logger.error(f"❌ 未找到预设指令: {request.preset_name}")
                 raise HTTPException(
                     status_code=404,
                     detail=f"未找到预设指令: {request.preset_name}"
                 )
             
+            if response.status_code == 400:
+                error_data = response.json() if response.text else {}
+                error_msg = error_data.get("detail", "设备离线或预设格式错误")
+                logger.error(f"❌ 预设执行失败: {error_msg}")
+                raise HTTPException(status_code=400, detail=error_msg)
+            
             if response.status_code != 200:
                 error_detail = response.json() if response.text else "预设执行失败"
+                logger.error(f"❌ 预设执行失败: {error_detail}")
                 raise HTTPException(status_code=500, detail=error_detail)
+            
+            # 解析响应
+            response_data = response.json()
+            data = response_data.get("data", {})
             
             logger.info(f"✅ 预设执行成功: {request.preset_name}")
             
@@ -698,116 +703,7 @@ async def execute_preset(request: PresetRequest, raw_request: Request):
         raise
     except Exception as e:
         logger.error(f"❌ 执行预设失败: {e}")
-        # 如果通过preset_key执行失败，尝试使用旧的映射方式（兼容性）
-        logger.info(f"⚠️  尝试使用旧的预设映射方式...")
-        
-        # 方式2：旧的预设指令映射（向后兼容）
-        preset_map = {
-            # LED预设
-            "led_blink": {
-                "device_type": "led",
-                "preset_type": "blink",
-                "default_params": {"count": 3, "on_time": 500, "off_time": 500}
-            },
-            "led_wave": {
-                "device_type": "led",
-                "preset_type": "wave",
-                "default_params": {"interval_ms": 200, "cycles": 3, "reverse": False}
-            },
-            
-            # 继电器预设
-            "relay_timed": {
-                "device_type": "relay",
-                "preset_type": "timed_switch",
-                "default_params": {"duration_ms": 5000}
-            },
-            
-            # 舵机预设
-            "servo_rotate": {
-                "device_type": "servo",
-                "preset_type": "rotate",
-                "default_params": {"start_angle": 0, "end_angle": 180, "duration_ms": 2000}
-            },
-            "servo_swing": {
-                "device_type": "servo",
-                "preset_type": "swing",
-                "default_params": {"center_angle": 90, "swing_range": 30, "speed": 100, "cycles": 5}
-            },
-            
-            # PWM预设
-            "pwm_fade": {
-                "device_type": "pwm",
-                "preset_type": "fade",
-                "default_params": {"start_duty": 0, "end_duty": 100, "duration_ms": 2000, "frequency": 5000}
-            },
-            "pwm_breathe": {
-                "device_type": "pwm",
-                "preset_type": "breathe",
-                "default_params": {"min_duty": 0, "max_duty": 100, "period_ms": 2000, "cycles": 3, "frequency": 5000}
-            },
-            "pwm_pulse": {
-                "device_type": "pwm",
-                "preset_type": "pulse",
-                "default_params": {"duty_high": 100, "duty_low": 0, "high_time_ms": 100, "low_time_ms": 100, "cycles": 5, "frequency": 5000}
-            },
-        }
-        
-        if request.preset_name not in preset_map:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"不支持的预设指令: {request.preset_name}"
-            )
-        
-        preset_config = preset_map[request.preset_name]
-        
-        # 合并默认参数和用户参数
-        parameters = preset_config["default_params"].copy()
-        if request.parameters:
-            parameters.update(request.parameters)
-        
-        # 提取device_id（如果用户提供）
-        device_id = parameters.pop("led_id", None) or \
-                   parameters.pop("servo_id", None) or \
-                   parameters.pop("pwm_id", None) or \
-                   parameters.pop("relay_id", None) or 1
-        
-        # 构造预设命令
-        preset_cmd = {
-            "cmd": "preset",
-            "device_type": preset_config["device_type"],
-            "device_id": device_id,
-            "preset_type": preset_config["preset_type"],
-            "parameters": parameters
-        }
-        
-        # 调用后端API发送预设命令（使用内部API密钥）
-        headers = get_internal_headers()
-        async with httpx.AsyncClient(timeout=30.0) as client:  # 预设可能需要更长时间
-            response = await client.post(
-                f"{BACKEND_URL}/api/devices/{request.device_uuid}/control",
-                json=preset_cmd,
-                headers=headers
-            )
-            
-            if response.status_code == 401 or response.status_code == 403:
-                logger.error(f"❌ 后端API认证失败: {response.status_code}")
-                raise HTTPException(
-                    status_code=500, 
-                    detail="后端API认证失败，请检查BACKEND_API_KEY配置"
-                )
-            
-            if response.status_code != 200:
-                error_detail = response.json() if response.text else "预设执行失败"
-                raise HTTPException(status_code=500, detail=error_detail)
-            
-            logger.info(f"✅ 预设执行成功: {request.preset_name}")
-            
-            # 精简返回：只返回结果
-            return StandardResponse(
-                code=200,
-                msg="成功",
-                data={"result": "success"}
-            )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==================== 启动配置 ====================
