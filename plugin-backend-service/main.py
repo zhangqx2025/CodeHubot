@@ -4,15 +4,16 @@ AIOT 插件后端服务
 直接访问数据库和MQTT，不依赖主backend服务
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
+from contextlib import asynccontextmanager
 import logging
 from datetime import datetime
 import json
-from sqlalchemy import create_engine, desc
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine, desc, Column, Integer, String, DateTime, Boolean, Text, JSON
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 import paho.mqtt.client as mqtt
 import os
 
@@ -72,9 +73,6 @@ logger.info("=" * 60 + "\n")
 # ============================================================
 # 数据库模型（简化版，只包含必要字段）
 # ============================================================
-
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, JSON
-from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
@@ -180,13 +178,31 @@ class MQTTClient:
 mqtt_client = MQTTClient()
 
 # ============================================================
+# 生命周期管理
+# ============================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理"""
+    # 启动时
+    logger.info("🚀 启动服务，连接 MQTT...")
+    mqtt_client.connect()
+    yield
+    # 关闭时
+    logger.info("👋 关闭服务，断开 MQTT...")
+    if mqtt_client.client:
+        mqtt_client.client.loop_stop()
+        mqtt_client.client.disconnect()
+
+# ============================================================
 # FastAPI 应用
 # ============================================================
 
 app = FastAPI(
     title="AIOT 插件后端服务",
     description="为外部插件提供设备操作服务",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS配置
@@ -222,11 +238,6 @@ class StandardResponse(BaseModel):
 # API 接口
 # ============================================================
 
-@app.on_event("startup")
-async def startup_event():
-    """启动时连接MQTT"""
-    mqtt_client.connect()
-
 @app.get("/")
 async def root():
     return {
@@ -245,7 +256,7 @@ async def health_check():
     }
 
 @app.get("/api/sensor-data")
-async def get_sensor_data(device_uuid: str, sensor: str, db: Session = None):
+async def get_sensor_data(device_uuid: str, sensor: str):
     """获取传感器数据
     
     直接从数据库的 interaction_logs 表读取最新传感器数据
