@@ -13,16 +13,6 @@
         class="register-form"
         @submit.prevent="handleRegister"
       >
-        <el-form-item prop="email">
-          <el-input
-            v-model="registerForm.email"
-            placeholder="请输入邮箱地址（用于接收通知）"
-            prefix-icon="Message"
-            type="email"
-            autocomplete="off"
-          />
-        </el-form-item>
-        
         <el-form-item prop="username">
           <el-input
             v-model="registerForm.username"
@@ -84,22 +74,14 @@ const userStore = useUserStore()
 
 const registerFormRef = ref()
 const loading = ref(false)
-const codeDisabled = ref(false)
-const codeText = ref('发送验证码')
-const countdown = ref(0)
 
 const registerForm = reactive({
-  email: '',
   username: '',
   password: '',
   confirmPassword: ''
 })
 
 const registerRules = {
-  email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
-  ],
   username: [
     { required: true, message: '请输入用户名（登录时使用）', trigger: 'blur' },
     { min: 3, max: 20, message: '用户名长度必须在3-20位之间', trigger: 'blur' },
@@ -137,7 +119,7 @@ const handleRegister = async () => {
     if (valid) {
       loading.value = true
       try {
-        await userStore.registerUser(registerForm.email, registerForm.username, registerForm.password)
+        await userStore.registerUser(null, registerForm.username, registerForm.password)
         // 注册成功，跳转到登录页面
         // registerUser 内部已经显示了成功消息，这里直接跳转
         router.push('/login')
@@ -186,15 +168,6 @@ const handleRegister = async () => {
 
 .register-form {
   margin-bottom: 20px;
-}
-
-.code-input {
-  display: flex;
-  gap: 10px;
-}
-
-.code-input .el-input {
-  flex: 1;
 }
 
 .register-btn {
