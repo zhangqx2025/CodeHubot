@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 小小程序员 - 创建你的AI助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 20px;
+            opacity: 0.9;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+            animation: fadeIn 0.8s ease-out 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .difficulty {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .easy {
+            background: #4ade80;
+            color: white;
+        }
+
+        .medium {
+            background: #fbbf24;
+            color: white;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 60px;
+            padding: 30px;
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 添加一些装饰星星 -->
+    <div class="star" style="top: 10%; left: 10%; animation-delay: 0s;"></div>
+    <div class="star" style="top: 20%; left: 80%; animation-delay: 0.5s;"></div>
+    <div class="star" style="top: 70%; left: 15%; animation-delay: 1s;"></div>
+    <div class="star" style="top: 60%; left: 85%; animation-delay: 1.5s;"></div>
+    <div class="star" style="top: 30%; left: 50%; animation-delay: 2s;"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🤖 小小程序员</h1>
+            <p>创建属于你自己的AI智能助手！</p>
+        </div>
+
+        <div class="cards">
+            <div class="card" onclick="location.href='zhuzhu.html'">
+                <div class="card-icon">🐷</div>
+                <h2>猪猪侠聊天助手</h2>
+                <p>创建一个会聊天的小伙伴，可以陪你说话、讲笑话、听你分享快乐和烦恼！</p>
+                <span class="difficulty easy">⭐ 简单</span>
+                <br><br>
+                <a href="zhuzhu.html" class="btn">开始创建 →</a>
+            </div>
+
+            <div class="card" onclick="location.href='garbage.html'">
+                <div class="card-icon">🗑️</div>
+                <h2>垃圾分类小助手</h2>
+                <p>创建一个聪明的垃圾分类机器人，帮助你正确分类垃圾，保护我们的地球！</p>
+                <span class="difficulty medium">⭐⭐ 中等</span>
+                <br><br>
+                <a href="garbage.html" class="btn">开始创建 →</a>
+            </div>
+
+            <div class="card" onclick="location.href='test.html'">
+                <div class="card-icon">🎮</div>
+                <h2>测试你的助手</h2>
+                <p>创建完成后，来这里测试你的AI助手，看看它们能不能正确回答问题！</p>
+                <span class="difficulty easy">⭐ 简单</span>
+                <br><br>
+                <a href="test.html" class="btn">去测试 →</a>
+            </div>
+
+            <div class="card" onclick="location.href='help.html'">
+                <div class="card-icon">❓</div>
+                <h2>帮助中心</h2>
+                <p>遇到问题了吗？来这里找答案！有详细的图片和步骤说明哦。</p>
+                <span class="difficulty easy">⭐ 简单</span>
+                <br><br>
+                <a href="help.html" class="btn">获取帮助 →</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>💡 小提示：建议和爸爸妈妈或老师一起完成哦！</p>
+            <p>🎓 制作：CodeHubot 团队 | 版本：v1.0</p>
+        </div>
+    </div>
+
+    <script>
+        // 添加一些随机星星
+        function createStars() {
+            for (let i = 0; i < 20; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                document.body.appendChild(star);
+            }
+        }
+        createStars();
+
+        // 点击卡片音效（可选）
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (!e.target.classList.contains('btn')) {
+                    this.querySelector('.btn').click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

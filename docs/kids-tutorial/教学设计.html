@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 AI智能体创建 - 教学设计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        }
+
+        .cover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 60px;
+            text-align: center;
+        }
+
+        .cover h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .cover .info {
+            font-size: 18px;
+            opacity: 0.9;
+            margin: 10px 0;
+        }
+
+        .content {
+            padding: 60px;
+        }
+
+        .section {
+            margin-bottom: 50px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 32px;
+            color: #667eea;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .section-subtitle {
+            font-size: 24px;
+            color: #764ba2;
+            margin: 30px 0 15px 0;
+        }
+
+        .objectives {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .objective-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .objective-card h4 {
+            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .objective-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .objective-card li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .objective-card li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+            margin: 30px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #667eea;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 35px;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -33px;
+            top: 30px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px #667eea;
+        }
+
+        .timeline-time {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .timeline-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .timeline-content {
+            color: #666;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            margin: 25px 0;
+        }
+
+        .highlight-box h4 {
+            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #ffc107;
+            margin: 25px 0;
+        }
+
+        .warning-box h4 {
+            color: #856404;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #28a745;
+            margin: 25px 0;
+        }
+
+        .success-box h4 {
+            color: #155724;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .print-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        @media print {
+            .print-btn { display: none; }
+            .section { page-break-inside: avoid; }
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+            font-weight: bold;
+        }
+
+        .tag-core {
+            background: #ef4444;
+            color: white;
+        }
+
+        .tag-tech {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .tag-edu {
+            background: #10b981;
+            color: white;
+        }
+
+        .tag-emotion {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #764ba2;
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="cover">
+            <h1>📚 AI智能体创建</h1>
+            <h2 style="margin: 20px 0;">教学设计文档</h2>
+            <div class="info">课程类型：信息技术 · 人工智能启蒙</div>
+            <div class="info">适用年级：小学 3-6 年级</div>
+            <div class="info">课时安排：2-3 课时</div>
+            <div class="info">教学形式：项目式学习 + 实践操作</div>
+            <div class="info" style="margin-top: 30px; font-size: 16px;">
+                授课教师：___________　　观摩日期：___________
+            </div>
+        </div>
+
+        <div class="content">
+            <a href="index.html" class="back-link">← 返回学生教程首页</a>
+
+            <!-- 一、教学目标 -->
+            <div class="section">
+                <h2 class="section-title">一、教学目标</h2>
+                
+                <div class="objectives">
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">🎯</span>
+                            知识与技能
+                        </h4>
+                        <ul>
+                            <li>理解人工智能和智能体的基本概念</li>
+                            <li>了解AI是如何通过提示词学习的</li>
+                            <li>掌握创建简单智能体的基本步骤</li>
+                            <li>认识Function Calling（工具调用）原理</li>
+                            <li>学会测试和验证AI的功能</li>
+                        </ul>
+                    </div>
+
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">🧠</span>
+                            过程与方法
+                        </h4>
+                        <ul>
+                            <li>培养逻辑思维和规则制定能力</li>
+                            <li>学会通过示例教会AI做事</li>
+                            <li>掌握问题发现和调试方法</li>
+                            <li>体验项目从构思到实现的完整流程</li>
+                            <li>学会使用技术工具解决实际问题</li>
+                        </ul>
+                    </div>
+
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">❤️</span>
+                            情感态度价值观
+                        </h4>
+                        <ul>
+                            <li>激发对人工智能技术的兴趣</li>
+                            <li>培养环保意识（垃圾分类）</li>
+                            <li>建立正确的AI使用观念</li>
+                            <li>增强解决问题的自信心</li>
+                            <li>培养团队协作精神</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>🎓 核心素养对应</h4>
+                    <p>
+                        <span class="tag tag-core">信息意识</span>
+                        <span class="tag tag-tech">计算思维</span>
+                        <span class="tag tag-edu">数字化学习</span>
+                        <span class="tag tag-emotion">信息社会责任</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- 二、教学重难点 -->
+            <div class="section">
+                <h2 class="section-title">二、教学重点与难点</h2>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">类别</th>
+                            <th style="width: 40%;">内容</th>
+                            <th style="width: 45%;">突破策略</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>教学重点</strong></td>
+                            <td>
+                                1. 理解系统提示词的作用<br>
+                                2. 学会为AI制定规则<br>
+                                3. 掌握测试验证方法
+                            </td>
+                            <td>
+                                • 使用类比法（教AI = 教新朋友）<br>
+                                • 提供丰富的示例对话<br>
+                                • 即时反馈和验证
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>教学难点</strong></td>
+                            <td>
+                                1. 理解Temperature参数的影响<br>
+                                2. preset_key的对应关系<br>
+                                3. 工具调用的稳定性问题
+                            </td>
+                            <td>
+                                • 使用可视化对比展示<br>
+                                • 教师演示+学生操作<br>
+                                • 提供详细的检查清单
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 三、教学准备 -->
+            <div class="section">
+                <h2 class="section-title">三、教学准备</h2>
+                
+                <h3 class="section-subtitle">📱 技术准备</h3>
+                <div class="highlight-box">
+                    <h4>系统环境</h4>
+                    <ul style="margin-left: 25px;">
+                        <li>后端服务正常运行（端口8000）</li>
+                        <li>插件服务正常运行（端口9000）</li>
+                        <li>插件后端服务正常运行（端口9002）</li>
+                        <li>MQTT服务正常运行</li>
+                        <li>至少1台ESP32设备在线</li>
+                    </ul>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>学生账号</h4>
+                    <ul style="margin-left: 25px;">
+                        <li>为每位学生创建独立账号（username: student01, student02...）</li>
+                        <li>密码设置简单易记（如：Student123）</li>
+                        <li>每个账号绑定至少1台设备</li>
+                    </ul>
+                </div>
+
+                <h3 class="section-subtitle">📋 材料准备</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>材料名称</th>
+                            <th>数量</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>学生教程网页（已创建）</td>
+                            <td>全班共享</td>
+                            <td>学生操作指引</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>设备UUID清单</td>
+                            <td>每人1份</td>
+                            <td>配置智能体时使用</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>预设指令配置（JSON）</td>
+                            <td>教师准备</td>
+                            <td>垃圾分类功能</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>测试用例表格</td>
+                            <td>每人1份</td>
+                            <td>记录测试结果</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>实物垃圾样品</td>
+                            <td>若干</td>
+                            <td>演示垃圾分类</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 四、教学过程 -->
+            <div class="section">
+                <h2 class="section-title">四、教学过程设计</h2>
+                
+                <h3 class="section-subtitle">第一课时：AI初体验 + 创建猪猪侠（40分钟）</h3>
+                
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <span class="timeline-time">5分钟</span>
+                        <div class="timeline-title">🎬 导入环节</div>
+                        <div class="timeline-content">
+                            <strong>活动：</strong>展示与ChatGPT对话视频<br>
+                            <strong>提问：</strong>"同学们，你们知道什么是人工智能吗？"<br>
+                            <strong>引导：</strong>今天我们要自己动手创建一个AI助手！<br>
+                            <strong>目标：</strong>激发兴趣，建立学习期待
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-time">10分钟</span>
+                        <div class="timeline-title">📖 概念讲解</div>
+                        <div class="timeline-content">
+                            <strong>讲解内容：</strong><br>
+                            1. 什么是智能体？（类比：教一个机器人朋友）<br>
+                            2. 什么是系统提示词？（类比：制定聊天规则）<br>
+                            3. AI怎么学习？（通过我们给的例子）<br><br>
+                            <strong>教学方法：</strong>PPT展示 + 实例演示<br>
+                            <strong>互动：</strong>让学生说说想让AI做什么
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-time">20分钟</span>
+                        <div class="timeline-title">👨‍💻 实践操作：创建猪猪侠</div>
+                        <div class="timeline-content">
+                            <strong>步骤1（5分钟）：</strong>教师演示创建流程<br>
+                            - 打开智能体管理页面<br>
+                            - 填写基本信息<br>
+                            - 复制系统提示词<br>
+                            - 保存智能体<br><br>
+                            
+                            <strong>步骤2（10分钟）：</strong>学生动手操作<br>
+                            - 跟随HTML教程页面操作<br>
+                            - 教师巡视指导<br>
+                            - 同桌互助<br><br>
+                            
+                            <strong>步骤3（5分钟）：</strong>测试对话<br>
+                            - 每人至少测试3个问题<br>
+                            - 记录AI的回答<br>
+                            - 分享有趣的对话
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-time">5分钟</span>
+                        <div class="timeline-title">📝 课堂小结</div>
+                        <div class="timeline-content">
+                            <strong>提问总结：</strong><br>
+                            - 今天我们学会了什么？<br>
+                            - 系统提示词有什么用？<br>
+                            - 你的猪猪侠表现怎么样？<br><br>
+                            <strong>预告：</strong>下节课我们要创建更厉害的垃圾分类助手！
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">第二课时：创建垃圾分类小助手（45分钟）</h3>
+                
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <span class="timeline-time">5分钟</span>
+                        <div class="timeline-title">🔄 复习导入</div>
+                        <div class="timeline-content">
+                            <strong>提问：</strong>上节课我们创建了什么？<br>
+                            <strong>展示：</strong>几个学生的猪猪侠对话截图<br>
+                            <strong>引入：</strong>今天要创建一个更厉害的AI，它能控制真实的LED灯！
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-time">10分钟</span>
+                        <div class="timeline-title">🗑️ 垃圾分类知识</div>
+                        <div class="timeline-content">
+                            <strong>活动：</strong>垃圾分类小游戏<br>
+                            - 展示实物垃圾样品（塑料瓶、电池、果皮、烟头）<br>
+                            - 学生抢答分类<br>
+                            - 讲解4种垃圾和对应LED颜色<br><br>
+                            <strong>重点：</strong><br>
+                            - 可回收 → 绿灯（LED1）<br>
+                            - 有害 → 红灯（LED2）<br>
+                            - 厨余 → 黄灯（LED3）<br>
+                            - 其他 → 灰灯（LED4）
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-time">5分钟</span>
+                        <div class="timeline-title">🔌 认识插件和预设指令</div>
+                        <div class="timeline-content">
+                            <strong>讲解：</strong><br>
+                            - 什么是插件？（类比：给AI装技能包）<br>
+                            - 什么是预设指令？（类比：提前设置好的动作）<br>
+                            - Temperature参数的作用（0.2 vs 0.7对比演示）<br><br>
+                            <strong>演示：</strong>调用一次预设，让LED灯亮起
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-time">20分钟</span>
+                        <div class="timeline-title">👨‍💻 实践操作：创建垃圾分类助手</div>
+                        <div class="timeline-content">
+                            <strong>步骤1（3分钟）：</strong>教师演示<br>
+                            - 打开创建页面<br>
+                            - 填写基本信息<br>
+                            - 选择插件<br>
+                            - 强调Temperature=0.2的重要性<br><br>
+                            
+                            <strong>步骤2（12分钟）：</strong>学生操作<br>
+                            - 跟随垃圾分类教程页面<br>
+                            - 填写信息、复制提示词<br>
+                            - 教师重点辅导Temperature设置<br>
+                            - 同桌互相检查<br><br>
+                            
+                            <strong>步骤3（5分钟）：</strong>测试验证<br>
+                            - 说出要扔的垃圾<br>
+                            - 观察LED是否正确亮起<br>
+                            - 记录测试结果
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-time">5分钟</span>
+                        <div class="timeline-title">🎉 成果展示与总结</div>
+                        <div class="timeline-content">
+                            <strong>展示环节：</strong><br>
+                            - 3-5名学生演示自己的智能体<br>
+                            - 其他学生观察LED灯变化<br>
+                            - 点评和鼓励<br><br>
+                            <strong>总结提升：</strong><br>
+                            - AI可以帮助我们做什么？<br>
+                            - 垃圾分类对环保的意义<br>
+                            - 技术如何让生活更美好？
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 五、教学评价 -->
+            <div class="section">
+                <h2 class="section-title">五、教学评价</h2>
+                
+                <h3 class="section-subtitle">📊 评价标准（总分100分）</h3>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">评价维度</th>
+                            <th style="width: 50%;">评价内容</th>
+                            <th style="width: 25%;">分值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>操作技能</strong><br>（30分）</td>
+                            <td>
+                                • 能独立完成猪猪侠创建（15分）<br>
+                                • 能在辅导下完成垃圾分类助手（15分）
+                            </td>
+                            <td>30分</td>
+                        </tr>
+                        <tr>
+                            <td><strong>理解能力</strong><br>（30分）</td>
+                            <td>
+                                • 理解系统提示词的作用（10分）<br>
+                                • 理解垃圾分类规则（10分）<br>
+                                • 理解AI工具调用原理（10分）
+                            </td>
+                            <td>30分</td>
+                        </tr>
+                        <tr>
+                            <td><strong>测试验证</strong><br>（20分）</td>
+                            <td>
+                                • 完成全部测试用例（10分）<br>
+                                • 准确记录测试结果（10分）
+                            </td>
+                            <td>20分</td>
+                        </tr>
+                        <tr>
+                            <td><strong>创新与分享</strong><br>（20分）</td>
+                            <td>
+                                • 对话内容有创意（10分）<br>
+                                • 积极分享和帮助他人（10分）
+                            </td>
+                            <td>20分</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="warning-box">
+                    <h4>⚠️ 评价注意事项</h4>
+                    <ul style="margin-left: 25px;">
+                        <li>重过程轻结果：关注学生的思考过程和努力程度</li>
+                        <li>鼓励尝试：即使失败也给予肯定</li>
+                        <li>差异化评价：根据年级和能力调整标准</li>
+                        <li>即时反馈：操作过程中给予鼓励和指导</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 六、教学反思 -->
+            <div class="section">
+                <h2 class="section-title">六、课后总结与反思</h2>
+                
+                <h3 class="section-subtitle">🎯 教学目标达成情况</h3>
+                
+                <div class="success-box">
+                    <h4>✅ 预期成果</h4>
+                    <ul style="margin-left: 25px;">
+                        <li>90%以上学生成功创建猪猪侠聊天助手</li>
+                        <li>70%以上学生成功创建垃圾分类助手</li>
+                        <li>100%学生理解AI基本概念</li>
+                        <li>80%以上学生能独立完成测试验证</li>
+                        <li>学生对AI技术产生浓厚兴趣</li>
+                    </ul>
+                </div>
+
+                <h3 class="section-subtitle">💭 教学反思要点</h3>
+                
+                <div class="highlight-box">
+                    <h4>学生表现观察</h4>
+                    <table class="table" style="margin-top: 15px;">
+                        <thead>
+                            <tr>
+                                <th>观察点</th>
+                                <th>记录内容</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>兴趣程度</td>
+                                <td>学生是否主动参与、提问、尝试？</td>
+                            </tr>
+                            <tr>
+                                <td>理解程度</td>
+                                <td>是否理解系统提示词、插件、参数的作用？</td>
+                            </tr>
+                            <tr>
+                                <td>操作能力</td>
+                                <td>能否独立完成复制粘贴、选择配置？</td>
+                            </tr>
+                            <tr>
+                                <td>问题解决</td>
+                                <td>遇到问题时的反应和处理方式？</td>
+                            </tr>
+                            <tr>
+                                <td>协作意识</td>
+                                <td>是否主动帮助同学、分享经验？</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="section-subtitle">📈 改进建议</h3>
+                
+                <div class="highlight-box">
+                    <h4>🔍 可能遇到的问题及预案</h4>
+                    
+                    <table class="table" style="margin-top: 15px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">问题</th>
+                                <th style="width: 35%;">可能原因</th>
+                                <th style="width: 35%;">应对方案</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>学生操作速度差异大</td>
+                                <td>计算机基础不同</td>
+                                <td>快的同学帮助慢的，或准备进阶任务</td>
+                            </tr>
+                            <tr>
+                                <td>LED灯不亮</td>
+                                <td>预设指令或参数问题</td>
+                                <td>教师提前测试，准备备用配置</td>
+                            </tr>
+                            <tr>
+                                <td>学生不理解概念</td>
+                                <td>讲解过于抽象</td>
+                                <td>多用类比和实例，少用技术术语</td>
+                            </tr>
+                            <tr>
+                                <td>网络不稳定</td>
+                                <td>学校网络问题</td>
+                                <td>提前测试网络，准备离线演示视频</td>
+                            </tr>
+                            <tr>
+                                <td>时间不够用</td>
+                                <td>某环节耗时过多</td>
+                                <td>可压缩展示环节，或分3课时完成</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="warning-box">
+                    <h4>⚠️ 教学难点应对</h4>
+                    
+                    <strong>1. Temperature参数难以理解</strong><br>
+                    <em>策略：</em>对比演示<br>
+                    - 展示Temperature=0.7的不稳定效果（有时灯亮有时不亮）<br>
+                    - 展示Temperature=0.2的稳定效果（每次都亮）<br>
+                    - 让学生直观感受差异<br><br>
+                    
+                    <strong>2. preset_key概念抽象</strong><br>
+                    <em>策略：</em>类比教学<br>
+                    - 类比为"暗号"或"密码"<br>
+                    - 系统提示词里的preset_key必须和设备里的"暗号"对上<br>
+                    - 就像对暗号一样，对上了才能执行<br><br>
+                    
+                    <strong>3. 系统提示词太长</strong><br>
+                    <em>策略：</em>分段理解<br>
+                    - 第一段：告诉AI要做什么<br>
+                    - 第二段：告诉AI分类规则<br>
+                    - 第三段：给AI看例子<br>
+                    - 第四段：告诉AI不要做什么
+                </div>
+            </div>
+
+            <!-- 七、教学亮点 -->
+            <div class="section">
+                <h2 class="section-title">七、教学亮点与创新</h2>
+                
+                <div class="objectives">
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">🌟</span>
+                            项目式学习
+                        </h4>
+                        <p style="color: #666; margin-top: 10px;">
+                            不是简单地讲解AI概念，而是让学生真正动手创建自己的AI助手，在实践中学习。
+                        </p>
+                    </div>
+
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">🎨</span>
+                            趣味性强
+                        </h4>
+                        <p style="color: #666; margin-top: 10px;">
+                            使用猪猪侠、垃圾分类等贴近学生生活的主题，配合LED灯的物理反馈，增强学习乐趣。
+                        </p>
+                    </div>
+
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">🔗</span>
+                            跨学科融合
+                        </h4>
+                        <p style="color: #666; margin-top: 10px;">
+                            融合信息技术、环境保护、语文（提示词设计）等多学科知识。
+                        </p>
+                    </div>
+
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">💡</span>
+                            即时反馈
+                        </h4>
+                        <p style="color: #666; margin-top: 10px;">
+                            学生创建后立即可以测试，LED灯的物理反馈让学习效果可见、可感知。
+                        </p>
+                    </div>
+
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">👥</span>
+                            分层教学
+                        </h4>
+                        <p style="color: #666; margin-top: 10px;">
+                            提供简单（猪猪侠）和中等（垃圾分类）两个难度，照顾不同水平学生。
+                        </p>
+                    </div>
+
+                    <div class="objective-card">
+                        <h4>
+                            <span style="font-size: 28px;">🌍</span>
+                            价值观渗透
+                        </h4>
+                        <p style="color: #666; margin-top: 10px;">
+                            通过垃圾分类主题，自然融入环保教育，培养社会责任感。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 八、课程总结 -->
+            <div class="section">
+                <h2 class="section-title">八、课程总结（示范课总结发言稿）</h2>
+                
+                <div class="highlight-box">
+                    <h4>🎤 教师总结发言（3-5分钟）</h4>
+                    
+                    <div style="background: white; padding: 25px; border-radius: 10px; margin-top: 15px; line-height: 2;">
+                        <p><strong>各位老师、同学们：</strong></p>
+                        
+                        <p style="margin-top: 15px;">
+                            今天我们一起经历了一次奇妙的AI创造之旅。看到同学们成功创建出自己的智能助手，我感到非常欣慰。
+                        </p>
+
+                        <p style="margin-top: 15px;">
+                            <strong>【我们学到了什么】</strong><br>
+                            通过这节课，我们不仅学会了创建AI智能体，更重要的是，我们理解了AI是如何学习的。就像我们教一个新朋友说话一样，通过清晰的指令、具体的例子、明确的规则，AI就能按照我们的期望工作。
+                        </p>
+
+                        <p style="margin-top: 15px;">
+                            <strong>【技术与生活的结合】</strong><br>
+                            我们创建的垃圾分类小助手，不仅是一个有趣的项目，更体现了技术如何服务生活、保护环境。当LED灯亮起的那一刻，同学们看到的不只是一个灯，而是AI、物联网、环保理念的完美结合。
+                        </p>
+
+                        <p style="margin-top: 15px;">
+                            <strong>【培养未来能力】</strong><br>
+                            在今天的课程中，同学们展现出了很强的：<br>
+                            • 逻辑思维能力 - 制定AI的行为规则<br>
+                            • 问题解决能力 - 调试和改进智能体<br>
+                            • 创新实践能力 - 动手创造新事物<br>
+                            这些能力，将是你们未来成长中宝贵的财富。
+                        </p>
+
+                        <p style="margin-top: 15px;">
+                            <strong>【给同学们的期望】</strong><br>
+                            希望大家：<br>
+                            • 继续探索AI的更多可能性<br>
+                            • 思考技术如何让世界更美好<br>
+                            • 记住：最好的学习方式就是动手实践<br>
+                            • 在使用AI的同时，也要培养独立思考的能力
+                        </p>
+
+                        <p style="margin-top: 15px;">
+                            <strong>【环保教育的延伸】</strong><br>
+                            通过垃圾分类小助手，我们不仅学会了技术，更重要的是理解了环保的重要性。每一次正确的垃圾分类，都是在为保护地球贡献一份力量。希望同学们把今天学到的知识带回家，带动家人一起做好垃圾分类。
+                        </p>
+
+                        <p style="margin-top: 15px; color: #667eea; font-weight: bold;">
+                            最后，为所有认真学习、勇于尝试的同学们点赞！你们都是最棒的小小程序员！👏
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">📝 观摩教师反思要点</h3>
+                
+                <div class="highlight-box">
+                    <h4>供听课教师参考</h4>
+                    
+                    <strong style="display: block; margin: 15px 0; color: #667eea;">1. 教学设计方面</strong>
+                    <ul style="margin-left: 25px;">
+                        <li>项目式学习的导入是否自然？</li>
+                        <li>教学环节是否紧凑有序？</li>
+                        <li>时间分配是否合理？</li>
+                        <li>难度梯度是否适当？</li>
+                    </ul>
+
+                    <strong style="display: block; margin: 15px 0; color: #667eea;">2. 教学方法方面</strong>
+                    <ul style="margin-left: 25px;">
+                        <li>类比法的运用是否恰当？</li>
+                        <li>演示讲解是否清晰？</li>
+                        <li>学生操作时间是否充足？</li>
+                        <li>个别辅导是否到位？</li>
+                    </ul>
+
+                    <strong style="display: block; margin: 15px 0; color: #667eea;">3. 学生学习方面</strong>
+                    <ul style="margin-left: 25px;">
+                        <li>学生的参与度如何？</li>
+                        <li>学生是否真正理解核心概念？</li>
+                        <li>动手能力是否得到锻炼？</li>
+                        <li>创新思维是否得到激发？</li>
+                    </ul>
+
+                    <strong style="display: block; margin: 15px 0; color: #667eea;">4. 技术整合方面</strong>
+                    <ul style="margin-left: 25px;">
+                        <li>技术工具使用是否流畅？</li>
+                        <li>HTML教程页面的辅助作用如何？</li>
+                        <li>技术故障的应对是否得当？</li>
+                        <li>物理反馈（LED）的效果如何？</li>
+                    </ul>
+                </div>
+
+                <h3 class="section-subtitle">🚀 后续拓展建议</h3>
+                
+                <div class="success-box">
+                    <h4>延伸学习活动</h4>
+                    
+                    <strong>课后作业（选做）：</strong>
+                    <ol style="margin-left: 25px; margin-top: 10px;">
+                        <li>和家长一起做一次垃圾分类，用你的AI助手帮忙</li>
+                        <li>设计一个新的智能体（画出草图，写出它能做什么）</li>
+                        <li>收集5个身边可以用AI解决的问题</li>
+                    </ol>
+
+                    <strong style="display: block; margin-top: 20px;">拓展课程方向：</strong>
+                    <ul style="margin-left: 25px; margin-top: 10px;">
+                        <li>🎓 学习助手：帮助背单词、做数学题</li>
+                        <li>📚 故事大王：创作童话故事</li>
+                        <li>🌡️ 天气播报员：查询天气并提醒穿衣</li>
+                        <li>🎵 音乐推荐师：根据心情推荐歌曲</li>
+                        <li>🍎 健康小管家：记录运动和饮食</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 九、教学资源 -->
+            <div class="section">
+                <h2 class="section-title">九、教学资源清单</h2>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>资源类型</th>
+                            <th>资源名称</th>
+                            <th>位置/链接</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>学生教程</td>
+                            <td>交互式HTML教程（5页）</td>
+                            <td>docs/kids-tutorial/index.html</td>
+                        </tr>
+                        <tr>
+                            <td>教师文档</td>
+                            <td>教学设计文档（本文档）</td>
+                            <td>docs/kids-tutorial/教学设计.html</td>
+                        </tr>
+                        <tr>
+                            <td>技术文档</td>
+                            <td>完整配置教程</td>
+                            <td>docs/智能体配置教程.md</td>
+                        </tr>
+                        <tr>
+                            <td>系统平台</td>
+                            <td>CodeHubot管理后台</td>
+                            <td>http://your-domain:8080</td>
+                        </tr>
+                        <tr>
+                            <td>演示设备</td>
+                            <td>ESP32开发板 + 4个LED灯</td>
+                            <td>实物展示</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 十、附录 -->
+            <div class="section">
+                <h2 class="section-title">十、附录</h2>
+                
+                <h3 class="section-subtitle">📋 学生测试记录表（可打印）</h3>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>测试项</th>
+                            <th>测试问题</th>
+                            <th>AI回答/LED反应</th>
+                            <th>评价</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>猪猪侠-1</td>
+                            <td>打招呼</td>
+                            <td style="width: 40%;"></td>
+                            <td>□好 □一般 □差</td>
+                        </tr>
+                        <tr>
+                            <td>猪猪侠-2</td>
+                            <td>讲笑话</td>
+                            <td></td>
+                            <td>□好 □一般 □差</td>
+                        </tr>
+                        <tr>
+                            <td>垃圾分类-1</td>
+                            <td>报纸（可回收）</td>
+                            <td></td>
+                            <td>□灯亮 □不亮</td>
+                        </tr>
+                        <tr>
+                            <td>垃圾分类-2</td>
+                            <td>电池（有害）</td>
+                            <td></td>
+                            <td>□灯亮 □不亮</td>
+                        </tr>
+                        <tr>
+                            <td>垃圾分类-3</td>
+                            <td>果皮（厨余）</td>
+                            <td></td>
+                            <td>□灯亮 □不亮</td>
+                        </tr>
+                        <tr>
+                            <td>垃圾分类-4</td>
+                            <td>烟头（其他）</td>
+                            <td></td>
+                            <td>□灯亮 □不亮</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="section-subtitle">🎯 课程评价表（教师用）</h3>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">评价项</th>
+                            <th style="width: 50%;">观察要点</th>
+                            <th style="width: 25%;">等级</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>教学目标达成</td>
+                            <td>知识、能力、情感目标是否达成</td>
+                            <td>□A □B □C</td>
+                        </tr>
+                        <tr>
+                            <td>教学设计</td>
+                            <td>环节设计是否合理，过渡是否自然</td>
+                            <td>□A □B □C</td>
+                        </tr>
+                        <tr>
+                            <td>教学方法</td>
+                            <td>方法是否适合学生认知水平</td>
+                            <td>□A □B □C</td>
+                        </tr>
+                        <tr>
+                            <td>师生互动</td>
+                            <td>学生参与度、互动效果</td>
+                            <td>□A □B □C</td>
+                        </tr>
+                        <tr>
+                            <td>技术运用</td>
+                            <td>技术工具使用是否恰当、流畅</td>
+                            <td>□A □B □C</td>
+                        </tr>
+                        <tr>
+                            <td>创新亮点</td>
+                            <td>教学创新、特色环节</td>
+                            <td>□A □B □C</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <strong>综合评价意见：</strong><br>
+                    <textarea style="width: 100%; height: 100px; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="请填写综合评价意见..."></textarea>
+                </div>
+
+                <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <strong>改进建议：</strong><br>
+                    <textarea style="width: 100%; height: 100px; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="请填写改进建议..."></textarea>
+                </div>
+            </div>
+
+            <!-- 十一、示范课亮点展示 -->
+            <div class="section">
+                <h2 class="section-title">十一、示范课亮点展示</h2>
+                
+                <div class="success-box">
+                    <h4>🌟 本课程的创新与特色</h4>
+                    
+                    <strong style="display: block; margin: 15px 0; color: #155724;">1. 技术前沿性</strong>
+                    <p style="margin-left: 20px; color: #666;">
+                        紧跟AI技术发展前沿，让学生在小学阶段就能接触到最新的大语言模型和Function Calling技术，为未来的AI时代做准备。
+                    </p>
+
+                    <strong style="display: block; margin: 15px 0; color: #155724;">2. 教学方法创新</strong>
+                    <p style="margin-left: 20px; color: #666;">
+                        采用项目式学习(PBL)，从"要我学"转变为"我要学"。学生不是被动接受知识，而是主动创造作品，极大提升了学习积极性。
+                    </p>
+
+                    <strong style="display: block; margin: 15px 0; color: #155724;">3. 跨学科整合</strong>
+                    <p style="margin-left: 20px; color: #666;">
+                        将信息技术、环境科学、语文（提示词编写）、科学（物联网）等多学科知识有机融合，体现了大单元教学理念。
+                    </p>
+
+                    <strong style="display: block; margin: 15px 0; color: #155724;">4. 即时反馈机制</strong>
+                    <p style="margin-left: 20px; color: #666;">
+                        通过LED灯的物理反馈，将抽象的AI概念具象化、可视化，让学生能够直观感受自己创作的成果，增强成就感。
+                    </p>
+
+                    <strong style="display: block; margin: 15px 0; color: #155724;">5. 分层教学实践</strong>
+                    <p style="margin-left: 20px; color: #666;">
+                        设计了简单（猪猪侠）和进阶（垃圾分类）两个项目，既保证基础较弱的学生能完成，又让学有余力的学生有挑战，真正实现因材施教。
+                    </p>
+
+                    <strong style="display: block; margin: 15px 0; color: #155724;">6. 价值引领教育</strong>
+                    <p style="margin-left: 20px; color: #666;">
+                        通过垃圾分类主题，自然融入环保教育、社会责任教育，体现了立德树人的根本任务。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 十二、给观摩教师的说明 -->
+            <div class="section">
+                <h2 class="section-title">十二、给观摩教师的说明</h2>
+                
+                <div class="warning-box">
+                    <h4>📢 课堂观察建议</h4>
+                    
+                    <strong style="display: block; margin: 15px 0;">重点关注环节：</strong>
+                    <ol style="margin-left: 25px; line-height: 2;">
+                        <li><strong>导入环节（5分钟）</strong>
+                            <br>观察：如何将抽象的AI概念转化为学生能理解的语言
+                        </li>
+                        <li><strong>系统提示词讲解（10分钟）</strong>
+                            <br>观察：如何通过类比帮助学生理解提示词的作用
+                        </li>
+                        <li><strong>学生实践操作（20分钟）</strong>
+                            <br>观察：学生的操作熟练度、遇到问题的处理方式
+                        </li>
+                        <li><strong>Temperature参数讲解（第二课时）</strong>
+                            <br>观察：如何让学生理解参数对AI行为的影响
+                        </li>
+                        <li><strong>测试验证环节（10分钟）</strong>
+                            <br>观察：LED物理反馈对学生学习效果的促进作用
+                        </li>
+                    </ol>
+
+                    <strong style="display: block; margin: 20px 0;">课后交流话题：</strong>
+                    <ul style="margin-left: 25px; line-height: 2;">
+                        <li>项目式学习在信息技术课的应用</li>
+                        <li>如何平衡技术深度与学生理解能力</li>
+                        <li>物联网+AI在教学中的融合方式</li>
+                        <li>低年级学生的AI教育方法探讨</li>
+                        <li>技术课中的德育渗透策略</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 页脚 -->
+            <div style="text-align: center; padding: 40px 0; color: #999; border-top: 2px solid #f0f0f0; margin-top: 60px;">
+                <p style="font-size: 16px; margin-bottom: 10px;">
+                    <strong>CodeHubot AIOT 管理系统</strong>
+                </p>
+                <p style="font-size: 14px;">
+                    教学设计文档 v1.0 | 更新时间：2025-11-26
+                </p>
+                <p style="font-size: 14px; margin-top: 10px;">
+                    适用于小学3-6年级人工智能启蒙课程
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">🖨️ 打印本文档</button>
+
+    <script>
+        // 自动保存评价内容到本地存储
+        const textareas = document.querySelectorAll('textarea');
+        textareas.forEach((textarea, index) => {
+            // 加载保存的内容
+            const saved = localStorage.getItem(`evaluation_${index}`);
+            if (saved) {
+                textarea.value = saved;
+            }
+            
+            // 监听变化并保存
+            textarea.addEventListener('input', function() {
+                localStorage.setItem(`evaluation_${index}`, this.value);
+            });
+        });
+    </script>
+</body>
+</html>
+

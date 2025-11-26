@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 测试你的AI助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .test-section h2 {
+            color: #ff6b6b;
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .test-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .test-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            border: 3px solid #e0e0e0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-color: #ff6b6b;
+        }
+
+        .test-icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .test-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .test-question {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .expected {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .expected strong {
+            color: #2e7d32;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .tip {
+            background: #fff3cd;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+
+        .tip strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .score-board {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .score-board h3 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .score {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .emoji {
+            font-size: 32px;
+            margin-right: 10px;
+        }
+
+        .result-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        .badge-pass {
+            background: #4caf50;
+            color: white;
+        }
+
+        .badge-fail {
+            background: #f44336;
+            color: white;
+        }
+
+        .checklist {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px 0;
+        }
+
+        .checklist-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4caf50;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #4caf50;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox.checked {
+            background: #4caf50;
+        }
+
+        .checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 测试你的AI助手</h1>
+            <p>跟着步骤来测试，看看你的AI助手能不能正确回答！</p>
+        </div>
+
+        <div class="test-section">
+            <h2>🐷 测试猪猪侠聊天助手</h2>
+            
+            <div class="test-cards">
+                <div class="test-card">
+                    <div class="test-icon">👋</div>
+                    <div class="test-title">测试1：打招呼</div>
+                    <div class="test-question">"你好，猪猪侠！"</div>
+                    <div class="expected">
+                        <strong>✓ 期望回答：</strong>
+                        友好地打招呼，可能会问你今天怎么样
+                    </div>
+                </div>
+
+                <div class="test-card">
+                    <div class="test-icon">😄</div>
+                    <div class="test-title">测试2：讲笑话</div>
+                    <div class="test-question">"给我讲个笑话"</div>
+                    <div class="expected">
+                        <strong>✓ 期望回答：</strong>
+                        讲一个有趣的笑话
+                    </div>
+                </div>
+
+                <div class="test-card">
+                    <div class="test-icon">☀️</div>
+                    <div class="test-title">测试3：聊天气</div>
+                    <div class="test-question">"今天天气真好"</div>
+                    <div class="expected">
+                        <strong>✓ 期望回答：</strong>
+                        表示同意，可能会问你的计划
+                    </div>
+                </div>
+
+                <div class="test-card">
+                    <div class="test-icon">😢</div>
+                    <div class="test-title">测试4：安慰</div>
+                    <div class="test-question">"今天心情不好"</div>
+                    <div class="expected">
+                        <strong>✓ 期望回答：</strong>
+                        表示理解和安慰，给你鼓励
+                    </div>
+                </div>
+            </div>
+
+            <div class="tip">
+                <strong>💡 评分标准：</strong>
+                如果猪猪侠的回答友好、自然、有表情符号，那就是成功的！
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🗑️ 测试垃圾分类小助手</h2>
+            
+            <div class="test-cards">
+                <div class="test-card">
+                    <div class="test-icon">♻️</div>
+                    <div class="test-title">测试1：可回收</div>
+                    <div class="test-question">"我要扔报纸"</div>
+                    <div class="expected">
+                        <strong>✓ 期望效果：</strong>
+                        LED绿灯亮3秒 + 告诉你是可回收垃圾
+                    </div>
+                </div>
+
+                <div class="test-card">
+                    <div class="test-icon">🔋</div>
+                    <div class="test-title">测试2：有害垃圾</div>
+                    <div class="test-question">"废电池扔哪里"</div>
+                    <div class="expected">
+                        <strong>✓ 期望效果：</strong>
+                        LED红灯亮3秒 + 告诉你是有害垃圾
+                    </div>
+                </div>
+
+                <div class="test-card">
+                    <div class="test-icon">🍎</div>
+                    <div class="test-title">测试3：厨余垃圾</div>
+                    <div class="test-question">"苹果皮怎么扔"</div>
+                    <div class="expected">
+                        <strong>✓ 期望效果：</strong>
+                        LED黄灯亮3秒 + 告诉你是厨余垃圾
+                    </div>
+                </div>
+
+                <div class="test-card">
+                    <div class="test-icon">🚬</div>
+                    <div class="test-title">测试4：其他垃圾</div>
+                    <div class="test-question">"烟头扔哪里"</div>
+                    <div class="expected">
+                        <strong>✓ 期望效果：</strong>
+                        LED灰灯亮3秒 + 告诉你是其他垃圾
+                    </div>
+                </div>
+            </div>
+
+            <div class="tip">
+                <strong>💡 评分标准：</strong>
+                <ul style="margin-left: 20px; margin-top: 10px; line-height: 2;">
+                    <li>LED灯要亮（最重要！）</li>
+                    <li>亮的颜色要对</li>
+                    <li>告诉你正确的分类</li>
+                    <li>每次都能成功（不是有时候行有时候不行）</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ 测试检查清单</h2>
+            
+            <div class="checklist">
+                <div class="checklist-item">
+                    <div class="checkbox" onclick="toggleCheck(this)"></div>
+                    <div>我已经打开了对话页面</div>
+                </div>
+                
+                <div class="checklist-item">
+                    <div class="checkbox" onclick="toggleCheck(this)"></div>
+                    <div>选择了正确的智能体</div>
+                </div>
+                
+                <div class="checklist-item">
+                    <div class="checkbox" onclick="toggleCheck(this)"></div>
+                    <div>测试了至少3个问题</div>
+                </div>
+                
+                <div class="checklist-item">
+                    <div class="checkbox" onclick="toggleCheck(this)"></div>
+                    <div>AI回答得很好（或LED灯正常亮）</div>
+                </div>
+                
+                <div class="checklist-item">
+                    <div class="checkbox" onclick="toggleCheck(this)"></div>
+                    <div>如果有问题，我已经记录下来了</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="score-board">
+            <h3>🏆 你的成绩</h3>
+            <div class="score">
+                <span id="scoreDisplay">0</span>/10
+            </div>
+            <p style="font-size: 18px; opacity: 0.9;">
+                每个测试通过得1分，加油哦！
+            </p>
+        </div>
+
+        <div class="test-section">
+            <h2>❓ 遇到问题了？</h2>
+            
+            <div style="background: white; padding: 20px; border-radius: 15px;">
+                <h3 style="color: #ff6b6b; margin-bottom: 15px;">常见问题：</h3>
+                
+                <details style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; color: #333;">
+                        🤔 猪猪侠回答很冷淡怎么办？
+                    </summary>
+                    <p style="margin-top: 10px; color: #666;">
+                        检查一下系统提示词是不是复制对了，特别是"活泼开朗"这些描述性格的词。
+                    </p>
+                </details>
+
+                <details style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; color: #333;">
+                        🤔 垃圾分类小助手的灯不亮？
+                    </summary>
+                    <p style="margin-top: 10px; color: #666;">
+                        可能的原因：<br>
+                        1. 预设指令没有创建<br>
+                        2. preset_key名字不对<br>
+                        3. 设备没有上线<br>
+                        4. Temperature设置太高了（要改成0.2）
+                    </p>
+                </details>
+
+                <details style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold; color: #333;">
+                        🤔 有时候灯亮，有时候不亮？
+                    </summary>
+                    <p style="margin-top: 10px; color: #666;">
+                        这说明Temperature设置太高了！让老师或爸爸妈妈把Temperature改成0.2，这样每次都会亮。
+                    </p>
+                </details>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="index.html" class="btn btn-secondary">← 返回首页</a>
+            <a href="help.html" class="btn btn-primary">获取更多帮助 →</a>
+        </div>
+    </div>
+
+    <script>
+        function toggleCheck(checkbox) {
+            checkbox.classList.toggle('checked');
+            updateScore();
+        }
+
+        function updateScore() {
+            const checked = document.querySelectorAll('.checkbox.checked').length;
+            document.getElementById('scoreDisplay').textContent = checked * 2;
+        }
+    </script>
+</body>
+</html>
+

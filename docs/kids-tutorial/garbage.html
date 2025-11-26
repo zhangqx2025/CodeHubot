@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗑️ 创建垃圾分类小助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            color: #00bcd4;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .content-section {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 5px solid #00bcd4;
+        }
+
+        .content-section h2 {
+            color: #00bcd4;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .garbage-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .garbage-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 3px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .garbage-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .garbage-card.recyclable {
+            border-color: #4ade80;
+        }
+
+        .garbage-card.harmful {
+            border-color: #ef4444;
+        }
+
+        .garbage-card.kitchen {
+            border-color: #f59e0b;
+        }
+
+        .garbage-card.other {
+            border-color: #6b7280;
+        }
+
+        .garbage-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .garbage-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .garbage-examples {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .led-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .led1 { background: #4ade80; color: white; }
+        .led2 { background: #ef4444; color: white; }
+        .led3 { background: #f59e0b; color: white; }
+        .led4 { background: #6b7280; color: white; }
+
+        .info-box {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px 0;
+            border: 2px dashed #00bcd4;
+        }
+
+        .info-box label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box .value {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.8;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .tip {
+            background: #fff3cd;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+
+        .tip strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .warning {
+            background: #ffe5e5;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #ef4444;
+        }
+
+        .warning strong {
+            color: #c53030;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .example-dialog {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px 0;
+        }
+
+        .example-dialog .user {
+            background: white;
+            padding: 12px 18px;
+            border-radius: 15px 15px 15px 0;
+            margin: 10px 0;
+            display: inline-block;
+            max-width: 70%;
+        }
+
+        .example-dialog .bot {
+            background: #00bcd4;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 15px 15px 0 15px;
+            margin: 10px 0;
+            display: inline-block;
+            max-width: 70%;
+            float: right;
+            clear: both;
+        }
+
+        .example-dialog::after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00bcd4 0%, #4facfe 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .emoji {
+            font-size: 32px;
+            margin-right: 10px;
+        }
+
+        .copyable {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .copyable:hover {
+            background: #e8f5e9;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            padding: 5px 15px;
+            background: #4ade80;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .copy-btn:hover {
+            background: #22c55e;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 35px;
+            height: 35px;
+            background: #00bcd4;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 35px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗑️ 创建垃圾分类小助手</h1>
+            <p>让AI帮你正确分类垃圾，保护地球！</p>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">🌍</span>认识垃圾分类</h2>
+            
+            <p style="margin-bottom: 20px; color: #666; font-size: 16px;">
+                垃圾分为4种，每种对应不同的LED灯：
+            </p>
+
+            <div class="garbage-types">
+                <div class="garbage-card recyclable">
+                    <div class="garbage-icon">♻️</div>
+                    <div class="garbage-title">可回收垃圾</div>
+                    <div class="garbage-examples">
+                        报纸<br>
+                        塑料瓶<br>
+                        易拉罐
+                    </div>
+                    <div class="led-indicator led1">💡 LED1 绿灯</div>
+                </div>
+
+                <div class="garbage-card harmful">
+                    <div class="garbage-icon">☠️</div>
+                    <div class="garbage-title">有毒有害</div>
+                    <div class="garbage-examples">
+                        废电池<br>
+                        旧手机<br>
+                        过期药品
+                    </div>
+                    <div class="led-indicator led2">💡 LED2 红灯</div>
+                </div>
+
+                <div class="garbage-card kitchen">
+                    <div class="garbage-icon">🍽️</div>
+                    <div class="garbage-title">厨余垃圾</div>
+                    <div class="garbage-examples">
+                        剩饭剩菜<br>
+                        果皮<br>
+                        菜叶
+                    </div>
+                    <div class="led-indicator led3">💡 LED3 黄灯</div>
+                </div>
+
+                <div class="garbage-card other">
+                    <div class="garbage-icon">🚮</div>
+                    <div class="garbage-title">其他垃圾</div>
+                    <div class="garbage-examples">
+                        烟头<br>
+                        脏纸巾<br>
+                        一次性筷子
+                    </div>
+                    <div class="led-indicator led4">💡 LED4 灰灯</div>
+                </div>
+            </div>
+
+            <div class="tip">
+                <strong>🎯 小助手的工作原理：</strong>
+                当你说"我要扔报纸"，小助手会自动点亮绿色LED灯（LED1），告诉你扔到可回收垃圾桶！
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">📝</span>第一步：填写基本信息</h2>
+            
+            <div class="info-box">
+                <label><span class="step-number">1</span>智能体名称：</label>
+                <div class="value">垃圾分类助手</div>
+            </div>
+
+            <div class="info-box">
+                <label><span class="step-number">2</span>描述：</label>
+                <div class="value">智能垃圾分类，自动控制垃圾桶LED指示灯</div>
+            </div>
+
+            <div class="info-box">
+                <label><span class="step-number">3</span>选择大模型：</label>
+                <div class="value">通义千问-Turbo</div>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ 特别注意：</strong>
+                这个智能体需要设置一个特殊的参数：<br>
+                <strong>Temperature = 0.2</strong><br>
+                这样AI才会每次都正确调用功能！请让老师或爸爸妈妈帮忙设置。
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">🔌</span>第二步：选择插件</h2>
+            
+            <p style="margin-bottom: 15px; color: #666; font-size: 16px;">
+                在"插件配置"这里，要勾选：
+            </p>
+
+            <div class="info-box">
+                <div style="font-size: 24px; text-align: center; padding: 20px;">
+                    ✅ <strong style="color: #00bcd4;">IoT设备控制</strong>
+                </div>
+            </div>
+
+            <div class="tip">
+                <strong>💡 为什么要选这个插件？</strong>
+                因为我们需要让AI能够控制LED灯！这个插件就像给AI装上了一双能按开关的手。
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">🎨</span>第三步：教会AI怎么分类</h2>
+            
+            <p style="margin-bottom: 15px; color: #666; font-size: 16px;">
+                把下面这段话复制到"系统提示词"框里：
+            </p>
+
+            <div class="info-box copyable" id="promptBox">
+                <button class="copy-btn" onclick="copyPrompt()">📋 复制</button>
+                <pre style="white-space: pre-wrap; line-height: 1.8; color: #333; font-size: 14px;">你是一个专业的垃圾分类助手，你必须严格执行以下操作流程：
+
+【重要】每次用户提到要扔垃圾时，你必须：
+1. 立即调用 executePreset 函数执行对应的预设指令
+2. 等待函数执行完成
+3. 然后向用户报告执行结果
+
+【分类规则】你必须立即执行以下预设：
+
+• 可回收垃圾（纸张、塑料瓶、金属罐、玻璃瓶、纸板箱等）
+  → 立即执行预设：led_seq_mig4wqy5
+  
+• 有毒有害垃圾（电池、灯管、油漆、药品、杀虫剂、手机等电子产品）
+  → 立即执行预设：led_seq_mig5hiep
+  
+• 厨余垃圾（剩饭剩菜、果皮、菜叶、茶叶渣、骨头、蛋壳等）
+  → 立即执行预设：led_seq_mig5i461
+  
+• 其他垃圾（烟头、污染纸张、废旧陶瓷、一次性餐具、灰土等）
+  → 立即执行预设：led_seq_mig5ivu5
+
+【示例对话】
+用户："我要扔报纸"
+你的操作：
+1. 调用 executePreset(device_uuid="2b91058a-xxx", preset_name="led_seq_mig4wqy5")
+2. 回复："已打开可回收垃圾桶，LED灯已亮起3秒提示。报纸属于可回收垃圾。"
+
+【禁止】
+- ❌ 不要只告诉用户要执行什么，必须真正执行
+- ❌ 不要说"我将执行..."，而要先执行再说"已执行..."</pre>
+            </div>
+
+            <div class="tip">
+                <strong>🎯 这段话告诉AI：</strong>
+                当小朋友说要扔什么垃圾时，AI要马上点亮对应的LED灯，然后告诉小朋友扔对了！
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">💬</span>第四步：看看效果</h2>
+            
+            <p style="margin-bottom: 15px; color: #666;">这是小助手和小朋友的对话：</p>
+
+            <div class="example-dialog">
+                <div class="user">
+                    👦 小明：我要扔报纸
+                </div>
+                <div class="bot">
+                    🤖 小助手：已打开可回收垃圾桶，LED绿灯已亮起3秒提示 💚 报纸属于可回收垃圾！
+                </div>
+                <div style="clear: both;"></div>
+                
+                <div class="user">
+                    👧 小红：废电池扔哪里？
+                </div>
+                <div class="bot">
+                    🤖 小助手：已打开有毒有害垃圾桶，LED红灯已亮起3秒提示 ❤️ 废电池属于有毒有害垃圾，要小心处理哦！
+                </div>
+                <div style="clear: both;"></div>
+
+                <div class="user">
+                    👦 小明：苹果皮怎么扔？
+                </div>
+                <div class="bot">
+                    🤖 小助手：已打开厨余垃圾桶，LED黄灯已亮起3秒提示 💛 苹果皮是厨余垃圾呢！
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">🌟</span>重要提示</h2>
+            
+            <div class="warning">
+                <strong>⚠️ 创建前要做的事：</strong>
+                <ol style="margin-left: 20px; margin-top: 10px; line-height: 2;">
+                    <li>让老师或爸爸妈妈先创建4个"预设指令"</li>
+                    <li>每个预设指令对应一种垃圾和一个LED灯</li>
+                    <li>预设指令的名字要和上面提示词里的一样</li>
+                    <li>把Temperature改成0.2（很重要！）</li>
+                </ol>
+            </div>
+
+            <div class="tip">
+                <strong>💡 如果不确定怎么做：</strong>
+                可以先创建简单的"猪猪侠"，等熟悉了再来创建垃圾分类小助手！
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="index.html" class="btn btn-secondary">← 返回首页</a>
+            <a href="zhuzhu.html" class="btn btn-secondary">先创建猪猪侠</a>
+            <a href="test.html" class="btn btn-primary">去测试 →</a>
+        </div>
+    </div>
+
+    <script>
+        function copyPrompt() {
+            const promptText = document.querySelector('#promptBox pre').textContent;
+            navigator.clipboard.writeText(promptText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✓ 已复制！';
+                btn.style.background = '#4ade80';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#4ade80';
+                }, 2000);
+            }).catch(err => {
+                alert('复制失败，请手动选择文字复制');
+            });
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐷 创建猪猪侠聊天助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            color: #f5576c;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .progress {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .progress::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+
+        .step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid #e0e0e0;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #999;
+        }
+
+        .step.active .step-circle {
+            background: #f5576c;
+            border-color: #f5576c;
+            color: white;
+        }
+
+        .step-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .content-section {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 5px solid #f5576c;
+        }
+
+        .content-section h2 {
+            color: #f5576c;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px 0;
+            border: 2px dashed #f5576c;
+        }
+
+        .info-box label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box .value {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.8;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .tip {
+            background: #fff3cd;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+
+        .tip strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .example-dialog {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px 0;
+        }
+
+        .example-dialog .user {
+            background: white;
+            padding: 12px 18px;
+            border-radius: 15px 15px 15px 0;
+            margin: 10px 0;
+            display: inline-block;
+            max-width: 70%;
+        }
+
+        .example-dialog .bot {
+            background: #f5576c;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 15px 15px 0 15px;
+            margin: 10px 0;
+            display: inline-block;
+            max-width: 70%;
+            float: right;
+            clear: both;
+        }
+
+        .example-dialog::after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .emoji {
+            font-size: 32px;
+            margin-right: 10px;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 12px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .checklist li::before {
+            content: '✓';
+            background: #4ade80;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .copyable {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .copyable:hover {
+            background: #e8f5e9;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            padding: 5px 15px;
+            background: #4ade80;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .copy-btn:hover {
+            background: #22c55e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐷 创建猪猪侠聊天助手</h1>
+            <p>让我们一起创建一个会聊天的小伙伴吧！</p>
+        </div>
+
+        <div class="progress">
+            <div class="step active">
+                <div class="step-circle">1</div>
+                <div class="step-label">准备</div>
+            </div>
+            <div class="step active">
+                <div class="step-circle">2</div>
+                <div class="step-label">填写</div>
+            </div>
+            <div class="step active">
+                <div class="step-circle">3</div>
+                <div class="step-label">测试</div>
+            </div>
+            <div class="step active">
+                <div class="step-circle">✓</div>
+                <div class="step-label">完成</div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">📝</span>第一步：填写基本信息</h2>
+            
+            <div class="info-box">
+                <label>智能体名称：</label>
+                <div class="value">猪猪侠对话</div>
+            </div>
+
+            <div class="info-box">
+                <label>描述：</label>
+                <div class="value">一个友好的聊天助手，可以和你进行日常对话</div>
+            </div>
+
+            <div class="info-box">
+                <label>选择大模型：</label>
+                <div class="value">通义千问-Turbo</div>
+            </div>
+
+            <div class="tip">
+                <strong>💡 小提示：</strong>
+                这些内容要填在网页的"智能体管理"页面哦！让爸爸妈妈或老师帮你打开。
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">🎨</span>第二步：设置猪猪侠的性格</h2>
+            
+            <p style="margin-bottom: 15px; color: #666; font-size: 16px;">
+                把下面这段话复制到"系统提示词"框里：
+            </p>
+
+            <div class="info-box copyable" id="promptBox">
+                <button class="copy-btn" onclick="copyPrompt()">📋 复制</button>
+                <pre style="white-space: pre-wrap; line-height: 1.8; color: #333; font-size: 14px;">你是一个友好、热情的对话助手，名字叫"猪猪侠"。你的特点是：
+
+【性格特征】
+• 活泼开朗，充满正能量
+• 说话简洁明了，不啰嗦
+• 善于倾听，理解用户情绪
+• 偶尔会用一些可爱的表情符号 😊
+
+【对话风格】
+• 使用简体中文
+• 语气轻松自然
+• 回复长度适中（50-100字）
+• 避免过于正式或生硬
+
+【能力范围】
+• 日常闲聊
+• 情感支持
+• 知识问答
+• 讲笑话和故事
+
+【示例对话】
+用户："今天天气真好"
+你："是呀！这么好的天气，最适合出去走走啦 ☀️ 你有什么户外计划吗？"
+
+【注意】
+- 当遇到需要专业技术支持的问题时，坦诚告知建议咨询专业人士
+- 保持友善和尊重</pre>
+            </div>
+
+            <div class="tip">
+                <strong>🎯 这段话的作用：</strong>
+                告诉AI助手应该怎么说话，就像教一个新朋友怎么和别人聊天一样！
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">💬</span>第三步：看看猪猪侠会怎么说话</h2>
+            
+            <p style="margin-bottom: 15px; color: #666;">这是猪猪侠和小朋友的对话例子：</p>
+
+            <div class="example-dialog">
+                <div class="user">
+                    👦 小明：今天天气真好！
+                </div>
+                <div class="bot">
+                    🐷 猪猪侠：是呀！这么好的天气，最适合出去走走啦 ☀️ 你有什么户外计划吗？
+                </div>
+                <div style="clear: both;"></div>
+                
+                <div class="user">
+                    👦 小明：给我讲个笑话吧
+                </div>
+                <div class="bot">
+                    🐷 猪猪侠：好呀！有一天，小明去买水果。老板问："要几个苹果？" 小明说："要五个！" 老板给了他五个。小明数了数说："怎么只有四个？" 老板笑着说："你不是一个苹果吗？" 😄
+                </div>
+                <div style="clear: both;"></div>
+
+                <div class="user">
+                    👦 小明：今天考试没考好，有点难过
+                </div>
+                <div class="bot">
+                    🐷 猪猪侠：没关系的！一次考试不代表全部。重要的是知道哪里没学好，下次努力就行啦！你是最棒的！💪
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2><span class="emoji">✅</span>最后一步：检查清单</h2>
+            
+            <ul class="checklist">
+                <li>智能体名称填好了（猪猪侠对话）</li>
+                <li>描述填好了</li>
+                <li>选择了大模型（通义千问-Turbo）</li>
+                <li>复制了系统提示词</li>
+                <li>状态设置为"激活"</li>
+                <li>点击了"保存"按钮</li>
+            </ul>
+
+            <div class="tip">
+                <strong>🎉 恭喜你！</strong>
+                如果上面的都打钩了，那么猪猪侠就创建好啦！现在可以去"测试"页面试试看！
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="index.html" class="btn btn-secondary">← 返回首页</a>
+            <a href="test.html" class="btn btn-primary">去测试 →</a>
+        </div>
+    </div>
+
+    <script>
+        function copyPrompt() {
+            const promptText = document.querySelector('#promptBox pre').textContent;
+            navigator.clipboard.writeText(promptText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✓ 已复制！';
+                btn.style.background = '#4ade80';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#4ade80';
+                }, 2000);
+            }).catch(err => {
+                alert('复制失败，请手动选择文字复制');
+            });
+        }
+    </script>
+</body>
+</html>
+
