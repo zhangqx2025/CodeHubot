@@ -230,6 +230,7 @@ import { Document, Plus, Delete, Search } from '@element-plus/icons-vue'
 import { getAgent, updateAgent } from '@/api/agent'
 import { getPlugins } from '@/api/plugin'
 import { getActiveLLMModels } from '@/api/llm-model'
+import { getPromptTemplates } from '@/api/prompt-template'
 
 const route = useRoute()
 const router = useRouter()
@@ -265,65 +266,8 @@ const rules = {
   ]
 }
 
-// 提示词模板
-const promptTemplates = [
-  {
-    id: 1,
-    name: '物联网设备助手',
-    description: '专业的物联网设备管理和控制助手',
-    content: `你是一个专业的物联网助手，擅长帮助用户管理和控制智能设备。
-
-你的主要职责包括：
-1. 解答用户关于设备使用的问题
-2. 帮助用户控制智能设备（如开关灯、调节温度等）
-3. 分析传感器数据并提供建议
-4. 设置自动化场景
-
-请用友好、专业的语气与用户交流，并在必要时主动询问以获取更多信息。`
-  },
-  {
-    id: 2,
-    name: '数据分析助手',
-    description: '专注于传感器数据分析和可视化',
-    content: `你是一个数据分析专家，专注于物联网传感器数据的分析和解读。
-
-你的核心能力：
-1. 分析温度、湿度等传感器数据的趋势
-2. 发现数据中的异常情况并告警
-3. 提供数据可视化建议
-4. 基于历史数据做出预测
-
-请用专业但易懂的方式解释数据，帮助用户做出明智的决策。`
-  },
-  {
-    id: 3,
-    name: '智能家居管家',
-    description: '贴心的智能家居生活助手',
-    content: `你是一个贴心的智能家居管家，致力于让用户的生活更舒适便捷。
-
-你的服务内容：
-1. 根据用户习惯自动调节家居环境
-2. 提供节能建议
-3. 设置场景模式（如回家模式、睡眠模式）
-4. 提醒维护和保养设备
-
-请以管家的身份，用亲切、体贴的语气与用户交流。`
-  },
-  {
-    id: 4,
-    name: '教学助手',
-    description: '用于物联网教学的互动助手',
-    content: `你是一个物联网教学助手，帮助学生学习物联网知识和实践。
-
-你的教学目标：
-1. 讲解物联网基础概念（传感器、通信协议等）
-2. 指导学生完成实验项目
-3. 解答编程和硬件相关问题
-4. 提供项目创意和改进建议
-
-请用耐心、鼓励的方式引导学生学习，注重培养动手能力和创新思维。`
-  }
-]
+// 提示词模板（从后端动态加载）
+const promptTemplates = ref([])
 
 // 已选中的插件详情
 const selectedPlugins = computed(() => {
@@ -451,8 +395,27 @@ const removePlugin = (pluginId) => {
   }).catch(() => {})
 }
 
+// 加载提示词模板
+const loadPromptTemplates = async () => {
+  try {
+    const response = await getPromptTemplates({
+      is_active: true,
+      page: 1,
+      page_size: 100
+    })
+    promptTemplates.value = response.data.items
+  } catch (error) {
+    console.error('加载提示词模板失败:', error)
+    ElMessage.error('加载提示词模板失败')
+  }
+}
+
 // 显示提示词模板
-const showPromptTemplates = () => {
+const showPromptTemplates = async () => {
+  // 如果模板还未加载，先加载
+  if (promptTemplates.value.length === 0) {
+    await loadPromptTemplates()
+  }
   templateDialogVisible.value = true
 }
 
@@ -477,6 +440,7 @@ onMounted(() => {
   loadAgent()
   loadPlugins()
   loadModels()
+  loadPromptTemplates()
 })
 </script>
 

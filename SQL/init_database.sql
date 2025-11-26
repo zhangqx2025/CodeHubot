@@ -288,6 +288,28 @@ CREATE TABLE `aiot_agents` (
 INSERT INTO `aiot_agents` (`uuid`, `name`, `description`, `system_prompt`, `plugin_ids`, `llm_model_id`, `user_id`, `is_active`, `is_system`, `created_at`, `updated_at`) VALUES
 (UUID(), 'IoT助手', 'IoT设备管理助手', '你是一个专业的物联网助手，擅长帮助用户管理和控制智能设备。\n\n你的主要职责包括：\n1. 解答用户关于设备使用的问题\n2. 帮助用户控制智能设备（如开关灯、调节温度等）\n3. 分析传感器数据并提供建议\n4. 设置自动化场景\n\n请用友好、专业的语气与用户交流，并在必要时主动询问以获取更多信息。', '[1]', 1, 1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
+-- 提示词模板表
+CREATE TABLE `aiot_prompt_templates` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '模板名称',
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '模板描述',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '提示词内容',
+  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '分类标签',
+  `tags` json DEFAULT NULL COMMENT '标签（数组）',
+  `difficulty` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '难度等级：easy/medium/hard',
+  `suitable_for` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '适用场景',
+  `requires_plugin` tinyint(1) DEFAULT '0' COMMENT '是否需要插件',
+  `recommended_temperature` decimal(3,2) DEFAULT '0.70' COMMENT '推荐的Temperature参数',
+  `sort_order` int DEFAULT '0' COMMENT '排序顺序',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_category` (`category`),
+  KEY `idx_is_active` (`is_active`),
+  KEY `idx_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='提示词模板表';
+
 -- ============================================================================
 -- 8. 其他辅助表
 -- ============================================================================
