@@ -54,7 +54,7 @@
             <el-form-item prop="email">
               <el-input
                 v-model="loginForm.email"
-                placeholder="请输入用户名或邮箱"
+                placeholder="请输入用户名"
                 size="large"
                 prefix-icon="User"
                 class="form-input"

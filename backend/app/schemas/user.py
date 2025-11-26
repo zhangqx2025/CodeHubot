@@ -51,21 +51,13 @@ class UserCreate(BaseModel):
         if len(v) < MIN_PASSWORD_LENGTH:
             errors.append(f'密码长度至少{MIN_PASSWORD_LENGTH}个字符')
         
-        # 检查是否包含大写字母
-        if not re.search(r'[A-Z]', v):
-            errors.append('密码必须包含至少一个大写字母')
-        
-        # 检查是否包含小写字母
-        if not re.search(r'[a-z]', v):
-            errors.append('密码必须包含至少一个小写字母')
+        # 检查是否包含字母
+        if not re.search(r'[a-zA-Z]', v):
+            errors.append('密码必须包含至少一个字母')
         
         # 检查是否包含数字
         if not re.search(r'[0-9]', v):
             errors.append('密码必须包含至少一个数字')
-        
-        # 检查是否包含特殊字符
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            errors.append('密码必须包含至少一个特殊字符 (!@#$%^&*等)')
         
         # 检查是否包含空格
         if ' ' in v:
@@ -74,7 +66,8 @@ class UserCreate(BaseModel):
         # 检查常见弱密码
         weak_passwords = [
             'password', '12345678', 'qwerty', 'abc123', 
-            'password123', 'admin123', '123456789'
+            'password123', 'admin123', '123456789', '11111111', 
+            '88888888', 'aaaaaaaa', 'abcdefgh'
         ]
         if v.lower() in weak_passwords:
             errors.append('密码过于简单，请使用更强的密码')
@@ -141,18 +134,14 @@ class PasswordResetConfirm(BaseModel):
         
         if len(v) < MIN_PASSWORD_LENGTH:
             errors.append(f'密码长度至少{MIN_PASSWORD_LENGTH}个字符')
-        if not re.search(r'[A-Z]', v):
-            errors.append('密码必须包含至少一个大写字母')
-        if not re.search(r'[a-z]', v):
-            errors.append('密码必须包含至少一个小写字母')
+        if not re.search(r'[a-zA-Z]', v):
+            errors.append('密码必须包含至少一个字母')
         if not re.search(r'[0-9]', v):
             errors.append('密码必须包含至少一个数字')
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            errors.append('密码必须包含至少一个特殊字符')
         if ' ' in v:
             errors.append('密码不能包含空格')
         
-        weak_passwords = ['password', '12345678', 'qwerty', 'abc123', 'password123']
+        weak_passwords = ['password', '12345678', 'qwerty', 'abc123', 'password123', 'admin123', '123456789']
         if v.lower() in weak_passwords:
             errors.append('密码过于简单')
         
