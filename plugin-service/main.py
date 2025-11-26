@@ -397,7 +397,7 @@ async def get_sensor_data(
     logger.info(f"🔹 查询参数:")
     logger.info(f"   - uuid: {uuid}")
     logger.info(f"   - sensor: {sensor}")
-    logger.info(f"🔹 当前 BACKEND_URL: {BACKEND_URL}")
+    logger.info(f"🔹 当前 PLUGIN_BACKEND_URL: {PLUGIN_BACKEND_URL}")
     logger.info(f"🔹 时间戳: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info("=" * 80)
     
@@ -524,7 +524,7 @@ async def control_device(request: ControlRequest, raw_request: Request):
     logger.info(f"   - port_id: {request.port_id}")
     logger.info(f"   - action: {request.action}")
     logger.info(f"   - value: {request.value}")
-    logger.info(f"🔹 当前 BACKEND_URL: {BACKEND_URL}")
+    logger.info(f"🔹 当前 PLUGIN_BACKEND_URL: {PLUGIN_BACKEND_URL}")
     logger.info(f"🔹 时间戳: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info("=" * 80)
     
@@ -606,7 +606,7 @@ async def execute_preset(request: PresetRequest, raw_request: Request):
     logger.info(f"   - device_uuid: {request.device_uuid}")
     logger.info(f"   - preset_name: {request.preset_name}")
     logger.info(f"   - parameters: {request.parameters}")
-    logger.info(f"🔹 当前 BACKEND_URL: {BACKEND_URL}")
+    logger.info(f"🔹 当前 PLUGIN_BACKEND_URL: {PLUGIN_BACKEND_URL}")
     logger.info(f"🔹 时间戳: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info("=" * 80)
     logger.info(f"🎯 执行预设: uuid={request.device_uuid}, preset={request.preset_name}")
@@ -658,7 +658,9 @@ async def execute_preset(request: PresetRequest, raw_request: Request):
         # 调用 plugin-backend-service 执行预设
         logger.info(f"📤 调用 plugin-backend-service 执行预设: {request.preset_name}")
         
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        # 预设指令可能包含多个步骤和延时，需要更长的超时时间
+        # 例如：10个步骤，每步延时5秒 = 50秒
+        async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 f"{PLUGIN_BACKEND_URL}/api/preset",
                 json={
@@ -688,21 +690,55 @@ async def execute_preset(request: PresetRequest, raw_request: Request):
             
             # 解析响应
             response_data = response.json()
+            if not isinstance(response_data, dict):
+                logger.error(f"❌ 响应格式错误: {type(response_data)}")
+                raise HTTPException(status_code=500, detail="响应格式错误")
+            
             data = response_data.get("data", {})
             
-            logger.info(f"✅ 预设执行成功: {request.preset_name}")
+            # 记录执行结果
+            if isinstance(data, dict):
+                preset_name = data.get("preset_name", request.preset_name)
+                if data.get("success"):
+                    message = data.get("message", "预设执行成功")
+                    logger.info(f"✅ {message}")
+                    
+                    # 如果是序列指令，记录详细信息
+                    if "total_steps" in data:
+                        logger.info(f"📊 总步骤: {data.get('total_steps')}, "
+                                  f"执行步骤: {len(data.get('executed_steps', []))}")
+                        if data.get("errors"):
+                            logger.warning(f"⚠️  部分步骤执行失败: {data.get('errors')}")
+                else:
+                    logger.warning(f"⚠️  预设执行完成但有错误: {data.get('message')}")
             
-            # 精简返回：只返回结果
+            # 返回详细结果（保持与后端一致）
             return StandardResponse(
                 code=200,
                 msg="成功",
-                data={"result": "success"}
+                data=data
             )
             
+    except httpx.TimeoutException as e:
+        logger.error(f"❌ 预设执行超时: {e}")
+        logger.error(f"💡 提示: 预设可能包含多个步骤，执行时间较长")
+        raise HTTPException(
+            status_code=504,
+            detail="预设执行超时，可能包含多个步骤需要较长时间"
+        )
+    except httpx.ConnectError as e:
+        logger.error(f"❌ 无法连接到 plugin-backend-service: {e}")
+        logger.error(f"💡 请检查: 1) plugin-backend-service 是否运行 2) PLUGIN_BACKEND_URL={PLUGIN_BACKEND_URL}")
+        raise HTTPException(
+            status_code=503,
+            detail="无法连接到设备操作服务，请稍后重试"
+        )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"❌ 执行预设失败: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
