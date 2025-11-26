@@ -16,6 +16,7 @@ from sqlalchemy import create_engine, desc, Column, Integer, String, DateTime, B
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 import paho.mqtt.client as mqtt
 import os
+from dotenv import load_dotenv
 
 # 配置日志
 logging.basicConfig(
@@ -23,6 +24,19 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# ============================================================
+# 加载环境变量
+# ============================================================
+
+# 加载 .env 文件
+env_file = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(env_file):
+    load_dotenv(env_file)
+    logger.info(f"✅ 已加载配置文件: {env_file}")
+else:
+    logger.warning(f"⚠️  配置文件不存在: {env_file}")
+    logger.warning(f"⚠️  将使用默认配置，请复制 env.example 为 .env 并修改配置")
 
 # ============================================================
 # 配置
@@ -39,6 +53,11 @@ if not DATABASE_URL:
     DB_NAME = os.getenv("DB_NAME", "aiot")
     DB_USER = os.getenv("DB_USER", "aiot_user")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
+    
+    # 检查是否使用默认密码
+    if DB_PASSWORD == "password":
+        logger.warning("⚠️  警告：正在使用默认密码 'password'，这不安全！")
+        logger.warning("⚠️  请在 .env 文件中设置正确的 DB_PASSWORD")
     
     # 构建 DATABASE_URL
     DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
@@ -66,12 +85,24 @@ if os.getenv("DATABASE_URL"):
     logger.info("    配置方式: DATABASE_URL（完整连接字符串）")
 else:
     logger.info("    配置方式: 单独配置项")
-    logger.info(f"    DB_HOST = {os.getenv('DB_HOST', 'localhost')}")
-    logger.info(f"    DB_PORT = {os.getenv('DB_PORT', '3306')}")
-    logger.info(f"    DB_NAME = {os.getenv('DB_NAME', 'aiot')}")
-    logger.info(f"    DB_USER = {os.getenv('DB_USER', 'aiot_user')}")
-    password = os.getenv('DB_PASSWORD', 'password')
-    logger.info(f"    DB_PASSWORD = {'*' * len(password)} ({len(password)}字符)")
+    
+    # 检查是否从 .env 读取到了配置
+    db_password_from_env = os.getenv('DB_PASSWORD')
+    if db_password_from_env:
+        logger.info(f"    DB_HOST = {os.getenv('DB_HOST', 'localhost')}")
+        logger.info(f"    DB_PORT = {os.getenv('DB_PORT', '3306')}")
+        logger.info(f"    DB_NAME = {os.getenv('DB_NAME', 'aiot')}")
+        logger.info(f"    DB_USER = {os.getenv('DB_USER', 'aiot_user')}")
+        password = db_password_from_env
+        logger.info(f"    DB_PASSWORD = {'*' * len(password)} ({len(password)}字符)")
+    else:
+        logger.warning("    ⚠️  未从 .env 读取到数据库配置，使用默认值")
+        logger.warning(f"    DB_HOST = {os.getenv('DB_HOST', 'localhost')} (默认)")
+        logger.warning(f"    DB_PORT = {os.getenv('DB_PORT', '3306')} (默认)")
+        logger.warning(f"    DB_NAME = {os.getenv('DB_NAME', 'aiot')} (默认)")
+        logger.warning(f"    DB_USER = {os.getenv('DB_USER', 'aiot_user')} (默认)")
+        password = 'password'
+        logger.warning(f"    DB_PASSWORD = {'*' * len(password)} ({len(password)}字符) (默认 - 不安全！)")
 
 # 显示最终的连接信息（隐藏密码）
 if '@' in DATABASE_URL:
