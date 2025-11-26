@@ -57,10 +57,28 @@ cat docs/development-guide.md
 2. **MQTT 服务部署** - 使用 Docker 容器部署 MQTT 服务
 3. **后端服务部署** - 部署主 API 服务
 4. **前端服务部署** - 构建并部署前端应用
-5. **配置服务部署** - 部署设备配置服务
-6. **插件服务部署** - 部署外部插件服务
+5. **插件后端服务部署** - ⭐ **新增** 部署 plugin-backend-service（端口9001）
+6. **插件服务部署** - 部署 plugin-service（端口9000）
+
+⚠️ **重要**: 插件后端服务(plugin-backend-service)必须在插件服务(plugin-service)之前部署！
 
 ## 文档说明
+
+### DEPLOYMENT_COMPLETE_GUIDE.md ⭐ **新增**
+
+**完整部署指南**（包含新架构），包含：
+- 包含 plugin-backend-service 的完整部署流程
+- Docker Compose 和直接运行两种方式
+- 服务架构说明
+- 配置清单
+- 验证步骤
+
+### PLUGIN_BACKEND_DEPLOYMENT.md ⭐ **新增**
+
+**Plugin Backend Service 专项部署指南**，包含：
+- Docker 容器部署
+- 直接运行方式
+- 详细的故障排查
 
 ### docker-deployment.md
 
@@ -97,9 +115,12 @@ cat docs/development-guide.md
 
 ## 注意事项
 
-1. **配置**: 部署前请仔细检查所有配置文件
-2. **备份**: 建议在部署前备份现有数据
-3. **路径**: 文档中的路径基于 `/opt/codehubot`，如使用其他路径请相应修改
+1. **新架构**: 2025-11-26 更新，新增 plugin-backend-service（端口9001）
+2. **服务依赖**: plugin-service 依赖 plugin-backend-service，部署顺序很重要
+3. **配置**: 部署前请仔细检查所有配置文件
+4. **备份**: 建议在部署前备份现有数据
+5. **路径**: 文档中的路径基于 `/opt/codehubot`，如使用其他路径请相应修改
+6. **端口**: 确保 9001 端口未被占用（plugin-backend-service 使用）
 
 ## 支持
 

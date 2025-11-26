@@ -860,8 +860,13 @@ async def get_device_config(
     """获取设备配置信息 - 支持JWT和内部API密钥认证
     
     认证方式：
-    1. JWT Token（用户请求）
-    2. X-Internal-API-Key（内部服务，如plugin-service）
+    1. JWT Token（用户请求，前端调用）
+    2. X-Internal-API-Key（内部服务）
+    
+    ⚠️  新架构说明：
+    - 新版插件服务使用 plugin-backend-service，不再调用此接口
+    - 此接口主要供前端或其他内部服务使用
+    - 保留此接口以支持前端和兼容性
     """
     # 使用joinedload预加载产品信息，避免N+1查询问题
     device = db.query(Device).options(joinedload(Device.product)).filter(Device.uuid == device_uuid).first()
@@ -1272,8 +1277,13 @@ async def get_device_realtime_data(
     """获取设备实时传感器数据 - 支持JWT和内部API密钥认证
     
     认证方式：
-    1. JWT Token（用户请求）
-    2. X-Internal-API-Key（内部服务，如plugin-service）
+    1. JWT Token（用户请求，前端调用）
+    2. X-Internal-API-Key（内部服务）
+    
+    ⚠️  新架构说明：
+    - 新版插件服务使用 plugin-backend-service 直接访问数据库，不再调用此接口
+    - 此接口主要供前端查看实时数据使用
+    - 保留此接口以支持前端和兼容性
     """
     from sqlalchemy.orm import joinedload
     

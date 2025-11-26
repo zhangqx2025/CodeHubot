@@ -77,10 +77,12 @@
 | **前端** | Vue 3 + Vite + Element Plus | 现代化 UI 框架 |
 | **后端** | FastAPI + SQLAlchemy + Pydantic | 高性能 Python Web 框架 |
 | **AI** | Deepseek/通义千问/文心一言/智谱GLM/Kimi/混元/豆包等 | 全面支持国产大模型 |
+| **插件服务** ⭐ | plugin-service + plugin-backend | 双层架构，性能提升 |
 | **数据库** | MySQL 8.0 | 关系型数据库 |
 | **消息队列** | MQTT (Mosquitto) | 物联网标准通信协议 |
 | **反向代理** | Nginx | Web 服务器和负载均衡 |
 | **容器化** | Docker + Docker Compose | 容器化部署方案 |
+
 
 ## 🚀 一键部署
 
@@ -96,23 +98,31 @@
 git clone https://github.com/CodeHubot/CodeHubot.git CodeHubot
 cd CodeHubot
 
-# 2. 配置环境变量
+# 2. 配置环境变量（使用新架构配置）
 cd docker
-cp .env.example .env
-# 编辑 .env 文件，设置 SECRET_KEY 和 INTERNAL_API_KEY
+cp env.plugin.example .env
+nano .env  # 设置 MYSQL_PASSWORD, SECRET_KEY 等
 
-# 3. 一键部署
+# 3. 一键部署（包含新的 plugin-backend-service）
+docker-compose -f docker-compose.plugin.yml up -d
+
+# 或使用旧配置（不推荐）
+cp .env.example .env
 cd ..
 ./deploy.sh deploy
 ```
 
 部署完成后访问：
-- **前端**: http://localhost:8080
+- **前端**: http://localhost:80
 - **后端 API**: http://localhost:8000
 - **API 文档**: http://localhost:8000/docs
-- **数据库管理**: http://localhost:8081 (phpMyAdmin)
+- **Plugin Service**: http://localhost:9000 (插件对外接口)
+- **Plugin Backend**: http://localhost:9001 (插件内部服务) 
 
-📖 详细部署文档请查看 [deploy/docs/docker-deployment.md](deploy/docs/docker-deployment.md)
+📖 **详细部署文档**：
+- [完整部署指南](deploy/DEPLOYMENT_COMPLETE_GUIDE.md) ⭐ 推荐
+- [快速开始](deploy/QUICK_START_PLUGIN_BACKEND.md)
+- [Docker 部署](deploy/docs/docker-deployment.md)
 
 ---
 

@@ -108,7 +108,8 @@ cd ..
 | Backend | codehubot-backend | 8000 | 后端 API |
 | Config-Service | codehubot-config-service | 8001 | 配置服务 |
 | Frontend | codehubot-frontend | 80 | 前端 Web |
-| Plugin-Service | codehubot-plugin-service | 9000 | 插件服务 |
+| Plugin-Service | codehubot-plugin-service | 9000 | 插件服务（对外接口） |
+| **Plugin-Backend-Service** | **codehubot-plugin-backend** | **9001** | **插件后端服务（直接访问数据库和MQTT）** |
 
 ## 🔧 配置要点
 
@@ -141,11 +142,12 @@ cd ..
 
 ## ⚠️ 注意事项
 
-1. **插件服务**: 已包含在部署中，但不包含 SSL 证书配置（HTTP 模式）
-2. **数据持久化**: 所有数据存储在 Docker 数据卷中
-3. **端口冲突**: 确保所需端口未被占用
-4. **资源要求**: 建议至少 4GB RAM
-5. **插件服务配置**: 确保 `INTERNAL_API_KEY` 与后端配置一致
+1. **新架构**: plugin-backend-service (端口9001) 为新增服务，直接访问数据库和MQTT
+2. **插件服务**: plugin-service (端口9000) 调用 plugin-backend-service，不再直接调用 backend
+3. **数据持久化**: 所有数据存储在 Docker 数据卷中
+4. **端口冲突**: 确保所需端口未被占用（特别是新增的 9001 端口）
+5. **资源要求**: 建议至少 4GB RAM
+6. **服务依赖**: plugin-backend-service 依赖 MySQL 和 MQTT，确保这两个服务先启动
 
 ## 🆘 获取帮助
 

@@ -60,7 +60,9 @@ if config.CORS_ENABLED:
     )
     logger.info(f"✅ CORS已启用，允许的来源: {allow_origins}")
 
-# 后端服务地址（从配置读取）
+# 插件后端服务地址（从配置读取）
+PLUGIN_BACKEND_URL = config.PLUGIN_BACKEND_URL
+# 保留用于兼容
 BACKEND_URL = config.BACKEND_URL
 
 # ==================== 全局异常处理器 ====================
@@ -177,23 +179,39 @@ async def verify_device_exists(device_uuid: str) -> bool:
     """
     try:
         headers = get_internal_headers()
+        url = f"{BACKEND_URL}/api/devices/{device_uuid}/config"
+        logger.info(f"🔍 验证设备: {device_uuid}")
+        logger.debug(f"🔗 请求URL: {url}")
+        logger.debug(f"📋 请求头: {headers}")
+        
         async with httpx.AsyncClient(timeout=10.0) as client:
             # 调用设备配置接口（已支持内部API密钥）
-            response = await client.get(
-                f"{BACKEND_URL}/api/devices/{device_uuid}/config",
-                headers=headers
-            )
+            response = await client.get(url, headers=headers)
+            
+            logger.info(f"📡 后端响应状态: {response.status_code}")
+            
             # 200表示设备存在，404表示设备不存在
             if response.status_code == 200:
+                logger.info(f"✅ 设备验证成功: {device_uuid}")
                 return True
             elif response.status_code == 404:
+                logger.warning(f"⚠️ 设备不存在(404): {device_uuid}")
                 return False
             else:
                 # 其他错误（如401认证失败）也返回False
-                logger.warning(f"验证设备时返回状态码: {response.status_code}")
+                logger.error(f"❌ 验证设备时返回异常状态码 {response.status_code}: {response.text[:200]}")
+                return False
+    except httpx.TimeoutException as e:
+        logger.error(f"❌ 验证设备超时: {e}, URL: {BACKEND_URL}")
+        return False
+    except httpx.ConnectError as e:
+        logger.error(f"❌ 无法连接到后端服务: {e}, URL: {BACKEND_URL}")
+        logger.error(f"💡 请检查: 1) 后端服务是否运行 2) BACKEND_URL配置是否正确")
                 return False
     except Exception as e:
-        logger.error(f"验证设备失败: {e}")
+        logger.error(f"❌ 验证设备失败: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return False
 
 
@@ -285,7 +303,13 @@ async def get_device_aliases(
             if response.status_code != 200:
                 raise HTTPException(status_code=500, detail="获取设备配置失败")
             
-            config_data = response.json()
+            response_data = response.json()
+            
+            # 后端使用统一响应格式，需要提取 data 字段
+            config_data = response_data
+            if isinstance(response_data, dict) and "data" in response_data:
+                config_data = response_data.get("data", {})
+                logger.info(f"📦 从统一响应格式中提取 config data")
             
             # 提取控制端口别名
             control_aliases = {}
@@ -359,9 +383,24 @@ async def get_device_aliases(
          summary="获取传感器数据")
 async def get_sensor_data(
     uuid: str = Query(..., description="UUID"),
-    sensor: str = Query(..., description="温度/湿度/DS18B20/雨水/雨水级别")
+    sensor: str = Query(..., description="温度/湿度/DS18B20/雨水/雨水级别"),
+    raw_request: Request = None
 ):
     """获取传感器数据。sensor: 温度/湿度/DS18B20/雨水/雨水级别"""
+    # 打印详细的请求信息
+    logger.info("=" * 80)
+    logger.info("📥 插件服务接收到传感器查询请求")
+    logger.info(f"🔹 请求URL: {raw_request.url if raw_request else 'N/A'}")
+    logger.info(f"🔹 请求方法: {raw_request.method if raw_request else 'GET'}")
+    logger.info(f"🔹 客户端IP: {raw_request.client.host if raw_request and raw_request.client else 'Unknown'}")
+    logger.info(f"🔹 User-Agent: {raw_request.headers.get('user-agent', 'Unknown') if raw_request else 'Unknown'}")
+    logger.info(f"🔹 查询参数:")
+    logger.info(f"   - uuid: {uuid}")
+    logger.info(f"   - sensor: {sensor}")
+    logger.info(f"🔹 当前 BACKEND_URL: {BACKEND_URL}")
+    logger.info(f"🔹 时间戳: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("=" * 80)
+    
     logger.info(f"📊 获取传感器数据: uuid={uuid}, sensor={sensor}")
     
     # 🧪 测试模式：返回模拟数据
@@ -414,112 +453,37 @@ async def get_sensor_data(
             }
         )
     
-    # 验证设备
-    if not await verify_device_exists(uuid):
-        logger.warning(f"❌ 设备不存在: {uuid}")
-        raise HTTPException(status_code=404, detail=f"设备 {uuid} 不存在")
-    
     try:
-        # 调用后端API获取实时数据（使用内部API密钥）
-        headers = get_internal_headers()
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        # 调用插件后端服务获取传感器数据
+        async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(
-                f"{BACKEND_URL}/api/devices/{uuid}/realtime-data",
-                params={"limit": 20},
-                headers=headers
+                f"{PLUGIN_BACKEND_URL}/api/sensor-data",
+                params={"device_uuid": uuid, "sensor": sensor}
             )
             
-            if response.status_code == 401 or response.status_code == 403:
-                logger.error(f"❌ 后端API认证失败: {response.status_code}")
-                raise HTTPException(
-                    status_code=500, 
-                    detail="后端API认证失败，请检查BACKEND_API_KEY配置"
-                )
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="设备不存在或暂无传感器数据")
             
             if response.status_code != 200:
-                raise HTTPException(status_code=500, detail="获取传感器数据失败")
+                error_msg = response.text if response.text else "获取传感器数据失败"
+                raise HTTPException(status_code=response.status_code, detail=error_msg)
             
-            data = response.json()
+            response_data = response.json()
             
-            # 调试：打印返回的数据类型和内容
-            logger.info(f"📦 后端返回数据类型: {type(data)}")
+            # plugin-backend-service 返回格式：
+            # {"code": 200, "msg": "成功", "data": {"value": 30.4, "unit": "°C"}}
             
-            # 后端返回格式：
-            # {
-            #   "device_uuid": "...",
-            #   "device_name": "...",
-            #   "latest": {
-            #     "timestamp": "...",
-            #     "data": {
-            #       "DHT11_temperature": 24.5,
-            #       "DHT11_humidity": 35.0,
-            #       "DS18B20_temperature": 23.0
-            #     }
-            #   },
-            #   "data": [...],
-            #   "count": 20
-            # }
-            
-            if not isinstance(data, dict):
-                logger.error(f"❌ 未知的数据格式: {type(data)}")
+            if not isinstance(response_data, dict):
+                logger.error(f"❌ 未知的响应格式: {type(response_data)}")
                 raise HTTPException(status_code=500, detail="后端返回数据格式错误")
             
-            # 获取最新数据
-            latest = data.get("latest")
-            if not latest or not isinstance(latest, dict):
-                raise HTTPException(
-                    status_code=404,
-                    detail="设备暂无传感器数据"
-                )
+            # 提取数据
+            data = response_data.get("data", {})
+            value = data.get("value")
+            unit = data.get("unit", "")
             
-            sensor_data_dict = latest.get("data", {})
-            timestamp = latest.get("timestamp", "")
-            
-            logger.info(f"📦 传感器数据: {sensor_data_dict}")
-            
-            # 映射传感器名称到实际的key
-            # 用户输入: "温度" / "湿度" / "DS18B20" / "雨水"
-            # 实际key: "DHT11_temperature" / "DHT11_humidity" / "DS18B20_temperature" / "RAIN_SENSOR"
-            sensor_key_map = {
-                "温度": "DHT11_temperature",
-                "temperature": "DHT11_temperature",
-                "湿度": "DHT11_humidity", 
-                "humidity": "DHT11_humidity",
-                "DS18B20": "DS18B20_temperature",
-                "DS18B20温度": "DS18B20_temperature",
-                "雨水": "RAIN_SENSOR",
-                "雨水传感器": "RAIN_SENSOR",
-                "是否下雨": "RAIN_SENSOR",
-                "rain": "RAIN_SENSOR",
-                "雨水级别": "RAIN_SENSOR_level",
-                "rain_level": "RAIN_SENSOR_level",
-            }
-            
-            actual_key = sensor_key_map.get(sensor)
-            if not actual_key:
-                # 尝试直接使用用户输入的key
-                actual_key = sensor
-            
-            # 查找传感器值
-            value = sensor_data_dict.get(actual_key)
             if value is None:
-                # 列出所有可用的传感器
-                available = list(sensor_data_dict.keys())
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"未找到传感器 '{sensor}' 的数据。可用传感器: {available}"
-                )
-            
-            # 确定单位
-            unit = ""
-            if "temperature" in actual_key.lower() or "温度" in sensor:
-                unit = "°C"
-            elif "humidity" in actual_key.lower() or "湿度" in sensor:
-                unit = "%"
-            elif "level" in actual_key.lower() or "级别" in sensor:
-                unit = "级"
-            elif "rain" in actual_key.lower() or "雨水" in sensor:
-                unit = ""
+                raise HTTPException(status_code=404, detail=f"未找到传感器 '{sensor}' 的数据")
             
             logger.info(f"✅ 传感器数据: {sensor}={value}{unit}")
             
@@ -544,8 +508,26 @@ async def get_sensor_data(
           response_model=StandardResponse,
           tags=["控制"],
           summary="控制设备端口")
-async def control_device(request: ControlRequest):
+async def control_device(request: ControlRequest, raw_request: Request):
     """控制设备。port_type: led/relay/servo/pwm, action: on/off/set"""
+    # 打印详细的请求信息
+    logger.info("=" * 80)
+    logger.info("📥 插件服务接收到控制请求")
+    logger.info(f"🔹 请求URL: {raw_request.url}")
+    logger.info(f"🔹 请求方法: {raw_request.method}")
+    logger.info(f"🔹 客户端IP: {raw_request.client.host if raw_request.client else 'Unknown'}")
+    logger.info(f"🔹 User-Agent: {raw_request.headers.get('user-agent', 'Unknown')}")
+    logger.info(f"🔹 Content-Type: {raw_request.headers.get('content-type', 'Unknown')}")
+    logger.info(f"🔹 请求体参数:")
+    logger.info(f"   - device_uuid: {request.device_uuid}")
+    logger.info(f"   - port_type: {request.port_type}")
+    logger.info(f"   - port_id: {request.port_id}")
+    logger.info(f"   - action: {request.action}")
+    logger.info(f"   - value: {request.value}")
+    logger.info(f"🔹 当前 BACKEND_URL: {BACKEND_URL}")
+    logger.info(f"🔹 时间戳: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("=" * 80)
+    
     logger.info(f"🎮 控制设备: uuid={request.device_uuid}, "
                 f"port={request.port_type}{request.port_id}, action={request.action}")
     
@@ -570,79 +552,26 @@ async def control_device(request: ControlRequest):
             data={"result": "success"}
         )
     
-    # 验证设备
-    if not await verify_device_exists(request.device_uuid):
-        logger.warning(f"❌ 设备不存在: {request.device_uuid}")
-        raise HTTPException(status_code=404, detail=f"设备 {request.device_uuid} 不存在")
-    
     try:
-        # 构造控制命令（按照固件期望的格式）
-        # 固件期望格式：
-        # LED: {"cmd": "led", "device_id": 1, "action": "on/off"}
-        # Relay: {"cmd": "relay", "device_id": 1, "action": "on/off"}
-        # Servo: {"cmd": "servo", "device_id": 1, "action": "set", "angle": 90}
-        # PWM: {"cmd": "pwm", "device_id": 2, "action": "set", "duty_cycle": 50, "frequency": 5000}
-        
-        port_type_lower = request.port_type.lower()
-        
-        if port_type_lower == "led":
-            control_cmd = {
-                "cmd": "led",
-                "device_id": request.port_id,
-                "action": request.action  # "on" 或 "off"
-            }
-            
-        elif port_type_lower == "relay":
-            control_cmd = {
-                "cmd": "relay",
-                "device_id": request.port_id,
-                "action": request.action  # "on" 或 "off"
-            }
-            
-        elif port_type_lower == "servo":
-            if request.action == "set" and request.value is not None:
-                control_cmd = {
-                    "cmd": "servo",
-                    "device_id": request.port_id,
-                    "action": "set",
-                    "angle": request.value
-                }
-            else:
-                raise HTTPException(status_code=400, detail="舵机控制需要指定angle值")
-                
-        elif port_type_lower == "pwm":
-            if request.action == "set" and request.value is not None:
-                control_cmd = {
-                    "cmd": "pwm",
-                    "device_id": request.port_id,
-                    "action": "set",
-                    "duty_cycle": request.value,
-                    "frequency": 5000  # 默认频率
-                }
-            else:
-                raise HTTPException(status_code=400, detail="PWM控制需要指定duty_cycle值")
-        else:
-            raise HTTPException(status_code=400, detail=f"不支持的端口类型: {request.port_type}")
-        
-        # 调用后端API发送控制命令（使用内部API密钥）
-        headers = get_internal_headers()
+        # 调用插件后端服务控制设备
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                f"{BACKEND_URL}/api/devices/{request.device_uuid}/control",
-                json=control_cmd,
-                headers=headers
+                f"{PLUGIN_BACKEND_URL}/api/control",
+                json={
+                    "device_uuid": request.device_uuid,
+                    "port_type": request.port_type,
+                    "port_id": request.port_id,
+                    "action": request.action,
+                    "value": request.value
+                }
             )
             
-            if response.status_code == 401 or response.status_code == 403:
-                logger.error(f"❌ 后端API认证失败: {response.status_code}")
-                raise HTTPException(
-                    status_code=500, 
-                    detail="后端API认证失败，请检查BACKEND_API_KEY配置"
-                )
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="设备不存在")
             
             if response.status_code != 200:
-                error_detail = response.json() if response.text else "控制失败"
-                raise HTTPException(status_code=500, detail=error_detail)
+                error_detail = response.text if response.text else "控制失败"
+                raise HTTPException(status_code=response.status_code, detail=error_detail)
             
             logger.info(f"✅ 控制成功: {request.port_type}{request.port_id} -> {request.action}")
             
@@ -664,8 +593,22 @@ async def control_device(request: ControlRequest):
           response_model=StandardResponse,
           tags=["预设"],
           summary="执行预设指令")
-async def execute_preset(request: PresetRequest):
+async def execute_preset(request: PresetRequest, raw_request: Request):
     """执行预设。通过preset_key执行用户自定义的预设指令"""
+    # 打印详细的请求信息
+    logger.info("=" * 80)
+    logger.info("📥 插件服务接收到预设执行请求")
+    logger.info(f"🔹 请求URL: {raw_request.url}")
+    logger.info(f"🔹 请求方法: {raw_request.method}")
+    logger.info(f"🔹 客户端IP: {raw_request.client.host if raw_request.client else 'Unknown'}")
+    logger.info(f"🔹 User-Agent: {raw_request.headers.get('user-agent', 'Unknown')}")
+    logger.info(f"🔹 请求体参数:")
+    logger.info(f"   - device_uuid: {request.device_uuid}")
+    logger.info(f"   - preset_name: {request.preset_name}")
+    logger.info(f"   - parameters: {request.parameters}")
+    logger.info(f"🔹 当前 BACKEND_URL: {BACKEND_URL}")
+    logger.info(f"🔹 时间戳: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("=" * 80)
     logger.info(f"🎯 执行预设: uuid={request.device_uuid}, preset={request.preset_name}")
     
     # 🧪 测试模式：返回模拟成功响应

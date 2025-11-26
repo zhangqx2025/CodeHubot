@@ -37,7 +37,10 @@ class Config:
     
     # ==================== 后端服务配置 ====================
     
-    # 后端API服务地址
+    # 插件后端服务地址（推荐使用，避免与主backend循环依赖）
+    PLUGIN_BACKEND_URL: str = os.getenv("PLUGIN_BACKEND_URL", "http://localhost:9001")
+    
+    # 主后端API服务地址（已弃用，保留用于兼容）
     BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8000")
     
     # 后端API密钥（可选）
@@ -66,15 +69,11 @@ class Config:
         print("  AIOT 外部插件服务配置")
         print("=" * 60)
         print(f"  服务地址: http://{cls.HOST}:{cls.PORT}")
-        print(f"  后端地址: {cls.BACKEND_URL}")
+        print(f"  插件后端: {cls.PLUGIN_BACKEND_URL}")
         print(f"  日志级别: {cls.LOG_LEVEL}")
         print(f"  自动重载: {'启用' if cls.RELOAD else '禁用'}")
         print(f"  CORS: {'启用' if cls.CORS_ENABLED else '禁用'}")
         print(f"  调试模式: {'启用' if cls.DEBUG_MODE else '禁用'}")
-        if cls.BACKEND_API_KEY:
-            print(f"  API密钥: ***{cls.BACKEND_API_KEY[-4:]} ✅")
-        else:
-            print(f"  API密钥: ❌ 未配置（后端可能拒绝访问）")
         print("=" * 60 + "\n")
 
 
