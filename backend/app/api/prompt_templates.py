@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.core.database import get_db
-from app.core.security import get_current_user, is_admin_user
+from app.api.auth import get_current_user
 from app.models.user import User
 from app.models.prompt_template import PromptTemplate
 from app.schemas.prompt_template import (
@@ -17,6 +17,11 @@ from app.schemas.prompt_template import (
 )
 
 router = APIRouter()
+
+
+def is_admin_user(user: User) -> bool:
+    """判断用户是否为管理员"""
+    return user.email == "admin@aiot.com" or user.username == "admin" or user.role == "admin"
 
 @router.get("/", response_model=PromptTemplateList)
 def get_prompt_templates(
