@@ -291,7 +291,14 @@ class MQTTService:
     def start(self):
         """启动MQTT客户端"""
         try:
-            self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+            # 兼容 paho-mqtt 1.x 和 2.x 版本
+            try:
+                # paho-mqtt 2.0+ 使用 CallbackAPIVersion
+                self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+            except AttributeError:
+                # paho-mqtt 1.x 使用旧的 API
+                self.client = mqtt.Client()
+            
             self.client.username_pw_set(self.username, self.password)
             
             # 设置回调函数
