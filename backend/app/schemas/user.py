@@ -10,7 +10,7 @@ from app.core.constants import (
 
 class UserCreate(BaseModel):
     """用户注册Schema - 增强输入验证"""
-    email: EmailStr = Field(..., description="用户邮箱")
+    email: Optional[EmailStr] = Field(None, description="用户邮箱（可选）")
     username: str = Field(
         ...,
         min_length=MIN_USERNAME_LENGTH,
@@ -92,7 +92,7 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     """用户响应Schema - 不包含敏感信息"""
     id: int
-    email: str
+    email: Optional[str] = None
     username: str
     role: str = 'user'  # 用户角色：admin/user
     is_active: bool

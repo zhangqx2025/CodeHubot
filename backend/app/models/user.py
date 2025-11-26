@@ -7,7 +7,7 @@ class User(Base):
     __tablename__ = "aiot_core_users"
     
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, index=True, nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=True)  # 改为可选
     username = Column(String(50), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), default='user', nullable=False, comment='用户角色：admin/user')

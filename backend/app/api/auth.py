@@ -30,16 +30,17 @@ router = APIRouter()
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """用户注册 - 增强输入验证和事务管理"""
+    """用户注册 - 增强输入验证和事务管理（邮箱可选）"""
     try:
-        # 检查邮箱是否已存在
-        existing_user = db.query(User).filter(User.email == user_data.email).first()
-        if existing_user:
-            logger.warning(f"注册失败：邮箱已存在 - {user_data.email}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ErrorMessages.EMAIL_EXISTS
-            )
+        # 检查邮箱是否已存在（如果提供了邮箱）
+        if user_data.email:
+            existing_user = db.query(User).filter(User.email == user_data.email).first()
+            if existing_user:
+                logger.warning(f"注册失败：邮箱已存在 - {user_data.email}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=ErrorMessages.EMAIL_EXISTS
+                )
         
         # 检查用户名是否已存在
         existing_username = db.query(User).filter(User.username == user_data.username).first()
@@ -53,7 +54,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         # 创建用户
         hashed_password = get_password_hash(user_data.password)
         db_user = User(
-            email=user_data.email,
+            email=user_data.email,  # 可以是 None
             username=user_data.username,
             password_hash=hashed_password
         )
@@ -61,15 +62,16 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(db_user)
         
-        logger.info(f"✅ 用户注册成功: {user_data.email} (ID: {db_user.id})")
+        logger.info(f"✅ 用户注册成功: {user_data.username} (邮箱: {user_data.email or '未提供'}) (ID: {db_user.id})")
         
         # 发送欢迎邮件（已禁用，避免 SSL 证书验证问题）
-        # try:
-        #     await send_welcome_email(user_data.email, user_data.username)
-        #     logger.info(f"欢迎邮件已发送: {user_data.email}")
-        # except Exception as e:
-        #     logger.warning(f"发送欢迎邮件失败: {e}", exc_info=True)
-        #     # 邮件发送失败不影响注册流程
+        # if user_data.email:
+        #     try:
+        #         await send_welcome_email(user_data.email, user_data.username)
+        #         logger.info(f"欢迎邮件已发送: {user_data.email}")
+        #     except Exception as e:
+        #         logger.warning(f"发送欢迎邮件失败: {e}", exc_info=True)
+        #         # 邮件发送失败不影响注册流程
         
         return db_user
         
