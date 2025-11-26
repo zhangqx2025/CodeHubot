@@ -5,8 +5,11 @@
 
 import json
 import requests
+import logging
 from typing import List, Dict, Any, Optional
 from app.models.llm_model import LLMModel
+
+logger = logging.getLogger(__name__)
 
 
 class LLMService:
@@ -20,6 +23,73 @@ class LLMService:
         self.temperature = float(model.temperature) if model.temperature else 0.7
         self.max_tokens = model.max_tokens or 4096
         self.top_p = float(model.top_p) if model.top_p else 0.9
+    
+    def _log_request_details(self, provider: str, url: str, payload: Dict, functions: Optional[List[Dict]] = None):
+        """统一的请求日志输出"""
+        logger.info("=" * 80)
+        logger.info(f"🤖 调用大模型 API - {provider}")
+        logger.info("=" * 80)
+        logger.info(f"📍 URL: {url}")
+        logger.info(f"🏷️  Provider: {provider}")
+        logger.info(f"🎯 Model: {self.model_name}")
+        
+        # API Key (脱敏显示)
+        masked_key = f"{self.api_key[:10]}...{self.api_key[-4:]}" if self.api_key and len(self.api_key) > 14 else "***"
+        logger.info(f"🔑 API Key: {masked_key}")
+        
+        # 参数配置
+        logger.info(f"⚙️  Temperature: {payload.get('temperature', self.temperature)}")
+        logger.info(f"⚙️  Max Tokens: {payload.get('max_tokens', self.max_tokens)}")
+        logger.info(f"⚙️  Top P: {payload.get('top_p', self.top_p)}")
+        
+        # 消息内容
+        messages = payload.get('messages', [])
+        logger.info(f"💬 Messages Count: {len(messages)}")
+        logger.info("📝 Messages Detail:")
+        for i, msg in enumerate(messages, 1):
+            role = msg.get('role', 'unknown')
+            content = msg.get('content', '')
+            content_preview = content[:200] + '...' if len(content) > 200 else content
+            logger.info(f"   [{i}] Role: {role}")
+            logger.info(f"       Content: {content_preview}")
+        
+        # Functions (工具)
+        if functions:
+            logger.info(f"🔧 Functions/Tools: {len(functions)} 个")
+            logger.info("📋 Functions Detail:")
+            for i, func in enumerate(functions, 1):
+                func_name = func.get('name', 'unknown')
+                func_desc = func.get('description', 'N/A')
+                logger.info(f"   [{i}] {func_name}: {func_desc}")
+                
+                # 打印参数定义
+                if 'parameters' in func:
+                    params = func['parameters']
+                    if 'properties' in params:
+                        logger.info(f"       参数:")
+                        for param_name, param_def in params['properties'].items():
+                            param_type = param_def.get('type', 'unknown')
+                            param_desc = param_def.get('description', 'N/A')
+                            required = '必填' if param_name in params.get('required', []) else '可选'
+                            logger.info(f"         - {param_name} ({param_type}, {required}): {param_desc}")
+            
+            # Tool choice
+            if 'tool_choice' in payload:
+                logger.info(f"🎯 Tool Choice: {payload['tool_choice']}")
+            elif 'function_call' in payload:
+                logger.info(f"🎯 Function Call: {payload['function_call']}")
+        else:
+            logger.info("🔧 Functions/Tools: 无")
+        
+        # 完整 Payload (JSON 格式)
+        logger.info("📦 完整请求 Payload:")
+        try:
+            payload_json = json.dumps(payload, ensure_ascii=False, indent=2)
+            logger.info(payload_json)
+        except Exception as e:
+            logger.error(f"   无法序列化 payload: {e}")
+        
+        logger.info("=" * 80)
     
     def chat(
         self,
@@ -80,12 +150,21 @@ class LLMService:
             payload["functions"] = functions
             payload["function_call"] = function_call or "auto"
         
+        # 打印详细请求日志
+        self._log_request_details("OpenAI", url, payload, functions)
+        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
         response = requests.post(url, json=payload, headers=headers, timeout=60)
+        
+        # 打印响应状态
+        logger.info(f"📡 响应状态码: {response.status_code}")
+        if response.status_code != 200:
+            logger.error(f"❌ API 调用失败: {response.text}")
+        
         response.raise_for_status()
         
         result = response.json()
@@ -95,11 +174,14 @@ class LLMService:
         output = {}
         if message.get("content"):
             output["response"] = message["content"]
+            logger.info(f"✅ 响应内容: {message['content'][:200]}...")
         if message.get("function_call"):
             output["function_call"] = {
                 "name": message["function_call"]["name"],
                 "arguments": json.loads(message["function_call"]["arguments"])
             }
+            logger.info(f"🔧 Function Call: {message['function_call']['name']}")
+            logger.info(f"📝 Arguments: {json.dumps(output['function_call']['arguments'], ensure_ascii=False)}")
         
         return output
     
@@ -132,28 +214,20 @@ class LLMService:
             if function_call and function_call != "none":
                 payload["tool_choice"] = "auto"
         
+        # 打印详细请求日志
+        self._log_request_details("Qwen (通义千问)", url, payload, functions)
+        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
-        # 打印请求信息用于调试
-        print(f"🔍 调用通义千问 API:")
-        print(f"  URL: {url}")
-        print(f"  Model: {self.model_name}")
-        print(f"  Has Functions: {bool(functions)}")
-        if functions:
-            print(f"  Functions Count: {len(functions)}")
-            import json
-            print(f"  Functions: {json.dumps(functions, ensure_ascii=False, indent=2)}")
-        
         response = requests.post(url, json=payload, headers=headers, timeout=60)
         
-        # 如果请求失败，打印详细错误
+        # 打印响应状态
+        logger.info(f"📡 响应状态码: {response.status_code}")
         if response.status_code != 200:
-            print(f"❌ API 调用失败:")
-            print(f"  Status Code: {response.status_code}")
-            print(f"  Response: {response.text}")
+            logger.error(f"❌ API 调用失败: {response.text}")
         
         response.raise_for_status()
         
@@ -164,10 +238,12 @@ class LLMService:
         output = {}
         if message.get("content"):
             output["response"] = message["content"]
+            logger.info(f"✅ 响应内容: {message['content'][:200]}...")
         
         # 添加 token 使用量信息
         if "usage" in result:
             output["usage"] = result["usage"]
+            logger.info(f"📊 Token使用: {json.dumps(result['usage'], ensure_ascii=False)}")
         
         if message.get("tool_calls"):
             # 转换为标准格式
@@ -176,6 +252,8 @@ class LLMService:
                 "name": tool_call["function"]["name"],
                 "arguments": json.loads(tool_call["function"]["arguments"])
             }
+            logger.info(f"🔧 Tool Call: {tool_call['function']['name']}")
+            logger.info(f"📝 Arguments: {json.dumps(output['function_call']['arguments'], ensure_ascii=False)}")
         
         return output
     
@@ -324,33 +402,24 @@ class LLMService:
             if function_call and function_call != "none":
                 payload["tool_choice"] = "auto"
         
+        # 打印详细请求日志
+        self._log_request_details("Doubao (豆包)", url, payload, functions)
+        
         headers = {
             "Authorization": f"Bearer {self.model.api_key}",
             "Content-Type": "application/json"
         }
         
-        # 打印请求信息用于调试
-        print(f"🔍 调用火山引擎豆包 API:")
-        print(f"  原始 API Base: {self.model.api_base}")
-        print(f"  处理后 API Base: {api_base}")
-        print(f"  完整 URL: {url}")
-        print(f"  Model Name: {self.model.name}")
-        print(f"  API Key (前10位): {self.model.api_key[:10]}..." if self.model.api_key and len(self.model.api_key) > 10 else f"  API Key: {self.model.api_key}")
-        print(f"  Messages Count: {len(messages)}")
-        print(f"  Payload Model: {payload.get('model')}")
-        if functions:
-            print(f"  Functions Count: {len(functions)}")
-        print(f"  完整 Payload: {json.dumps(payload, ensure_ascii=False, indent=2)}")
-        
         try:
             response = requests.post(url, json=payload, headers=headers, timeout=60)
             
-            # 如果请求失败，打印详细错误
+            # 打印响应状态
+            logger.info(f"📡 响应状态码: {response.status_code}")
             if response.status_code != 200:
-                print(f"❌ API 调用失败:")
-                print(f"  Status Code: {response.status_code}")
-                print(f"  Response Headers: {dict(response.headers)}")
-                print(f"  Response: {response.text}")
+                logger.error(f"❌ API 调用失败:")
+                logger.error(f"  Status Code: {response.status_code}")
+                logger.error(f"  Response Headers: {dict(response.headers)}")
+                logger.error(f"  Response: {response.text}")
             
             response.raise_for_status()
             
@@ -361,10 +430,12 @@ class LLMService:
             output = {}
             if message.get("content"):
                 output["response"] = message["content"]
+                logger.info(f"✅ 响应内容: {message['content'][:200]}...")
             
             # 添加 token 使用量信息
             if "usage" in result:
                 output["usage"] = result["usage"]
+                logger.info(f"📊 Token使用: {json.dumps(result['usage'], ensure_ascii=False)}")
             
             if message.get("tool_calls"):
                 # 转换为标准格式
@@ -373,14 +444,16 @@ class LLMService:
                     "name": tool_call["function"]["name"],
                     "arguments": json.loads(tool_call["function"]["arguments"])
                 }
+                logger.info(f"🔧 Tool Call: {tool_call['function']['name']}")
+                logger.info(f"📝 Arguments: {json.dumps(output['function_call']['arguments'], ensure_ascii=False)}")
             
             return output
             
         except requests.exceptions.RequestException as e:
-            print(f"❌ 请求异常:")
-            print(f"  Error: {str(e)}")
+            logger.error(f"❌ 请求异常:")
+            logger.error(f"  Error: {str(e)}")
             if hasattr(e, 'response') and e.response is not None:
-                print(f"  Response Text: {e.response.text}")
+                logger.error(f"  Response Text: {e.response.text}")
             raise
 
 
