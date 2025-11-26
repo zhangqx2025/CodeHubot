@@ -441,6 +441,13 @@ async def control_device(request: ControlRequest):
         if not device:
             raise HTTPException(status_code=404, detail="设备不存在")
         
+        # 打印设备信息
+        logger.info(f"📱 查询到设备信息:")
+        logger.info(f"   UUID: {device.uuid}")
+        logger.info(f"   Device ID: {device.device_id}")
+        logger.info(f"   名称: {device.name}")
+        logger.info(f"   在线状态: {device.is_online}")
+        
         # 构造控制命令
         port_type_lower = request.port_type.lower()
         
