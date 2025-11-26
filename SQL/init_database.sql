@@ -1,7 +1,7 @@
 -- ============================================================================
 -- CodeHubot - AIOT管理系统数据库初始化脚本
 -- ============================================================================
--- 版本: 2.0
+-- 版本: 2.1
 -- 生成日期: 2025-11-26
 -- 说明: 本脚本用于初始化 AIOT 管理系统数据库
 -- 
@@ -9,6 +9,12 @@
 -- 1. 用户密码 (password_hash)
 -- 2. API 密钥 (api_key)
 -- 3. 设备密钥 (device_secret)
+-- 
+-- 规范说明:
+-- - 字符集统一使用: utf8mb4_unicode_ci
+-- - 布尔值统一使用: tinyint(1)
+-- - 时间戳统一使用: CURRENT_TIMESTAMP
+-- - UUID统一使用: UUID() 函数生成
 -- ============================================================================
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -31,7 +37,7 @@ CREATE TABLE `aiot_core_users` (
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '姓名',
   `password_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码哈希',
   `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user' COMMENT '用户角色：admin/user',
-  `is_active` tinyint(1) DEFAULT '1' COMMENT '是否激活',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
   `last_login` datetime DEFAULT NULL COMMENT '最后登录时间',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -45,7 +51,7 @@ CREATE TABLE `aiot_core_users` (
 
 -- 插入默认管理员用户 (密码: admin123，请修改)
 INSERT INTO `aiot_core_users` (`id`, `email`, `username`, `name`, `password_hash`, `role`, `is_active`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 'admin@example.com', 'admin', '系统管理员', '$pbkdf2-sha256$29000$REPLACE_WITH_YOUR_PASSWORD_HASH', 'admin', 1, NULL, NOW(), NOW());
+(1, 'admin@example.com', 'admin', '系统管理员', '$pbkdf2-sha256$29000$REPLACE_WITH_YOUR_PASSWORD_HASH', 'admin', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 2. 产品表
@@ -65,16 +71,16 @@ CREATE TABLE `aiot_core_products` (
   `power_requirements` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '电源要求',
   `firmware_version` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '固件版本',
   `hardware_version` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '硬件版本',
-  `is_active` tinyint(1) DEFAULT '1' COMMENT '是否激活',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
   `version` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '产品版本',
   `manufacturer` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '制造商',
   `manufacturer_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '制造商代码',
-  `total_devices` int DEFAULT '0' COMMENT '设备总数',
-  `is_system` tinyint(1) DEFAULT '0' COMMENT '是否系统内置产品',
+  `total_devices` int NOT NULL DEFAULT '0' COMMENT '设备总数',
+  `is_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否系统内置产品',
   `creator_id` int DEFAULT NULL COMMENT '创建者ID',
-  `is_shared` tinyint(1) DEFAULT '0' COMMENT '是否共享',
+  `is_shared` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否共享',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `product_code` (`product_code`),
   UNIQUE KEY `idx_product_code` (`product_code`),
@@ -90,7 +96,7 @@ INSERT INTO `aiot_core_products` (`id`, `product_code`, `name`, `description`, `
 '{"DHT11_humidity": {"key": "DHT11_humidity", "name": "DHT11湿度传感器", "type": "DHT11", "unit": "%", "range": {"max": 100, "min": 0}, "enabled": true}, "DHT11_temperature": {"key": "DHT11_temperature", "name": "DHT11温度传感器", "type": "DHT11", "unit": "°C", "range": {"max": 80, "min": -40}, "enabled": true}, "DS18B20_temperature": {"key": "DS18B20_temperature", "name": "DS18B20防水温度传感器", "type": "DS18B20", "unit": "°C", "range": {"max": 125, "min": -55}, "enabled": true}}',
 '{"led_1": {"key": "led_1", "pin": 42, "name": "LED1", "type": "LED", "enabled": true, "device_id": 1}, "led_2": {"key": "led_2", "pin": 41, "name": "LED2", "type": "LED", "enabled": true, "device_id": 2}, "relay_1": {"key": "relay_1", "pin": 1, "name": "继电器1", "type": "RELAY", "enabled": true, "device_id": 1}, "servo_m1": {"key": "servo_m1", "pin": 48, "name": "舵机M1", "type": "SERVO", "enabled": true, "device_id": 1}}',
 '{"ota": true, "mqtt": true, "wifi": true, "sensors": ["DHT11", "DS18B20"], "controls": ["LED", "RELAY", "SERVO", "PWM"]}',
-'["WiFi", "MQTT", "HTTP"]', '{"power": "0.5W", "current": "160mA", "voltage": "3.3V"}', '1.0.0', 'ESP32-V2', 1, '1.0', 'ESP', 'ESP', 0, 1, 1, 0, NOW(), NOW());
+'["WiFi", "MQTT", "HTTP"]', '{"power": "0.5W", "current": "160mA", "voltage": "3.3V"}', '1.0.0', 'ESP32-V2', 1, '1.0', 'ESP', 'ESP', 0, 1, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 3. 设备表
@@ -107,9 +113,9 @@ CREATE TABLE `aiot_core_devices` (
   `device_secret` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备密钥',
   `firmware_version` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '固件版本',
   `hardware_version` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '硬件版本',
-  `device_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending' COMMENT '设备状态: pending/bound/active/offline/error',
-  `is_online` tinyint(1) DEFAULT '0' COMMENT '是否在线',
-  `is_active` tinyint(1) DEFAULT '1' COMMENT '是否激活',
+  `device_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending' COMMENT '设备状态: pending/bound/active/offline/error',
+  `is_online` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否在线',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
   `last_seen` datetime DEFAULT NULL COMMENT '最后在线时间',
   `product_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '产品代码',
   `product_version` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '产品版本',
@@ -120,8 +126,8 @@ CREATE TABLE `aiot_core_devices` (
   `device_control_config` json DEFAULT NULL COMMENT '设备控制配置',
   `device_settings` json DEFAULT NULL COMMENT '设备设置',
   `last_heartbeat` datetime DEFAULT NULL COMMENT '最后心跳时间',
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `device_id` (`device_id`),
@@ -136,7 +142,7 @@ CREATE TABLE `aiot_core_devices` (
 
 -- 插入测试设备（用于功能测试）
 INSERT INTO `aiot_core_devices` (`uuid`, `device_id`, `product_id`, `user_id`, `name`, `description`, `device_secret`, `device_status`, `is_online`, `is_active`, `mac_address`, `created_at`, `updated_at`) VALUES
-('test', 'TEST-DEVICE-001', 1, 1, '测试设备', '用于功能测试的虚拟设备，支持所有控制命令', 'REPLACE_WITH_DEVICE_SECRET', 'active', 0, 1, '00:00:00:00:00:00', NOW(), NOW());
+('test', 'TEST-DEVICE-001', 1, 1, '测试设备', '用于功能测试的虚拟设备，支持所有控制命令', 'REPLACE_WITH_DEVICE_SECRET', 'active', 0, 1, '00:00:00:00:00:00', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 4. LLM提供商表
@@ -144,32 +150,32 @@ INSERT INTO `aiot_core_devices` (`uuid`, `device_id`, `product_id`, `user_id`, `
 
 CREATE TABLE `aiot_llm_providers` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(36) NOT NULL DEFAULT '' COMMENT '唯一标识UUID',
-  `code` varchar(50) NOT NULL COMMENT '提供商代码',
-  `name` varchar(100) NOT NULL COMMENT '提供商名称',
-  `title` varchar(200) NOT NULL COMMENT '完整标题',
-  `description` text COMMENT '提供商描述',
-  `apply_url` varchar(500) DEFAULT NULL COMMENT 'API申请地址',
-  `doc_url` varchar(500) DEFAULT NULL COMMENT '文档地址',
-  `default_api_base` varchar(500) DEFAULT NULL COMMENT '默认API地址',
-  `has_free_quota` int DEFAULT NULL COMMENT '是否提供免费额度',
-  `icon` varchar(200) DEFAULT NULL COMMENT '图标URL或图标名称',
-  `tag_type` varchar(20) DEFAULT NULL COMMENT '标签类型',
-  `country` varchar(20) DEFAULT NULL COMMENT '国家',
-  `sort_order` int DEFAULT NULL COMMENT '排序顺序',
-  `is_active` int DEFAULT NULL COMMENT '是否启用',
+  `uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '唯一标识UUID',
+  `code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '提供商代码',
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '提供商名称',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '完整标题',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '提供商描述',
+  `apply_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'API申请地址',
+  `doc_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '文档地址',
+  `default_api_base` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '默认API地址',
+  `has_free_quota` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否提供免费额度',
+  `icon` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '图标URL或图标名称',
+  `tag_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标签类型',
+  `country` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '国家',
+  `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序顺序',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否启用',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`),
   UNIQUE KEY `uk_uuid` (`uuid`),
   KEY `ix_aiot_llm_providers_id` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM提供商表';
 
 -- 插入LLM提供商
-INSERT INTO `aiot_llm_providers` (`uuid`, `code`, `name`, `title`, `description`, `apply_url`, `doc_url`, `default_api_base`, `has_free_quota`, `tag_type`, `country`, `sort_order`, `is_active`) VALUES
-(UUID(), 'qwen', '通义千问', '阿里云通义千问（模型服务平台百炼）', '阿里云自研的大语言模型，支持中文对话、代码生成、Function Calling 等功能。提供 Turbo、Plus、Max 等多个版本，性能强劲，响应快速。', 'https://dashscope.console.aliyun.com/', 'https://help.aliyun.com/zh/model-studio/qwen-api-reference', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 1, 'primary', 'cn', 1, 1),
-(UUID(), 'doubao', '豆包', '火山引擎豆包（字节跳动）', '字节跳动自研的大语言模型，推理能力强，响应快速。支持多种场景应用，包括对话、文本生成、Kimi长文本等。火山引擎方舟平台提供稳定的API服务。', 'https://console.volcengine.com/ark', 'https://www.volcengine.com/docs/82379/1330310', 'https://ark.cn-beijing.volces.com/api/v3', 1, 'success', 'cn', 10, 1);
+INSERT INTO `aiot_llm_providers` (`uuid`, `code`, `name`, `title`, `description`, `apply_url`, `doc_url`, `default_api_base`, `has_free_quota`, `tag_type`, `country`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+(UUID(), 'qwen', '通义千问', '阿里云通义千问（模型服务平台百炼）', '阿里云自研的大语言模型，支持中文对话、代码生成、Function Calling 等功能。提供 Turbo、Plus、Max 等多个版本，性能强劲，响应快速。', 'https://dashscope.console.aliyun.com/', 'https://help.aliyun.com/zh/model-studio/qwen-api-reference', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 1, 'primary', 'cn', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(UUID(), 'doubao', '豆包', '火山引擎豆包（字节跳动）', '字节跳动自研的大语言模型，推理能力强，响应快速。支持多种场景应用，包括对话、文本生成、Kimi长文本等。火山引擎方舟平台提供稳定的API服务。', 'https://console.volcengine.com/ark', 'https://www.volcengine.com/docs/82379/1330310', 'https://ark.cn-beijing.volces.com/api/v3', 1, 'success', 'cn', 10, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 5. LLM模型表
@@ -177,34 +183,34 @@ INSERT INTO `aiot_llm_providers` (`uuid`, `code`, `name`, `title`, `description`
 
 CREATE TABLE `aiot_llm_models` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(36) NOT NULL DEFAULT '' COMMENT '唯一标识UUID',
-  `name` varchar(100) NOT NULL COMMENT '模型名称',
-  `display_name` varchar(100) NOT NULL COMMENT '显示名称',
-  `provider` varchar(50) NOT NULL COMMENT '提供商',
-  `model_type` varchar(50) DEFAULT NULL COMMENT '模型类型',
-  `api_base` varchar(500) DEFAULT NULL COMMENT 'API基础URL',
-  `api_key` varchar(500) DEFAULT NULL COMMENT 'API密钥',
-  `api_version` varchar(50) DEFAULT NULL COMMENT 'API版本',
+  `uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '唯一标识UUID',
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '模型名称',
+  `display_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '显示名称',
+  `provider` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '提供商',
+  `model_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '模型类型',
+  `api_base` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'API基础URL',
+  `api_key` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'API密钥',
+  `api_version` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'API版本',
   `max_tokens` int DEFAULT NULL COMMENT '最大token数',
   `temperature` decimal(3,2) DEFAULT NULL COMMENT '温度参数',
   `top_p` decimal(3,2) DEFAULT NULL COMMENT 'top_p参数',
-  `enable_deep_thinking` int DEFAULT '0' COMMENT '是否启用深度思考',
-  `description` text COMMENT '模型描述',
-  `is_active` int DEFAULT NULL COMMENT '是否激活',
-  `is_default` int DEFAULT NULL COMMENT '是否默认模型',
-  `is_system` int DEFAULT NULL COMMENT '是否系统内置',
-  `sort_order` int DEFAULT NULL COMMENT '排序顺序',
+  `enable_deep_thinking` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否启用深度思考',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '模型描述',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
+  `is_default` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否默认模型',
+  `is_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否系统内置',
+  `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序顺序',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_uuid` (`uuid`),
   KEY `ix_aiot_llm_models_id` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM模型表';
 
 -- 插入LLM模型（API密钥需要自行配置）
-INSERT INTO `aiot_llm_models` (`uuid`, `name`, `display_name`, `provider`, `model_type`, `api_base`, `api_key`, `max_tokens`, `temperature`, `top_p`, `enable_deep_thinking`, `description`, `is_active`, `is_default`, `is_system`, `sort_order`) VALUES
-(UUID(), 'qwen-turbo', '通义千问-Turbo', 'qwen', 'chat', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'YOUR_API_KEY_HERE', 8192, 0.70, 0.90, 0, '阿里云通义千问大语言模型，性能强劲，响应快速，适合对话场景', 1, 1, 1, 1),
-(UUID(), 'qwen-plus', '通义千问-Plus', 'qwen', 'chat', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'YOUR_API_KEY_HERE', 32768, 0.70, 0.90, 0, '阿里云通义千问Plus版本，更强大的理解和生成能力', 1, 0, 1, 2);
+INSERT INTO `aiot_llm_models` (`uuid`, `name`, `display_name`, `provider`, `model_type`, `api_base`, `api_key`, `max_tokens`, `temperature`, `top_p`, `enable_deep_thinking`, `description`, `is_active`, `is_default`, `is_system`, `sort_order`, `created_at`, `updated_at`) VALUES
+(UUID(), 'qwen-turbo', '通义千问-Turbo', 'qwen', 'chat', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'YOUR_API_KEY_HERE', 8192, 0.70, 0.90, 0, '阿里云通义千问大语言模型，性能强劲，响应快速，适合对话场景', 1, 1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(UUID(), 'qwen-plus', '通义千问-Plus', 'qwen', 'chat', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'YOUR_API_KEY_HERE', 32768, 0.70, 0.90, 0, '阿里云通义千问Plus版本，更强大的理解和生成能力', 1, 0, 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 6. 插件表
@@ -212,27 +218,27 @@ INSERT INTO `aiot_llm_models` (`uuid`, `name`, `display_name`, `provider`, `mode
 
 CREATE TABLE `aiot_plugins` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(36) NOT NULL DEFAULT '' COMMENT '唯一标识UUID',
-  `name` varchar(100) NOT NULL COMMENT '插件名称',
-  `description` text COMMENT '插件描述',
+  `uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '唯一标识UUID',
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '插件名称',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '插件描述',
   `openapi_spec` json NOT NULL COMMENT 'OpenAPI 3.0.0 规范（JSON）',
   `user_id` int NOT NULL COMMENT '创建用户 ID',
-  `is_active` int DEFAULT NULL COMMENT '是否激活',
-  `is_system` int DEFAULT NULL COMMENT '是否系统内置',
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
+  `is_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否系统内置',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_uuid` (`uuid`),
   KEY `user_id` (`user_id`),
   KEY `ix_aiot_plugins_id` (`id`),
   CONSTRAINT `aiot_plugins_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `aiot_core_users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='插件表';
 
 -- 插入IoT设备控制插件
 INSERT INTO `aiot_plugins` (`uuid`, `name`, `description`, `openapi_spec`, `user_id`, `is_active`, `is_system`, `created_at`, `updated_at`) VALUES
 (UUID(), 'IoT设备控制', '传感器查询、设备控制（LED/继电器/舵机/PWM）、预设指令', 
 '{"openapi": "3.0.0", "info": {"title": "IoT设备控制", "version": "1.2.0", "description": "传感器查询、设备控制（LED/继电器/舵机/PWM）、预设指令"}, "servers": [{"url": "https://plugin.aiot.hello1023.com", "description": "生产服务器"}], "paths": {"/plugin/sensor-data": {"get": {"summary": "查询传感器", "operationId": "getSensorData", "parameters": [{"name": "uuid", "in": "query", "required": true, "description": "UUID", "schema": {"type": "string"}}, {"name": "sensor", "in": "query", "required": true, "description": "传感器类型", "schema": {"type": "string", "enum": ["温度", "湿度", "DS18B20"]}}]}}, "/plugin/control": {"post": {"summary": "控制设备", "operationId": "controlDevice", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["device_uuid", "port_type", "port_id", "action"], "properties": {"device_uuid": {"type": "string"}, "port_type": {"type": "string", "enum": ["led", "relay", "servo", "pwm"]}, "port_id": {"type": "integer"}, "action": {"type": "string", "enum": ["on", "off", "set"]}, "value": {"type": "integer"}}}}}}}}, "/plugin/preset": {"post": {"summary": "执行预设", "operationId": "executePreset", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["device_uuid", "preset_name"], "properties": {"device_uuid": {"type": "string"}, "preset_name": {"type": "string"}, "parameters": {"type": "object"}}}}}}}}}}',
-1, 1, 1, NOW(), NOW());
+1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 7. 智能体表
@@ -240,28 +246,28 @@ INSERT INTO `aiot_plugins` (`uuid`, `name`, `description`, `openapi_spec`, `user
 
 CREATE TABLE `aiot_agents` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(36) NOT NULL DEFAULT '' COMMENT '唯一标识UUID',
-  `name` varchar(100) NOT NULL COMMENT '智能体名称',
-  `description` text COMMENT '智能体描述',
-  `system_prompt` text COMMENT '系统提示词',
+  `uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '唯一标识UUID',
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '智能体名称',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '智能体描述',
+  `system_prompt` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '系统提示词',
   `plugin_ids` json DEFAULT NULL COMMENT '关联的插件 ID 列表',
   `llm_model_id` int DEFAULT NULL COMMENT '关联的大模型ID',
   `user_id` int NOT NULL COMMENT '创建用户 ID',
-  `is_active` int DEFAULT NULL COMMENT '是否激活',
-  `is_system` int DEFAULT NULL COMMENT '是否系统内置',
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
+  `is_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否系统内置',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_uuid` (`uuid`),
   KEY `user_id` (`user_id`),
   KEY `ix_aiot_agents_id` (`id`),
   KEY `idx_llm_model_id` (`llm_model_id`),
   CONSTRAINT `aiot_agents_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `aiot_core_users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='智能体表';
 
 -- 插入示例智能体
 INSERT INTO `aiot_agents` (`uuid`, `name`, `description`, `system_prompt`, `plugin_ids`, `llm_model_id`, `user_id`, `is_active`, `is_system`, `created_at`, `updated_at`) VALUES
-(UUID(), 'IoT助手', 'IoT设备管理助手', '你是一个专业的物联网助手，擅长帮助用户管理和控制智能设备。\n\n你的主要职责包括：\n1. 解答用户关于设备使用的问题\n2. 帮助用户控制智能设备（如开关灯、调节温度等）\n3. 分析传感器数据并提供建议\n4. 设置自动化场景\n\n请用友好、专业的语气与用户交流，并在必要时主动询问以获取更多信息。', '[1]', 1, 1, 1, 1, NOW(), NOW());
+(UUID(), 'IoT助手', 'IoT设备管理助手', '你是一个专业的物联网助手，擅长帮助用户管理和控制智能设备。\n\n你的主要职责包括：\n1. 解答用户关于设备使用的问题\n2. 帮助用户控制智能设备（如开关灯、调节温度等）\n3. 分析传感器数据并提供建议\n4. 设置自动化场景\n\n请用友好、专业的语气与用户交流，并在必要时主动询问以获取更多信息。', '[1]', 1, 1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 8. 其他辅助表
@@ -270,35 +276,35 @@ INSERT INTO `aiot_agents` (`uuid`, `name`, `description`, `system_prompt`, `plug
 -- 访问日志表
 CREATE TABLE `aiot_access_logs` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `ip_address` varchar(45) DEFAULT NULL,
-  `endpoint` varchar(128) DEFAULT NULL,
-  `mac_address` varchar(17) DEFAULT NULL,
-  `success` tinyint(1) DEFAULT NULL,
-  `timestamp` datetime DEFAULT NULL,
-  `user_agent` varchar(256) DEFAULT NULL,
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'IP地址',
+  `endpoint` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '访问端点',
+  `mac_address` varchar(17) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'MAC地址',
+  `success` tinyint(1) DEFAULT NULL COMMENT '是否成功',
+  `timestamp` datetime DEFAULT NULL COMMENT '时间戳',
+  `user_agent` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户代理',
   PRIMARY KEY (`id`),
   KEY `ix_aiot_access_logs_ip_address` (`ip_address`),
   KEY `ix_aiot_access_logs_timestamp` (`timestamp`),
   KEY `ix_aiot_access_logs_id` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='访问日志表';
 
 -- 设备绑定历史表
 CREATE TABLE `aiot_device_binding_history` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `mac_address` varchar(17) NOT NULL COMMENT '设备MAC地址',
-  `device_uuid` varchar(36) DEFAULT NULL COMMENT '设备UUID',
-  `device_id` varchar(100) DEFAULT NULL COMMENT '设备ID',
-  `device_name` varchar(100) DEFAULT NULL COMMENT '设备名称',
+  `mac_address` varchar(17) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备MAC地址',
+  `device_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '设备UUID',
+  `device_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '设备ID',
+  `device_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '设备名称',
   `user_id` int NOT NULL COMMENT '绑定用户ID',
-  `user_email` varchar(255) DEFAULT NULL COMMENT '用户邮箱',
-  `user_username` varchar(50) DEFAULT NULL COMMENT '用户名',
+  `user_email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户邮箱',
+  `user_username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户名',
   `product_id` int DEFAULT NULL COMMENT '产品ID',
-  `product_code` varchar(100) DEFAULT NULL COMMENT '产品编码',
-  `product_name` varchar(200) DEFAULT NULL COMMENT '产品名称',
-  `action` varchar(20) NOT NULL COMMENT '操作类型：bind/unbind',
+  `product_code` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '产品编码',
+  `product_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '产品名称',
+  `action` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '操作类型：bind/unbind',
   `action_time` datetime NOT NULL COMMENT '操作时间',
-  `notes` text COMMENT '备注信息',
-  `created_at` datetime DEFAULT NULL COMMENT '记录创建时间',
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '备注信息',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
   PRIMARY KEY (`id`),
   KEY `product_id` (`product_id`),
   KEY `ix_device_binding_history_device_uuid` (`device_uuid`),
@@ -307,7 +313,7 @@ CREATE TABLE `aiot_device_binding_history` (
   KEY `ix_device_binding_history_user_id` (`user_id`),
   CONSTRAINT `device_binding_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `aiot_core_users` (`id`),
   CONSTRAINT `device_binding_history_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `aiot_core_products` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='设备绑定历史表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='设备绑定历史表';
 
 -- 固件版本表
 CREATE TABLE `aiot_core_firmware_versions` (
@@ -319,10 +325,10 @@ CREATE TABLE `aiot_core_firmware_versions` (
   `file_hash` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件哈希值',
   `description` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '描述',
   `release_notes` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '发布说明',
-  `is_active` tinyint(1) DEFAULT '1' COMMENT '是否激活',
-  `is_latest` tinyint(1) DEFAULT '0' COMMENT '是否最新版本',
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
+  `is_latest` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否最新版本',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `version` (`version`),
   KEY `idx_product_code` (`product_code`),
@@ -337,14 +343,14 @@ CREATE TABLE `aiot_interaction_logs` (
   `interaction_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '交互类型',
   `direction` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '数据方向：inbound/outbound',
   `status` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '状态：success/failed/timeout/pending',
-  `data_size` bigint DEFAULT '0' COMMENT '数据大小（字节）',
+  `data_size` bigint NOT NULL DEFAULT '0' COMMENT '数据大小（字节）',
   `response_time` int DEFAULT NULL COMMENT '响应时间（毫秒）',
   `error_code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '错误代码',
   `error_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '错误信息',
   `request_data` json DEFAULT NULL COMMENT '请求数据',
   `response_data` json DEFAULT NULL COMMENT '响应数据',
   `client_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '客户端IP地址',
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_timestamp` (`timestamp`),
   KEY `idx_device_id` (`device_id`),
@@ -356,11 +362,11 @@ CREATE TABLE `aiot_interaction_logs` (
 CREATE TABLE `aiot_interaction_stats_daily` (
   `date` datetime NOT NULL COMMENT '统计日期',
   `device_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备ID',
-  `total_interactions` int DEFAULT '0' COMMENT '总交互次数',
-  `successful_interactions` int DEFAULT '0' COMMENT '成功交互次数',
-  `failed_interactions` int DEFAULT '0' COMMENT '失败交互次数',
+  `total_interactions` int NOT NULL DEFAULT '0' COMMENT '总交互次数',
+  `successful_interactions` int NOT NULL DEFAULT '0' COMMENT '成功交互次数',
+  `failed_interactions` int NOT NULL DEFAULT '0' COMMENT '失败交互次数',
   `avg_response_time` int DEFAULT NULL COMMENT '平均响应时间（毫秒）',
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`date`,`device_id`),
   KEY `idx_date` (`date`),
   KEY `idx_device_id` (`device_id`)
@@ -371,11 +377,11 @@ CREATE TABLE `aiot_interaction_stats_hourly` (
   `timestamp` datetime NOT NULL COMMENT '统计小时',
   `device_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '设备ID',
   `interaction_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '交互类型',
-  `total_count` int DEFAULT '0' COMMENT '总次数',
-  `success_count` int DEFAULT '0' COMMENT '成功次数',
-  `failed_count` int DEFAULT '0' COMMENT '失败次数',
+  `total_count` int NOT NULL DEFAULT '0' COMMENT '总次数',
+  `success_count` int NOT NULL DEFAULT '0' COMMENT '成功次数',
+  `failed_count` int NOT NULL DEFAULT '0' COMMENT '失败次数',
   `avg_response_time` int DEFAULT NULL COMMENT '平均响应时间（毫秒）',
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`timestamp`,`device_id`,`interaction_type`),
   KEY `idx_timestamp` (`timestamp`),
   KEY `idx_device_id` (`device_id`)
@@ -395,5 +401,11 @@ COMMIT;
 -- 2. 默认测试设备 UUID: test
 -- 3. LLM模型的 API Key 需要在前端管理界面配置
 -- 4. 设备密钥 (device_secret) 需要替换为实际值
+-- 
+-- 数据规范：
+-- - 所有表统一使用 utf8mb4_unicode_ci 字符集
+-- - 所有布尔值统一使用 tinyint(1) 类型
+-- - 所有时间戳统一使用 CURRENT_TIMESTAMP
+-- - 所有 UUID 统一使用 UUID() 函数生成
+-- - 所有 NOT NULL 字段都有明确的 DEFAULT 值
 -- ============================================================================
-
