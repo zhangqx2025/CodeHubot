@@ -101,6 +101,11 @@ async def chat_with_agent(
     if not agent:
         raise HTTPException(status_code=404, detail="智能体不存在")
     
+    # 权限检查：普通用户只能使用自己的智能体，管理员可以使用所有智能体
+    from app.api.agents import is_admin_user
+    if not is_admin_user(current_user) and agent.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="无权使用此智能体")
+    
     # 2. 获取智能体关联的插件
     plugins = []
     if agent.plugin_ids:

@@ -26,11 +26,9 @@ def is_admin_user(user: User) -> bool:
 def can_access_agent(agent: Agent, user: User) -> bool:
     """判断用户是否可以访问智能体"""
     if is_admin_user(user):
+        # 管理员：可以访问所有智能体
         return True
-    # 系统内置智能体：所有用户可以访问
-    if agent.is_system == 1:
-        return True
-    # 用户创建的智能体：只有创建者可以访问
+    # 普通用户：只能访问自己创建的智能体
     return agent.user_id == user.id
 
 
@@ -94,14 +92,12 @@ def get_agents(
     
     # 权限过滤
     if is_admin_user(current_user):
-        # 管理员：看到所有智能体
+        # 管理员：可以看到所有智能体
         if is_system is not None:
             query = query.filter(Agent.is_system == (1 if is_system else 0))
     else:
-        # 普通用户：只看到系统内置智能体和自己创建的
-        query = query.filter(
-            (Agent.is_system == 1) | (Agent.user_id == current_user.id)
-        )
+        # 普通用户：只能看到自己创建的智能体
+        query = query.filter(Agent.user_id == current_user.id)
     
     # 激活状态筛选
     if is_active is not None:
