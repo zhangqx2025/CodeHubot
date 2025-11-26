@@ -49,9 +49,9 @@ CREATE TABLE `aiot_core_users` (
   KEY `idx_role` (`role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
--- 插入默认管理员用户 (密码: admin123，请修改)
+-- 插入默认管理员用户 (密码: Admin123$)
 INSERT INTO `aiot_core_users` (`id`, `email`, `username`, `name`, `password_hash`, `role`, `is_active`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 'admin@example.com', 'admin', '系统管理员', '$pbkdf2-sha256$29000$REPLACE_WITH_YOUR_PASSWORD_HASH', 'admin', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(1, 'admin@example.com', 'admin', '系统管理员', '$pbkdf2-sha256$29000$BqCUEgIAYIwxRugdAyCEcA$saYHM8J66d.FK1ZMx7sFZf7byo3qnqEnCjy2FP98ilQ', 'admin', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 2. 产品表
@@ -413,7 +413,7 @@ COMMIT;
 -- 初始化完成
 -- ============================================================================
 -- 说明：
--- 1. 默认管理员用户名: admin, 密码: admin123 (请修改 password_hash)
+-- 1. 默认管理员用户名: admin, 密码: Admin123$
 -- 2. 默认测试设备 UUID: test
 -- 3. LLM模型的 API Key 需要在前端管理界面配置
 -- 4. 设备密钥 (device_secret) 需要替换为实际值
