@@ -48,8 +48,12 @@ class LLMService:
         logger.info("📝 Messages Detail:")
         for i, msg in enumerate(messages, 1):
             role = msg.get('role', 'unknown')
-            content = msg.get('content', '')
-            content_preview = content[:200] + '...' if len(content) > 200 else content
+            content = msg.get('content', '') or ''  # 确保不为 None
+            # 安全处理 content
+            if content:
+                content_preview = content[:200] + '...' if len(content) > 200 else content
+            else:
+                content_preview = '[空内容]'
             logger.info(f"   [{i}] Role: {role}")
             logger.info(f"       Content: {content_preview}")
         
@@ -58,8 +62,8 @@ class LLMService:
             logger.info(f"🔧 Functions/Tools: {len(functions)} 个")
             logger.info("📋 Functions Detail:")
             for i, func in enumerate(functions, 1):
-                func_name = func.get('name', 'unknown')
-                func_desc = func.get('description', 'N/A')
+                func_name = func.get('name', 'unknown') or 'unknown'
+                func_desc = func.get('description', 'N/A') or 'N/A'
                 logger.info(f"   [{i}] {func_name}: {func_desc}")
                 
                 # 打印参数定义
@@ -68,8 +72,8 @@ class LLMService:
                     if 'properties' in params:
                         logger.info(f"       参数:")
                         for param_name, param_def in params['properties'].items():
-                            param_type = param_def.get('type', 'unknown')
-                            param_desc = param_def.get('description', 'N/A')
+                            param_type = param_def.get('type', 'unknown') or 'unknown'
+                            param_desc = param_def.get('description', 'N/A') or 'N/A'
                             required = '必填' if param_name in params.get('required', []) else '可选'
                             logger.info(f"         - {param_name} ({param_type}, {required}): {param_desc}")
             
