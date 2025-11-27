@@ -73,7 +73,17 @@ def create_agent(
     db.commit()
     db.refresh(db_agent)
     
-    return db_agent
+    # 获取所有者信息
+    owner = db.query(User).filter(User.id == current_user.id).first()
+    
+    # 构建响应，添加所有者信息
+    agent_dict = {
+        **{c.name: getattr(db_agent, c.name) for c in db_agent.__table__.columns},
+        'owner_nickname': owner.nickname if owner else None,
+        'owner_username': owner.username if owner else None
+    }
+    
+    return AgentResponse(**agent_dict)
 
 
 @router.get("/", response_model=AgentList)
@@ -88,7 +98,10 @@ def get_agents(
     current_user: User = Depends(get_current_user)
 ):
     """获取智能体列表"""
-    query = db.query(Agent)
+    # 查询Agent并join User表以获取所有者信息
+    query = db.query(Agent, User.nickname, User.username).join(
+        User, Agent.user_id == User.id
+    )
     
     # 权限过滤
     if is_admin_user(current_user):
@@ -115,9 +128,19 @@ def get_agents(
     
     # 排序和分页
     query = query.order_by(Agent.created_at.desc())
-    agents = query.offset(skip).limit(limit).all()
+    results = query.offset(skip).limit(limit).all()
     
-    return AgentList(total=total, items=agents)
+    # 构建响应，添加所有者信息
+    agents_with_owner = []
+    for agent, owner_nickname, owner_username in results:
+        agent_dict = {
+            **{c.name: getattr(agent, c.name) for c in agent.__table__.columns},
+            'owner_nickname': owner_nickname,
+            'owner_username': owner_username
+        }
+        agents_with_owner.append(AgentResponse(**agent_dict))
+    
+    return AgentList(total=total, items=agents_with_owner)
 
 
 @router.get("/{agent_uuid}", response_model=AgentResponse)
@@ -127,15 +150,27 @@ def get_agent(
     current_user: User = Depends(get_current_user)
 ):
     """获取智能体详情（通过UUID）"""
-    agent = db.query(Agent).filter(Agent.uuid == agent_uuid).first()
+    # 查询Agent并join User表以获取所有者信息
+    result = db.query(Agent, User.nickname, User.username).join(
+        User, Agent.user_id == User.id
+    ).filter(Agent.uuid == agent_uuid).first()
     
-    if not agent:
+    if not result:
         raise HTTPException(status_code=404, detail="智能体不存在")
+    
+    agent, owner_nickname, owner_username = result
     
     if not can_access_agent(agent, current_user):
         raise HTTPException(status_code=403, detail="无权访问此智能体")
     
-    return agent
+    # 构建响应，添加所有者信息
+    agent_dict = {
+        **{c.name: getattr(agent, c.name) for c in agent.__table__.columns},
+        'owner_nickname': owner_nickname,
+        'owner_username': owner_username
+    }
+    
+    return AgentResponse(**agent_dict)
 
 
 @router.put("/{agent_uuid}", response_model=AgentResponse)
@@ -146,10 +181,15 @@ def update_agent(
     current_user: User = Depends(get_current_user)
 ):
     """更新智能体（通过UUID）"""
-    agent = db.query(Agent).filter(Agent.uuid == agent_uuid).first()
+    # 查询Agent并join User表以获取所有者信息
+    result = db.query(Agent, User.nickname, User.username).join(
+        User, Agent.user_id == User.id
+    ).filter(Agent.uuid == agent_uuid).first()
     
-    if not agent:
+    if not result:
         raise HTTPException(status_code=404, detail="智能体不存在")
+    
+    agent, owner_nickname, owner_username = result
     
     if not can_edit_agent(agent, current_user):
         raise HTTPException(status_code=403, detail="无权编辑此智能体")
@@ -174,7 +214,14 @@ def update_agent(
     db.commit()
     db.refresh(agent)
     
-    return agent
+    # 构建响应，添加所有者信息
+    agent_dict = {
+        **{c.name: getattr(agent, c.name) for c in agent.__table__.columns},
+        'owner_nickname': owner_nickname,
+        'owner_username': owner_username
+    }
+    
+    return AgentResponse(**agent_dict)
 
 
 @router.delete("/{agent_uuid}")

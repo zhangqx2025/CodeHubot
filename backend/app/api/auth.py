@@ -10,7 +10,8 @@ from app.core.database import get_db
 from app.models.user import User
 from app.schemas.user import (
     UserCreate, UserLogin, UserResponse, LoginResponse,
-    PasswordResetRequest, PasswordResetConfirm
+    PasswordResetRequest, PasswordResetConfirm,
+    ChangePasswordRequest, UpdateProfileRequest
 )
 from app.core.security import (
     verify_password, get_password_hash, 
@@ -419,5 +420,107 @@ async def refresh_access_token(request: RefreshTokenRequest, db: Session = Depen
 async def get_user_info(current_user: User = Depends(get_current_user)):
     """获取当前用户信息"""
     return current_user
+
+@router.post("/change-password")
+async def change_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """修改密码 - 需要验证旧密码"""
+    try:
+        # 验证旧密码
+        if not verify_password(password_data.old_password, current_user.password_hash):
+            logger.warning(f"修改密码失败：旧密码错误 - 用户ID: {current_user.id}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前密码错误"
+            )
+        
+        # 更新密码
+        current_user.password_hash = get_password_hash(password_data.new_password)
+        db.commit()
+        
+        logger.info(f"✅ 密码修改成功: {current_user.username} (ID: {current_user.id})")
+        
+        return {
+            "message": "密码修改成功"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ 修改密码失败: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="修改密码失败，请稍后重试"
+        )
+
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(
+    profile_data: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """修改个人信息 - 邮箱、用户名和昵称"""
+    try:
+        # 检查是否有更新内容
+        if profile_data.email is None and profile_data.username is None and profile_data.nickname is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="请提供要更新的信息"
+            )
+        
+        # 更新邮箱
+        if profile_data.email is not None:
+            # 检查邮箱是否已被其他用户使用
+            existing_user = db.query(User).filter(
+                User.email == profile_data.email,
+                User.id != current_user.id
+            ).first()
+            if existing_user:
+                logger.warning(f"修改邮箱失败：邮箱已被使用 - {profile_data.email}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="该邮箱已被使用"
+                )
+            current_user.email = profile_data.email
+        
+        # 更新用户名
+        if profile_data.username is not None:
+            # 检查用户名是否已被其他用户使用
+            existing_user = db.query(User).filter(
+                User.username == profile_data.username,
+                User.id != current_user.id
+            ).first()
+            if existing_user:
+                logger.warning(f"修改用户名失败：用户名已被使用 - {profile_data.username}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="该用户名已被使用"
+                )
+            current_user.username = profile_data.username
+        
+        # 更新昵称
+        if profile_data.nickname is not None:
+            current_user.nickname = profile_data.nickname
+        
+        db.commit()
+        db.refresh(current_user)
+        
+        logger.info(f"✅ 个人信息修改成功: {current_user.username} (ID: {current_user.id})")
+        
+        return current_user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ 修改个人信息失败: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="修改个人信息失败，请稍后重试"
+        )
 
 

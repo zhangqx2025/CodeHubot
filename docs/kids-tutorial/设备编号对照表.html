@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔢 设备编号对照表</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .search-box input {
+            width: 80%;
+            max-width: 400px;
+            padding: 15px;
+            font-size: 18px;
+            border: 3px solid #667eea;
+            border-radius: 25px;
+            outline: none;
+            text-align: center;
+        }
+
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .device-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 3px solid #e0e0e0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .device-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .device-card.selected {
+            border-color: #4ade80;
+            background: #f0fdf4;
+        }
+
+        .device-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .device-name {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .uuid-display {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .uuid-display.show {
+            display: block;
+        }
+
+        .uuid-text {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #333;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+
+        .copy-btn {
+            padding: 12px 30px;
+            background: #4ade80;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #22c55e;
+        }
+
+        .tip {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔢 教学设备编号对照表</h1>
+
+        <div class="tip">
+            💡 找到你的设备编号，点击查看对应的UUID
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="输入设备编号搜索（如：01）">
+        </div>
+
+        <div class="device-grid" id="deviceGrid"></div>
+
+        <div class="uuid-display" id="uuidDisplay">
+            <h3 style="color: #667eea; margin-bottom: 10px;">设备UUID</h3>
+            <div class="uuid-text" id="uuidText"></div>
+            <button class="copy-btn" onclick="copyUUID()">📋 复制UUID</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="index.html" style="color: #667eea; text-decoration: none;">← 返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        const devices = [
+            { number: "01", name: "教学设备01", uuid: "18078072-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "02", name: "教学设备02", uuid: "180788d2-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "03", name: "教学设备03", uuid: "18083d72-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "04", name: "教学设备04", uuid: "180841d8-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "05", name: "教学设备05", uuid: "1808450e-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "06", name: "教学设备06", uuid: "180847c2-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "07", name: "教学设备07", uuid: "18084d8e-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "08", name: "教学设备08", uuid: "18085049-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "09", name: "教学设备09", uuid: "180852ac-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "10", name: "教学设备10", uuid: "1808af61-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "11", name: "教学设备11", uuid: "1808b3f1-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "12", name: "教学设备12", uuid: "1808b688-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "13", name: "教学设备13", uuid: "1808b8fc-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "14", name: "教学设备14", uuid: "1808bb5d-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "15", name: "教学设备15", uuid: "1808bdac-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "16", name: "教学设备16", uuid: "18090ff1-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "17", name: "教学设备17", uuid: "18091672-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "18", name: "教学设备18", uuid: "1809192f-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "19", name: "教学设备19", uuid: "18091b8f-cb2f-11f0-9ba7-00163e3c72a3" },
+            { number: "20", name: "教学设备20", uuid: "18091e23-cb2f-11f0-9ba7-00163e3c72a3" }
+        ];
+
+        let selectedDevice = null;
+
+        // 渲染设备列表
+        function renderDevices(filter = '') {
+            const grid = document.getElementById('deviceGrid');
+            grid.innerHTML = '';
+            
+            devices
+                .filter(d => filter === '' || d.number.includes(filter))
+                .forEach(device => {
+                    const card = document.createElement('div');
+                    card.className = 'device-card';
+                    if (selectedDevice === device.number) {
+                        card.classList.add('selected');
+                    }
+                    card.innerHTML = `
+                        <div class="device-number">${device.number}</div>
+                        <div class="device-name">${device.name}</div>
+                    `;
+                    card.onclick = () => selectDevice(device);
+                    grid.appendChild(card);
+                });
+        }
+
+        // 选择设备
+        function selectDevice(device) {
+            selectedDevice = device.number;
+            document.getElementById('uuidText').textContent = device.uuid;
+            document.getElementById('uuidDisplay').classList.add('show');
+            renderDevices(document.getElementById('searchInput').value);
+            
+            // 滚动到UUID显示区域
+            document.getElementById('uuidDisplay').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 复制UUID
+        function copyUUID() {
+            const uuid = document.getElementById('uuidText').textContent;
+            navigator.clipboard.writeText(uuid).then(() => {
+                const btn = event.target;
+                btn.textContent = '✓ 已复制！';
+                btn.style.background = '#4ade80';
+                setTimeout(() => {
+                    btn.textContent = '📋 复制UUID';
+                }, 2000);
+            }).catch(() => {
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        // 搜索功能
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            renderDevices(e.target.value);
+        });
+
+        // 初始化
+        renderDevices();
+    </script>
+</body>
+</html>
+

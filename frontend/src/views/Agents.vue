@@ -67,6 +67,10 @@
           
           <div class="agent-stats">
             <div class="stat-item">
+              <el-icon><User /></el-icon>
+              <span>{{ getOwnerDisplayName(agent) }}</span>
+            </div>
+            <div class="stat-item">
               <el-icon><Connection /></el-icon>
               <span>{{ agent.plugin_ids?.length || 0 }} 个插件</span>
             </div>
@@ -155,7 +159,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, ChatDotRound, Connection, Clock, Edit, Delete } from '@element-plus/icons-vue'
+import { Search, Plus, ChatDotRound, Connection, Clock, Edit, Delete, User } from '@element-plus/icons-vue'
 import { getAgents, createAgent, updateAgent, deleteAgent } from '../api/agent'
 
 const router = useRouter()
@@ -315,6 +319,13 @@ const resetForm = () => {
 const formatDate = (date) => {
   if (!date) return ''
   return new Date(date).toLocaleString('zh-CN')
+}
+
+// 获取所有者显示名称（优先昵称）
+const getOwnerDisplayName = (agent) => {
+  if (!agent) return '未知'
+  // 优先显示昵称，没有昵称则显示用户名
+  return agent.owner_nickname || agent.owner_username || '未知'
 }
 
 onMounted(() => {

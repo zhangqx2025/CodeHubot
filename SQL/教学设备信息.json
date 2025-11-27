@@ -1,0 +1,183 @@
+{
+  "title": "教学设备UUID清单",
+  "created_date": "2025-11-27",
+  "total_devices": 20,
+  "system_url": "https://codehubot.hello1023.com/",
+  "common_config": {
+    "product_id": 2,
+    "user_id": 1,
+    "firmware_version": "1.5",
+    "hardware_version": "ESP32",
+    "sensors": ["DHT11温度", "DHT11湿度"],
+    "controllers": ["LED1", "LED2", "LED3", "LED4"],
+    "preset_commands": [
+      {
+        "preset_key": "led_seq_mig4wqy5",
+        "name": "LED1打开3秒关闭",
+        "color": "绿灯",
+        "usage": "可回收垃圾"
+      },
+      {
+        "preset_key": "led_seq_mig5hiep",
+        "name": "LED2打开3秒关闭",
+        "color": "红灯",
+        "usage": "有害垃圾"
+      },
+      {
+        "preset_key": "led_seq_mig5i461",
+        "name": "LED3打开3秒关闭",
+        "color": "黄灯",
+        "usage": "厨余垃圾"
+      },
+      {
+        "preset_key": "led_seq_mig5ivu5",
+        "name": "LED4打开3秒关闭",
+        "color": "灰灯",
+        "usage": "其他垃圾"
+      }
+    ]
+  },
+  "devices": [
+    {
+      "number": "01",
+      "name": "教学设备01",
+      "uuid": "18078072-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH01",
+      "mac_address": "80:B5:4E:D6:F8:01"
+    },
+    {
+      "number": "02",
+      "name": "教学设备02",
+      "uuid": "180788d2-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH02",
+      "mac_address": "80:B5:4E:D6:F8:02"
+    },
+    {
+      "number": "03",
+      "name": "教学设备03",
+      "uuid": "18083d72-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH03",
+      "mac_address": "80:B5:4E:D6:F8:03"
+    },
+    {
+      "number": "04",
+      "name": "教学设备04",
+      "uuid": "180841d8-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH04",
+      "mac_address": "80:B5:4E:D6:F8:04"
+    },
+    {
+      "number": "05",
+      "name": "教学设备05",
+      "uuid": "1808450e-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH05",
+      "mac_address": "80:B5:4E:D6:F8:05"
+    },
+    {
+      "number": "06",
+      "name": "教学设备06",
+      "uuid": "180847c2-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH06",
+      "mac_address": "80:B5:4E:D6:F8:06"
+    },
+    {
+      "number": "07",
+      "name": "教学设备07",
+      "uuid": "18084d8e-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH07",
+      "mac_address": "80:B5:4E:D6:F8:07"
+    },
+    {
+      "number": "08",
+      "name": "教学设备08",
+      "uuid": "18085049-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH08",
+      "mac_address": "80:B5:4E:D6:F8:08"
+    },
+    {
+      "number": "09",
+      "name": "教学设备09",
+      "uuid": "180852ac-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH09",
+      "mac_address": "80:B5:4E:D6:F8:09"
+    },
+    {
+      "number": "10",
+      "name": "教学设备10",
+      "uuid": "1808af61-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH10",
+      "mac_address": "80:B5:4E:D6:F8:10"
+    },
+    {
+      "number": "11",
+      "name": "教学设备11",
+      "uuid": "1808b3f1-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH11",
+      "mac_address": "80:B5:4E:D6:F8:11"
+    },
+    {
+      "number": "12",
+      "name": "教学设备12",
+      "uuid": "1808b688-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH12",
+      "mac_address": "80:B5:4E:D6:F8:12"
+    },
+    {
+      "number": "13",
+      "name": "教学设备13",
+      "uuid": "1808b8fc-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH13",
+      "mac_address": "80:B5:4E:D6:F8:13"
+    },
+    {
+      "number": "14",
+      "name": "教学设备14",
+      "uuid": "1808bb5d-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH14",
+      "mac_address": "80:B5:4E:D6:F8:14"
+    },
+    {
+      "number": "15",
+      "name": "教学设备15",
+      "uuid": "1808bdac-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH15",
+      "mac_address": "80:B5:4E:D6:F8:15"
+    },
+    {
+      "number": "16",
+      "name": "教学设备16",
+      "uuid": "18090ff1-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH16",
+      "mac_address": "80:B5:4E:D6:F8:16"
+    },
+    {
+      "number": "17",
+      "name": "教学设备17",
+      "uuid": "18091672-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH17",
+      "mac_address": "80:B5:4E:D6:F8:17"
+    },
+    {
+      "number": "18",
+      "name": "教学设备18",
+      "uuid": "1809192f-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH18",
+      "mac_address": "80:B5:4E:D6:F8:18"
+    },
+    {
+      "number": "19",
+      "name": "教学设备19",
+      "uuid": "18091b8f-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH19",
+      "mac_address": "80:B5:4E:D6:F8:19"
+    },
+    {
+      "number": "20",
+      "name": "教学设备20",
+      "uuid": "18091e23-cb2f-11f0-9ba7-00163e3c72a3",
+      "device_id": "AIOT-ESP32-TEACH20",
+      "mac_address": "80:B5:4E:D6:F8:20"
+    }
+  ]
+}
+

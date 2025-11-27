@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 设备配置信息</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .selector {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .selector label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-right: 15px;
+        }
+
+        .selector select {
+            padding: 12px 20px;
+            font-size: 18px;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .info-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .info-section.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: #667eea;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: #667eea;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .copy-box {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .copy-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .copy-content {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            color: #333;
+            word-break: break-all;
+            line-height: 1.6;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .copy-btn {
+            padding: 10px 25px;
+            background: #4ade80;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #22c55e;
+            transform: scale(1.05);
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .preset-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .preset-card.green { border-left-color: #4ade80; }
+        .preset-card.red { border-left-color: #ef4444; }
+        .preset-card.yellow { border-left-color: #fbbf24; }
+        .preset-card.gray { border-left-color: #9ca3af; }
+
+        .preset-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .preset-key {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 8px 0;
+            word-break: break-all;
+        }
+
+        .preset-usage {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .tip {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+            color: #856404;
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            position: relative;
+            padding-left: 50px;
+        }
+
+        .step-list li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 设备配置信息查询</h1>
+            <p>选择你的设备编号，查看UUID和预设指令信息</p>
+        </div>
+
+        <div class="card">
+            <div class="selector">
+                <label for="deviceSelect">🔢 选择你的设备编号：</label>
+                <select id="deviceSelect" onchange="showDeviceInfo()">
+                    <option value="">-- 请选择 --</option>
+                    <option value="01">设备01</option>
+                    <option value="02">设备02</option>
+                    <option value="03">设备03</option>
+                    <option value="04">设备04</option>
+                    <option value="05">设备05</option>
+                    <option value="06">设备06</option>
+                    <option value="07">设备07</option>
+                    <option value="08">设备08</option>
+                    <option value="09">设备09</option>
+                    <option value="10">设备10</option>
+                    <option value="11">设备11</option>
+                    <option value="12">设备12</option>
+                    <option value="13">设备13</option>
+                    <option value="14">设备14</option>
+                    <option value="15">设备15</option>
+                    <option value="16">设备16</option>
+                    <option value="17">设备17</option>
+                    <option value="18">设备18</option>
+                    <option value="19">设备19</option>
+                    <option value="20">设备20</option>
+                </select>
+            </div>
+
+            <div id="infoSection" class="info-section">
+                <!-- 设备UUID -->
+                <div class="section-title">🎯 步骤1：复制设备UUID</div>
+                <div class="tip">
+                    💡 创建智能体时，需要绑定插件，选择这个设备
+                </div>
+                <div class="copy-box">
+                    <div class="copy-label">设备UUID（在系统中选择设备时使用）</div>
+                    <div class="copy-content" id="uuidContent"></div>
+                    <button class="copy-btn" onclick="copyText('uuidContent', this)">📋 复制UUID</button>
+                </div>
+
+                <!-- 预设指令信息 -->
+                <div class="section-title" style="margin-top: 40px;">🎮 步骤2：了解预设指令</div>
+                <div class="tip">
+                    💡 垃圾分类助手需要用到这4个预设指令，它们已经在设备中配置好了
+                </div>
+
+                <div class="preset-grid">
+                    <div class="preset-card green">
+                        <div class="preset-name">💚 可回收垃圾（绿灯）</div>
+                        <div class="preset-key">led_seq_mig4wqy5</div>
+                        <div class="preset-usage">用途：报纸、塑料瓶、金属、玻璃</div>
+                    </div>
+
+                    <div class="preset-card red">
+                        <div class="preset-name">❤️ 有害垃圾（红灯）</div>
+                        <div class="preset-key">led_seq_mig5hiep</div>
+                        <div class="preset-usage">用途：电池、灯管、油漆、药品</div>
+                    </div>
+
+                    <div class="preset-card yellow">
+                        <div class="preset-name">💛 厨余垃圾（黄灯）</div>
+                        <div class="preset-key">led_seq_mig5i461</div>
+                        <div class="preset-usage">用途：剩饭剩菜、果皮、菜叶</div>
+                    </div>
+
+                    <div class="preset-card gray">
+                        <div class="preset-name">🖤 其他垃圾（灰灯）</div>
+                        <div class="preset-key">led_seq_mig5ivu5</div>
+                        <div class="preset-usage">用途：烟头、纸巾、陶瓷</div>
+                    </div>
+                </div>
+
+                <!-- 提示词模板示例 -->
+                <div class="section-title" style="margin-top: 40px;">📝 步骤3：修改系统提示词中的UUID</div>
+                
+                <div class="tip" style="background: #ffebee; border-left-color: #f44336; color: #c62828;">
+                    ⚠️ <strong>重要提醒：</strong>模板中的UUID是示例UUID，必须替换成你自己的真实设备UUID！
+                </div>
+
+                <div class="copy-box" style="border-color: #f44336; background: #fff5f5;">
+                    <div class="copy-label" style="color: #c62828; font-weight: bold;">🔴 必须修改的地方</div>
+                    <div class="copy-content" style="font-size: 14px; line-height: 2;">
+                        在系统提示词模板中找到：<br>
+                        <span style="background: #ffe0e0; padding: 5px; border-radius: 3px; text-decoration: line-through;">device_uuid: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span>
+                        <br><br>
+                        替换成你的UUID：<br>
+                        <span class="highlight" style="padding: 5px;">device_uuid: "<span id="uuidForPrompt"></span>"</span>
+                    </div>
+                    <button class="copy-btn" onclick="copyUUIDForPrompt()" style="background: #f44336;">📋 复制我的UUID</button>
+                </div>
+
+                <div class="copy-box">
+                    <div class="copy-label">提示词示例（可回收垃圾部分）</div>
+                    <div class="copy-content" style="font-size: 14px;">• 可回收（纸张、塑料瓶、金属、玻璃）
+  → 执行：<span class="highlight">led_seq_mig4wqy5</span></div>
+                </div>
+
+                <!-- 使用步骤 -->
+                <div class="section-title" style="margin-top: 40px;">✅ 完整使用步骤</div>
+                <ul class="step-list">
+                    <li data-step="1">
+                        <strong>复制UUID</strong><br>
+                        点击上面的"复制UUID"按钮
+                    </li>
+                    <li data-step="2">
+                        <strong>创建智能体</strong><br>
+                        在系统中创建智能体，选择"垃圾分类小助手"或"LED温湿度助手"模板
+                    </li>
+                    <li data-step="3" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                        <strong>⚠️ 修改系统提示词中的UUID（重要！）</strong><br>
+                        在提示词编辑框中，找到 <code>device_uuid</code> 字段，把示例UUID替换成你自己的UUID
+                    </li>
+                    <li data-step="4">
+                        <strong>绑定设备</strong><br>
+                        在插件配置中，找到你复制的UUID对应的设备并绑定
+                    </li>
+                    <li data-step="5">
+                        <strong>测试运行</strong><br>
+                        说"我要扔报纸"，看LED1（绿灯）是否亮起3秒
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="index.html" class="back-btn">← 返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        const devices = {
+            "01": { uuid: "18078072-cb2f-11f0-9ba7-00163e3c72a3" },
+            "02": { uuid: "180788d2-cb2f-11f0-9ba7-00163e3c72a3" },
+            "03": { uuid: "18083d72-cb2f-11f0-9ba7-00163e3c72a3" },
+            "04": { uuid: "180841d8-cb2f-11f0-9ba7-00163e3c72a3" },
+            "05": { uuid: "1808450e-cb2f-11f0-9ba7-00163e3c72a3" },
+            "06": { uuid: "180847c2-cb2f-11f0-9ba7-00163e3c72a3" },
+            "07": { uuid: "18084d8e-cb2f-11f0-9ba7-00163e3c72a3" },
+            "08": { uuid: "18085049-cb2f-11f0-9ba7-00163e3c72a3" },
+            "09": { uuid: "180852ac-cb2f-11f0-9ba7-00163e3c72a3" },
+            "10": { uuid: "1808af61-cb2f-11f0-9ba7-00163e3c72a3" },
+            "11": { uuid: "1808b3f1-cb2f-11f0-9ba7-00163e3c72a3" },
+            "12": { uuid: "1808b688-cb2f-11f0-9ba7-00163e3c72a3" },
+            "13": { uuid: "1808b8fc-cb2f-11f0-9ba7-00163e3c72a3" },
+            "14": { uuid: "1808bb5d-cb2f-11f0-9ba7-00163e3c72a3" },
+            "15": { uuid: "1808bdac-cb2f-11f0-9ba7-00163e3c72a3" },
+            "16": { uuid: "18090ff1-cb2f-11f0-9ba7-00163e3c72a3" },
+            "17": { uuid: "18091672-cb2f-11f0-9ba7-00163e3c72a3" },
+            "18": { uuid: "1809192f-cb2f-11f0-9ba7-00163e3c72a3" },
+            "19": { uuid: "18091b8f-cb2f-11f0-9ba7-00163e3c72a3" },
+            "20": { uuid: "18091e23-cb2f-11f0-9ba7-00163e3c72a3" }
+        };
+
+        function showDeviceInfo() {
+            const select = document.getElementById('deviceSelect');
+            const deviceNum = select.value;
+            
+            if (deviceNum && devices[deviceNum]) {
+                const uuid = devices[deviceNum].uuid;
+                document.getElementById('uuidContent').textContent = uuid;
+                document.getElementById('uuidForPrompt').textContent = uuid;
+                document.getElementById('infoSection').classList.add('show');
+                
+                // 平滑滚动到信息区域
+                setTimeout(() => {
+                    document.getElementById('infoSection').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100);
+            } else {
+                document.getElementById('infoSection').classList.remove('show');
+            }
+        }
+
+        function copyText(elementId, button) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ 已复制！';
+                button.style.background = '#4ade80';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            }).catch(() => {
+                // 备用复制方法
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    button.textContent = '✓ 已复制！';
+                    button.style.background = '#4ade80';
+                    setTimeout(() => {
+                        button.textContent = '📋 复制UUID';
+                        button.style.background = '';
+                    }, 2000);
+                } catch (err) {
+                    alert('复制失败，请手动复制');
+                }
+                document.body.removeChild(textarea);
+            });
+        }
+
+        function copyUUIDForPrompt() {
+            const uuid = document.getElementById('uuidForPrompt').textContent;
+            if (!uuid) {
+                alert('请先选择设备！');
+                return;
+            }
+            
+            navigator.clipboard.writeText(uuid).then(() => {
+                const btn = event.target;
+                btn.textContent = '✓ 已复制！记得替换提示词中的UUID';
+                btn.style.background = '#4ade80';
+                setTimeout(() => {
+                    btn.textContent = '📋 复制我的UUID';
+                    btn.style.background = '#f44336';
+                }, 3000);
+            }).catch(() => {
+                // 备用复制方法
+                const textarea = document.createElement('textarea');
+                textarea.value = uuid;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    event.target.textContent = '✓ 已复制！';
+                    setTimeout(() => {
+                        event.target.textContent = '📋 复制我的UUID';
+                    }, 2000);
+                } catch (err) {
+                    alert('复制失败，请手动复制');
+                }
+                document.body.removeChild(textarea);
+            });
+        }
+
+        // URL参数支持（如果通过链接传递设备编号）
+        const urlParams = new URLSearchParams(window.location.search);
+        const deviceParam = urlParams.get('device');
+        if (deviceParam && devices[deviceParam]) {
+            document.getElementById('deviceSelect').value = deviceParam;
+            showDeviceInfo();
+        }
+    </script>
+</body>
+</html>
+

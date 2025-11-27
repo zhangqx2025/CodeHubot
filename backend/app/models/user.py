@@ -9,6 +9,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=True)  # 改为可选
     username = Column(String(50), unique=True, index=True, nullable=False)
+    nickname = Column(String(50), nullable=True, comment='用户昵称（可选，优先显示）')
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), default='user', nullable=False, comment='用户角色：admin/user')
     is_active = Column(Boolean, default=True)

@@ -87,6 +87,7 @@ class UserResponse(BaseModel):
     id: int
     email: Optional[str] = None
     username: str
+    nickname: Optional[str] = None
     role: str = 'user'  # 用户角色：admin/user
     is_active: bool
     last_login: Optional[datetime] = None
@@ -151,10 +152,93 @@ class PasswordResetConfirm(BaseModel):
         return v
 
 class UserUpdate(BaseModel):
-    """用户更新Schema"""
+    """用户更新Schema（管理员用）"""
     username: Optional[str] = Field(
         None,
         min_length=MIN_USERNAME_LENGTH,
         max_length=MAX_USERNAME_LENGTH
     )
     is_active: Optional[bool] = None
+
+class ChangePasswordRequest(BaseModel):
+    """修改密码请求Schema"""
+    old_password: str = Field(..., description="当前密码")
+    new_password: str = Field(
+        ...,
+        min_length=MIN_PASSWORD_LENGTH,
+        max_length=MAX_PASSWORD_LENGTH,
+        description="新密码"
+    )
+    
+    @validator('new_password')
+    def validate_new_password(cls, v, values):
+        """验证新密码"""
+        errors = []
+        
+        # 检查新密码是否与旧密码相同
+        if 'old_password' in values and v == values['old_password']:
+            raise ValueError('新密码不能与当前密码相同')
+        
+        # 检查长度
+        if len(v) < MIN_PASSWORD_LENGTH:
+            errors.append(f'密码长度至少{MIN_PASSWORD_LENGTH}个字符')
+        
+        # 检查是否包含字母
+        if not re.search(r'[a-zA-Z]', v):
+            errors.append('密码必须包含至少一个字母')
+        
+        # 检查是否包含数字
+        if not re.search(r'[0-9]', v):
+            errors.append('密码必须包含至少一个数字')
+        
+        # 检查是否包含空格
+        if ' ' in v:
+            errors.append('密码不能包含空格')
+        
+        # 检查常见弱密码
+        weak_passwords = [
+            'password', '12345678', 'qwerty', 'abc123', 
+            'password123', 'admin123', '123456789', '11111111'
+        ]
+        if v.lower() in weak_passwords:
+            errors.append('密码过于简单，请使用更强的密码')
+        
+        if errors:
+            raise ValueError('；'.join(errors))
+        
+        return v
+
+class UpdateProfileRequest(BaseModel):
+    """修改个人信息请求Schema"""
+    email: Optional[EmailStr] = Field(None, description="邮箱")
+    username: Optional[str] = Field(
+        None,
+        min_length=MIN_USERNAME_LENGTH,
+        max_length=MAX_USERNAME_LENGTH,
+        description="用户名"
+    )
+    nickname: Optional[str] = Field(
+        None,
+        max_length=50,
+        description="用户昵称"
+    )
+    
+    @validator('username')
+    def validate_username(cls, v):
+        """验证用户名格式"""
+        if v is None:
+            return v
+            
+        # 检查格式
+        if not re.match(USERNAME_REGEX, v):
+            raise ValueError('用户名只能包含字母、数字、下划线和连字符')
+        
+        # 检查禁用用户名
+        if v.lower() in FORBIDDEN_USERNAMES:
+            raise ValueError('该用户名不可用')
+        
+        # 不能全是数字
+        if v.isdigit():
+            raise ValueError('用户名不能全是数字')
+        
+        return v

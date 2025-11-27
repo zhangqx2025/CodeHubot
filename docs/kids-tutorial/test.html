@@ -120,6 +120,10 @@
 <body>
     <div class="container">
         <h1>🎮 测试你的AI助手</h1>
+        
+        <div class="tip" style="text-align: center; margin-bottom: 30px;">
+            🎯 分别测试三个智能体：猪猪侠、LED温湿度助手、垃圾分类助手
+        </div>
 
         <h2>🐷 测试猪猪侠</h2>
         <div class="test-grid">
@@ -166,6 +170,53 @@
 
         <div class="tip">
             💡 猪猪侠的回答要友好、自然、有表情符号
+        </div>
+
+        <h2>💡 测试LED温湿度助手</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <div class="test-icon">💡</div>
+                <div class="test-title">打开LED</div>
+                <div class="test-question">"打开LED1"</div>
+                <div class="expected">
+                    <strong>✓ 期望：</strong>
+                    <div>回复"已打开LED1"，LED1灯亮</div>
+                </div>
+            </div>
+
+            <div class="test-card">
+                <div class="test-icon">🔴</div>
+                <div class="test-title">关闭LED</div>
+                <div class="test-question">"关闭LED1"</div>
+                <div class="expected">
+                    <strong>✓ 期望：</strong>
+                    <div>回复"已关闭LED1"，LED1灯灭</div>
+                </div>
+            </div>
+
+            <div class="test-card">
+                <div class="test-icon">🌡️</div>
+                <div class="test-title">查温度</div>
+                <div class="test-question">"现在温度多少？"</div>
+                <div class="expected">
+                    <strong>✓ 期望：</strong>
+                    <div>显示当前温度值（如24.5°C）</div>
+                </div>
+            </div>
+
+            <div class="test-card">
+                <div class="test-icon">💧</div>
+                <div class="test-title">查温湿度</div>
+                <div class="test-question">"查看温湿度"</div>
+                <div class="expected">
+                    <strong>✓ 期望：</strong>
+                    <div>显示温度和湿度数据</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tip">
+            💡 评分标准：LED能正确开关、温湿度数据能正常显示
         </div>
 
         <h2>🗑️ 测试垃圾分类</h2>
@@ -229,14 +280,28 @@
                 1. 预设指令没创建<br>
                 2. preset_key名字不对<br>
                 3. 设备没上线<br>
-                4. Temperature设置太高（要改成0.2）
+                4. 插件没有正确绑定
             </p>
         </details>
 
         <details class="faq">
             <summary>🤔 有时灯亮，有时不亮？</summary>
             <p>
-                Temperature设置太高了！让老师把Temperature改成0.2，这样每次都会稳定工作。
+                检查一下：<br>
+                1. 设备是否稳定在线<br>
+                2. 网络连接是否正常<br>
+                3. 预设指令配置是否正确
+            </p>
+        </details>
+
+        <details class="faq">
+            <summary>🤔 温湿度显示不出来？</summary>
+            <p>
+                可能原因：<br>
+                1. 设备没有温湿度传感器<br>
+                2. 插件没有正确绑定<br>
+                3. 设备离线或传感器故障<br>
+                请检查设备是否在线，传感器是否正常工作。
             </p>
         </details>
 

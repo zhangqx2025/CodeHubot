@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💡 创建LED温湿度助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #00bcd4;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .alert {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .alert a {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 25px;
+            background: #00bcd4;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+        }
+
+        .section {
+            margin: 30px 0;
+        }
+
+        .section h2 {
+            color: #00bcd4;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .input-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .input-box label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .input-box .value {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .code-box {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            position: relative;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            border-left: 4px solid #00bcd4;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 20px;
+            background: #4ade80;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .copy-btn:hover {
+            background: #22c55e;
+        }
+
+        .tip {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+            color: #1976d2;
+        }
+
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+            color: #f57c00;
+        }
+
+        .example {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .example .msg {
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+
+        .example .user {
+            background: white;
+            border: 2px solid #e0e0e0;
+        }
+
+        .example .bot {
+            background: #00bcd4;
+            color: white;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 12px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding-left: 40px;
+            position: relative;
+        }
+
+        .checklist li::before {
+            content: '✓';
+            position: absolute;
+            left: 12px;
+            background: #4ade80;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #00bcd4;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💡 创建LED控制与温湿度读取助手</h1>
+
+        <div class="alert">
+            <strong>⚠️ 请先打开系统</strong><br>
+            <a href="https://codehubot.hello1023.com/" target="_blank">🌐 进入 CodeHubot →</a>
+            <p style="font-size: 13px; color: #999; margin-top: 10px;">登录后找到"智能体管理"</p>
+        </div>
+
+        <div class="section">
+            <h2>📝 填写基本信息</h2>
+            
+            <div class="input-box">
+                <label>智能体名称：</label>
+                <div class="value">LED温湿度助手</div>
+            </div>
+
+            <div class="input-box">
+                <label>描述：</label>
+                <div class="value">可以控制LED灯和读取温湿度数据的助手</div>
+            </div>
+
+            <div class="input-box">
+                <label>选择大模型：</label>
+                <div class="value">通义千问-Turbo</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔌 绑定插件</h2>
+            <div class="warning">
+                ⚠️ 需要先绑定插件，才能控制设备！
+            </div>
+            <ul class="checklist">
+                <li>在"插件配置"里选择你的设备插件</li>
+                <li>点击"添加"按钮</li>
+                <li>确保插件显示为"已绑定"</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🎨 复制系统提示词</h2>
+            <p style="color: #666; margin-bottom: 15px;">把下面这段话复制到"系统提示词"框里：</p>
+            
+            <div class="code-box" id="promptBox">
+                <button class="copy-btn" onclick="copyPrompt()">📋 复制</button>你是一个简单易用的物联网助手，可以帮助用户控制LED灯和查看温湿度数据。
+
+【功能】
+
+1. **LED控制**
+   • 打开指定编号的LED灯（如LED1、LED2）
+   • 关闭指定编号的LED灯
+   • 如果用户没有指定编号，默认控制LED1
+
+2. **温湿度查询**
+   • 读取当前温度值
+   • 读取当前湿度值
+   • 显示温湿度数据
+
+【交互示例】
+
+用户："打开LED1"
+你：调用控制函数打开LED1，然后回复"✅ 已打开LED1"
+
+用户："关闭LED2"
+你：调用控制函数关闭LED2，然后回复"✅ 已关闭LED2"
+
+用户："打开LED"（未指定编号）
+你：调用控制函数打开LED1，然后回复"✅ 已打开LED1"
+
+用户："现在温度多少？"
+你：调用读取函数获取数据，然后回复"📊 当前温度：24.5°C"
+
+用户："查看温湿度"
+你：调用读取函数获取数据，然后回复"📊 当前环境数据：
+• 温度：24.5°C
+• 湿度：65%RH"
+
+【注意】
+• 每个设备可能有多个LED（LED1、LED2、LED3等）
+• 控制时需要指定正确的LED编号
+• 如果用户没说编号，默认操作LED1
+• 用简洁的语言回复用户</div>
+
+            <div class="tip">
+                💡 这段话告诉AI可以做什么：控制LED和查看温湿度
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💬 对话示例</h2>
+            <div class="example">
+                <div class="msg user">👦 小明：打开LED1</div>
+                <div class="msg bot">💡 助手：✅ 已打开LED1</div>
+                
+                <div class="msg user">👦 小明：现在温度多少？</div>
+                <div class="msg bot">💡 助手：📊 当前温度：24.5°C</div>
+                
+                <div class="msg user">👦 小明：查看温湿度</div>
+                <div class="msg bot">💡 助手：📊 当前环境数据：
+• 温度：24.5°C
+• 湿度：65%RH</div>
+                
+                <div class="msg user">👦 小明：关闭LED1</div>
+                <div class="msg bot">💡 助手：✅ 已关闭LED1</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>✅ 检查清单</h2>
+            <ul class="checklist">
+                <li>智能体名称填好了</li>
+                <li>选择了大模型</li>
+                <li>绑定了设备插件</li>
+                <li>复制了系统提示词</li>
+                <li>状态设置为"激活"</li>
+                <li>点击了"保存"按钮</li>
+            </ul>
+
+            <div class="tip">
+                🎉 全部打钩就完成啦！可以去测试页面试试看！
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="index.html" class="btn btn-secondary">← 返回</a>
+            <a href="test.html" class="btn btn-primary">去测试 →</a>
+        </div>
+    </div>
+
+    <script>
+        function copyPrompt() {
+            const promptText = document.querySelector('#promptBox').textContent.trim().replace('📋 复制', '').trim();
+            navigator.clipboard.writeText(promptText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '✓ 已复制！';
+                btn.style.background = '#4ade80';
+                setTimeout(() => {
+                    btn.textContent = '📋 复制';
+                }, 2000);
+            }).catch(() => {
+                alert('复制失败，请手动选择复制');
+            });
+        }
+    </script>
+</body>
+</html>
+

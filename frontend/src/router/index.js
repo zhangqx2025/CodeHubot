@@ -176,6 +176,13 @@ const routes = [
         component: () => import('../views/LLMModels.vue'),
         meta: { requiresAuth: true, requiresRole: 'admin' }
       },
+      // 个人信息
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('../views/Profile.vue'),
+        meta: { requiresAuth: true }
+      },
       // 用户管理
       {
         path: 'users',

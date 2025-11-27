@@ -591,9 +591,9 @@ const handleLogout = () => {
 // 处理用户下拉菜单命令
 const handleCommand = (command) => {
   if (command === 'profile') {
-    ElMessage.info('个人信息功能开发中...')
+    router.push('/profile')
   } else if (command === 'account') {
-    ElMessage.info('账户设置功能开发中...')
+    router.push('/profile')
   } else if (command === 'security') {
     ElMessage.info('安全设置功能开发中...')
   } else if (command === 'preferences') {
