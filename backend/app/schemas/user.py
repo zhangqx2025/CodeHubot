@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 import re
 from app.core.constants import (
@@ -7,6 +7,9 @@ from app.core.constants import (
     MIN_USERNAME_LENGTH, MAX_USERNAME_LENGTH,
     USERNAME_REGEX, FORBIDDEN_USERNAMES
 )
+
+# 定义角色类型
+UserRole = Literal['individual', 'platform_admin', 'school_admin', 'teacher', 'student']
 
 class UserCreate(BaseModel):
     """用户注册Schema - 增强输入验证"""
@@ -87,9 +90,17 @@ class UserResponse(BaseModel):
     id: int
     email: Optional[str] = None
     username: str
+    real_name: Optional[str] = None
     nickname: Optional[str] = None
-    role: str = 'user'  # 用户角色：admin/user
+    phone: Optional[str] = None
+    role: str = 'individual'
+    school_id: Optional[int] = None
+    school_name: Optional[str] = None
+    teacher_number: Optional[str] = None
+    student_number: Optional[str] = None
+    subject: Optional[str] = None
     is_active: bool
+    need_change_password: bool = False
     last_login: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

@@ -11,6 +11,7 @@
         :model="registerForm"
         :rules="registerRules"
         class="register-form"
+        autocomplete="off"
         @submit.prevent="handleRegister"
       >
         <el-form-item prop="username">

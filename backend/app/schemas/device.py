@@ -154,6 +154,9 @@ class DeviceList(BaseModel):
     product_id: Optional[int] = None  # 动态绑定，可为空
     product_code: Optional[str] = None
     product_name: Optional[str] = None
+    mac_address: Optional[str] = None  # MAC地址
+    device_mac: Optional[str] = None   # 设备MAC（用于显示）
+    ip_address: Optional[str] = None   # IP地址
     device_status: Optional[DeviceStatus] = None
     is_online: Optional[bool] = None
     is_active: Optional[bool] = None

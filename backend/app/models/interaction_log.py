@@ -3,7 +3,7 @@
 支持TimescaleDB时序数据库优化
 """
 
-from datetime import datetime
+from app.utils.timezone import get_beijing_time_naive
 from sqlalchemy import Column, Integer, BigInteger, String, Text, DateTime, JSON
 from sqlalchemy.sql import func
 

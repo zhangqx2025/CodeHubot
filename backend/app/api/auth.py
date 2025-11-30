@@ -8,11 +8,14 @@ from typing import Optional, Union
 import logging
 from app.core.database import get_db
 from app.models.user import User
+from app.models.school import School
+from app.utils.timezone import get_beijing_time_naive
 from app.schemas.user import (
     UserCreate, UserLogin, UserResponse, LoginResponse,
     PasswordResetRequest, PasswordResetConfirm,
     ChangePasswordRequest, UpdateProfileRequest
 )
+from app.schemas.user_management import InstitutionLoginRequest
 from app.core.security import (
     verify_password, get_password_hash, 
     create_access_token, create_refresh_token, verify_token,
@@ -52,12 +55,14 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
                 detail=ErrorMessages.USERNAME_EXISTS
             )
         
-        # 创建用户
+        # 创建用户（默认为独立用户）
         hashed_password = get_password_hash(user_data.password)
         db_user = User(
             email=user_data.email,  # 可以是 None
             username=user_data.username,
-            password_hash=hashed_password
+            password_hash=hashed_password,
+            role='individual',  # 默认为独立用户
+            school_id=None  # 独立用户不属于任何学校
         )
         db.add(db_user)
         db.commit()
@@ -117,7 +122,7 @@ async def login(login_data: UserLogin, db: Session = Depends(get_db)):
             )
         
         # 更新最后登录时间
-        user.last_login = datetime.utcnow()
+        user.last_login = get_beijing_time_naive()
         db.commit()
         
         # 生成访问令牌和刷新令牌
@@ -414,6 +419,87 @@ async def refresh_access_token(request: RefreshTokenRequest, db: Session = Depen
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Token刷新失败，请稍后重试"
+        )
+
+@router.post("/institution-login", response_model=LoginResponse)
+async def institution_login(login_data: InstitutionLoginRequest, db: Session = Depends(get_db)):
+    """机构登录 - 学校代码+工号/学号+密码登录"""
+    try:
+        # 1. 查找学校
+        school = db.query(School).filter(
+            School.school_code == login_data.school_code.upper()
+        ).first()
+        
+        if not school:
+            logger.warning(f"机构登录失败：学校不存在 - {login_data.school_code}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="学校不存在"
+            )
+        
+        if not school.is_active:
+            logger.warning(f"机构登录失败：学校已禁用 - {login_data.school_code}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="学校已禁用"
+            )
+        
+        # 2. 查找用户（通过工号或学号）
+        user = db.query(User).filter(
+            User.school_id == school.id,
+            (User.teacher_number == login_data.number) | (User.student_number == login_data.number)
+        ).first()
+        
+        if not user:
+            logger.warning(f"机构登录失败：用户不存在 - {login_data.school_code}/{login_data.number}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="工号/学号或密码错误"
+            )
+        
+        # 3. 验证密码
+        if not verify_password(login_data.password, user.password_hash):
+            logger.warning(f"机构登录失败：密码错误 - {login_data.school_code}/{login_data.number}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="工号/学号或密码错误"
+            )
+        
+        # 4. 检查账户状态
+        if not user.is_active:
+            logger.warning(f"机构登录失败：账户已禁用 - {login_data.school_code}/{login_data.number}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ErrorMessages.ACCOUNT_DISABLED
+            )
+        
+        # 5. 更新最后登录时间
+        user.last_login = get_beijing_time_naive()
+        db.commit()
+        
+        # 6. 生成访问令牌和刷新令牌
+        token_data = {"sub": str(user.id)}
+        access_token = create_access_token(data=token_data)
+        refresh_token = create_refresh_token(data=token_data)
+        
+        logger.info(f"✅ 机构用户登录成功: {user.username} ({user.role}) - {school.school_name} (ID: {user.id})")
+        
+        return LoginResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            expires_in=900,
+            user=UserResponse.model_validate(user)
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ 机构登录失败: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ErrorMessages.OPERATION_FAILED
         )
 
 @router.get("/user-info", response_model=UserResponse)

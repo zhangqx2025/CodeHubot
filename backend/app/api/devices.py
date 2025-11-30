@@ -104,24 +104,45 @@ def create_device(
     
     return db_device
 
+@router.get("", response_model=List[DeviceList])
 @router.get("/", response_model=List[DeviceList])
 def get_devices(
     skip: int = Query(0, ge=0, description="跳过的记录数"),
     limit: int = Query(100, ge=1, le=1000, description="返回的记录数"),
+    page: Optional[int] = Query(None, ge=1, description="页码（从1开始）"),
+    page_size: Optional[int] = Query(None, ge=1, le=1000, description="每页记录数"),
+    keyword: Optional[str] = Query(None, description="搜索关键词（name或sn）"),
     product_id: Optional[int] = Query(None, description="产品ID筛选"),
     is_online: Optional[bool] = Query(None, description="在线状态筛选"),
     is_active: Optional[bool] = Query(None, description="激活状态筛选"),
     device_status: Optional[str] = Query(None, description="设备状态筛选：pending/bound/active/offline/error"),
     has_error: Optional[bool] = Query(None, description="是否有故障（error_count>0）"),
     search: Optional[str] = Query(None, description="搜索关键词"),
+    exclude_grouped: Optional[bool] = Query(None, description="排除已在设备组中的设备"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """获取设备列表 - 数据权限控制：只返回用户注册的设备，管理员可以看到所有设备"""
+    # 支持page/page_size参数（转换为skip/limit）
+    if page is not None and page_size is not None:
+        skip = (page - 1) * page_size
+        limit = page_size
+    
+    # 支持keyword参数（映射到search）
+    if keyword:
+        search = keyword
+    
     query = db.query(Device)
     
-    # 数据权限过滤：管理员可以看到所有设备，普通用户只能看到自己注册的设备
-    if not is_admin_user(current_user):
+    # 数据权限过滤
+    if is_admin_user(current_user):
+        # 平台管理员可以看到所有设备
+        pass
+    elif current_user.role == 'school_admin' and current_user.school_id:
+        # 学校管理员只能看到明确归属于本校的设备
+        query = query.filter(Device.school_id == current_user.school_id)
+    else:
+        # 普通用户只能看到自己注册的设备
         query = query.filter(Device.user_id == current_user.id)
     
     # 应用筛选条件
@@ -143,6 +164,16 @@ def get_devices(
             (Device.location.like(search_pattern)) |
             (Device.group_name.like(search_pattern))
         )
+    
+    # 排除已在设备组中的设备
+    if exclude_grouped:
+        from app.models.device_group import DeviceGroupMember
+        # 使用子查询找出所有在设备组中的设备ID
+        grouped_device_ids = db.query(DeviceGroupMember.device_id).filter(
+            DeviceGroupMember.left_at.is_(None)  # 只查询未离开的设备
+        ).subquery()
+        # 排除这些设备
+        query = query.filter(~Device.id.in_(grouped_device_ids))
     
     # 分页
     devices = query.offset(skip).limit(limit).all()
@@ -279,7 +310,8 @@ def get_devices_with_product_info(
                 "device_id": device.device_id,
                 "uuid": device.uuid,
                 "product_id": device.product_id,
-                "mac_address": device.mac_address,  # 添加MAC地址
+                "mac_address": device.mac_address,  # MAC地址
+                "device_mac": device.mac_address or "",  # 设备MAC（用于显示，空值处理）
                 "ip_address": device.ip_address,    # 添加IP地址
                 "location": device.location,
                 "group_name": device.group_name,
@@ -387,6 +419,54 @@ def update_device(
     db.refresh(device)
     
     return device
+
+
+@router.put("/{device_uuid}/set-school")
+def set_device_school(
+    device_uuid: str,
+    school_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    设置设备归属学校
+    - 设备所有者可以将设备设置为学校设备
+    - 学校管理员可以将设备设置为本校设备
+    - 设置为NULL表示转为个人设备
+    """
+    device = db.query(Device).filter(Device.uuid == device_uuid).first()
+    
+    if not device:
+        raise HTTPException(status_code=404, detail="设备不存在")
+    
+    # 权限检查
+    is_owner = device.user_id == current_user.id
+    is_school_admin_of_target = (
+        current_user.role == 'school_admin' and 
+        current_user.school_id == school_id
+    )
+    
+    if not (is_owner or is_school_admin_of_target or is_admin_user(current_user)):
+        raise HTTPException(
+            status_code=403,
+            detail="无权设置该设备的学校归属"
+        )
+    
+    # 如果设置为学校设备，验证学校存在
+    if school_id is not None:
+        from app.models.school import School
+        school = db.query(School).filter(School.id == school_id).first()
+        if not school:
+            raise HTTPException(status_code=404, detail="学校不存在")
+    
+    # 更新设备的学校归属
+    device.school_id = school_id
+    db.commit()
+    db.refresh(device)
+    
+    message = "设备已设置为学校设备" if school_id else "设备已设置为个人设备"
+    return {"code": 200, "message": message, "data": {"device_uuid": device_uuid, "school_id": school_id}}
+
 
 @router.delete("/{device_uuid}")
 def delete_device(

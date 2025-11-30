@@ -46,10 +46,18 @@ class CustomJSONResponse(JSONResponse):
         return super().render(processed_content)
 
 # 创建数据库表
+# 注意：需要先导入所有模型，SQLAlchemy会自动处理外键依赖关系
+from app.models import school, course_model, device_group, knowledge_base, document, kb_analytics  # 导入所有模型
 user.Base.metadata.create_all(bind=engine)
 device.Base.metadata.create_all(bind=engine)
 product.Base.metadata.create_all(bind=engine)
 firmware.Base.metadata.create_all(bind=engine)
+school.Base.metadata.create_all(bind=engine)
+course_model.Base.metadata.create_all(bind=engine)
+device_group.Base.metadata.create_all(bind=engine)
+knowledge_base.Base.metadata.create_all(bind=engine)
+document.Base.metadata.create_all(bind=engine)
+kb_analytics.Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -130,7 +138,7 @@ async def response_middleware(request: Request, call_next):
                 # 包装为标准格式
                 wrapped_data = success_response(data=data, message="操作成功")
                 return CustomJSONResponse(
-                    content=wrapped_data.model_dump(),
+                    content=wrapped_data,  # wrapped_data 已经是字典
                     status_code=response.status_code,
                     headers=new_headers
                 )
@@ -160,7 +168,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     )
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_resp.model_dump()
+        content=error_resp  # error_resp 已经是字典
     )
 
 @app.exception_handler(RequestValidationError)
@@ -173,7 +181,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=error_resp.model_dump()
+        content=error_resp  # error_resp 已经是字典
     )
 
 # 注册路由

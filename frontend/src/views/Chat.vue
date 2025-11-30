@@ -6,7 +6,8 @@
         <el-icon class="agent-icon"><ChatDotRound /></el-icon>
         <div class="agent-details">
           <h3>{{ agent?.name || '智能体' }}</h3>
-          <p>{{ agent?.description || '正在加载...' }}</p>
+          <p v-if="!agent">正在加载...</p>
+          <p v-else>{{ agent.description || '暂无描述' }}</p>
         </div>
       </div>
       <div class="header-actions">

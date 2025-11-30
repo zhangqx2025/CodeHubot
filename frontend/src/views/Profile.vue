@@ -104,7 +104,7 @@
           <el-card class="info-card" shadow="hover">
             <template #header>
               <div class="card-header">
-                <el-icon size="20" color="#67C23A"><Shield /></el-icon>
+                <el-icon size="20" color="#67C23A"><Lock /></el-icon>
                 <span>账户安全</span>
               </div>
             </template>
@@ -213,7 +213,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  User, Lock, Key, Shield, Setting, Check, CircleCheck, Warning, Document,
+  User, Lock, Key, Setting, Check, CircleCheck, Warning, Document,
   Monitor, Login, Edit
 } from '@element-plus/icons-vue'
 import { getUserInfo, updateProfile as updateUserProfile, changePassword as changeUserPassword, getUserStats } from '@/api/auth'
