@@ -84,50 +84,9 @@
 | **容器化** | Docker + Docker Compose | 容器化部署方案 |
 
 
-## 🚀 一键部署
+## 🚀 快速开始
 
-### 前置要求
-
-- Docker 20.10+ 和 Docker Compose 2.0+
-- 至少 4GB 内存和 20GB 磁盘空间
-
-### 快速开始
-
-```bash
-# 1. 克隆项目
-git clone https://github.com/CodeHubot/CodeHubot.git CodeHubot
-cd CodeHubot
-
-# 2. 配置环境变量（使用新架构配置）
-cd docker
-cp .env.example .env
-nano .env  # 设置 MYSQL_PASSWORD, SECRET_KEY, ADMIN_PASSWORD 等
-
-# 重要：首次部署时，建议设置管理员账号：
-# ADMIN_USERNAME=admin          # 管理员用户名（默认：admin）
-# ADMIN_PASSWORD=your_password  # 管理员密码（必须设置才会自动创建）
-# ADMIN_EMAIL=admin@example.com # 管理员邮箱（可选）
-
-# 3. 一键部署（包含新的 plugin-backend-service）
-docker-compose -f docker-compose.plugin.yml up -d
-
-# 或使用旧配置（不推荐）
-cp .env.example .env
-cd ..
-./deploy.sh deploy
-```
-
-部署完成后访问：
-- **前端**: http://localhost:80
-- **后端 API**: http://localhost/api (通过nginx反向代理，8000端口不对外暴露)
-- **API 文档**: http://localhost/api/docs (通过nginx访问)
-- **Plugin Service**: http://localhost:9000 (插件对外接口)
-- **Plugin Backend**: http://localhost:9002 (插件内部服务) 
-
-📖 **详细部署文档**：
-- [完整部署指南](deploy/DEPLOYMENT_COMPLETE_GUIDE.md) ⭐ 推荐
-- [快速开始](deploy/QUICK_START_PLUGIN_BACKEND.md)
-- [Docker 部署](deploy/docs/docker-deployment.md)
+📖 **部署文档**：请查看 [部署指南](DEPLOYMENT_SUMMARY.md) 了解详细的部署步骤和配置说明。
 
 ---
 

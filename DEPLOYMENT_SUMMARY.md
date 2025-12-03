@@ -1,4 +1,55 @@
-# CodeHubot 容器化自动部署 - 文件清单
+# CodeHubot 部署指南
+
+本文档包含 CodeHubot 平台的完整部署指南和配置说明。
+
+## 🚀 一键部署
+
+### 前置要求
+
+- Docker 20.10+ 和 Docker Compose 2.0+
+- 至少 4GB 内存和 20GB 磁盘空间
+
+### 快速开始
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/CodeHubot/CodeHubot.git CodeHubot
+cd CodeHubot
+
+# 2. 配置环境变量（使用新架构配置）
+cd docker
+cp .env.example .env
+nano .env  # 设置 MYSQL_PASSWORD, SECRET_KEY 等（首次部署建议设置 ADMIN_PASSWORD）
+
+# 3. 一键部署（包含新的 plugin-backend-service）
+docker-compose -f docker-compose.plugin.yml up -d
+
+# 或使用旧配置（不推荐）
+cp .env.example .env
+cd ..
+./deploy.sh deploy
+```
+
+### 部署完成后访问
+
+部署完成后，可以通过以下地址访问系统：
+
+- **前端**: http://localhost:80
+- **后端 API**: http://localhost/api (通过nginx反向代理，8000端口不对外暴露)
+- **API 文档**: http://localhost/api/docs (通过nginx访问)
+- **Plugin Service**: http://localhost:9000 (插件对外接口)
+- **Plugin Backend**: http://localhost:9002 (插件内部服务)
+
+### 相关部署文档
+
+📖 **详细部署文档**：
+- [完整部署指南](deploy/DEPLOYMENT_COMPLETE_GUIDE.md) ⭐ 推荐
+- [快速开始](deploy/QUICK_START_PLUGIN_BACKEND.md)
+- [Docker 部署](deploy/docs/docker-deployment.md)
+
+---
+
+## 📦 容器化自动部署 - 文件清单
 
 本文档列出了所有为容器化自动部署创建的文件。
 
@@ -133,6 +184,74 @@ cd ..
 - MQTT 认证信息
 - 日志级别
 - 环境类型
+
+### 管理员账号配置（首次部署推荐）
+
+系统支持通过环境变量自动创建管理员账号，首次部署时建议配置：
+
+#### 配置项说明
+
+| 环境变量 | 说明 | 默认值 | 是否必需 |
+|---------|------|--------|---------|
+| `ADMIN_USERNAME` | 管理员用户名 | `admin` | 否 |
+| `ADMIN_PASSWORD` | 管理员密码 | 无 | **是**（必须设置才会创建） |
+| `ADMIN_EMAIL` | 管理员邮箱 | `{ADMIN_USERNAME}@aiot.com` | 否 |
+
+#### 配置示例
+
+在 `docker/.env` 文件中添加：
+
+```bash
+# 管理员账号配置（首次部署时建议设置）
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your_secure_password_here
+ADMIN_EMAIL=admin@example.com
+```
+
+#### 工作原理
+
+1. **自动创建**：系统启动时会自动检查管理员账号是否存在
+2. **条件创建**：只有设置了 `ADMIN_PASSWORD` 才会创建管理员账号
+3. **避免重复**：如果管理员账号已存在，不会重复创建
+4. **角色更新**：如果账号存在但角色不是 `platform_admin`，会自动更新为管理员角色
+
+#### 注意事项
+
+- ⚠️ **密码要求**：建议使用强密码，至少8位，包含字母和数字
+- ⚠️ **安全性**：生产环境请使用强密码，不要使用默认密码
+- ⚠️ **首次部署**：首次部署时建议设置，后续部署可以不设置（账号已存在）
+- ✅ **角色**：创建的管理员账号角色为 `platform_admin`，拥有平台管理权限
+
+#### 验证管理员账号
+
+部署完成后，可以使用配置的管理员账号登录系统：
+
+1. 访问前端：http://localhost:80
+2. 使用配置的用户名和密码登录
+3. 登录后可以访问管理功能
+
+#### 日志查看
+
+管理员账号创建过程会记录在日志中：
+
+```bash
+# 查看后端服务日志
+./deploy.sh logs backend
+
+# 或使用 docker-compose
+cd docker
+docker-compose -f docker-compose.prod.yml logs backend | grep -i admin
+```
+
+成功创建时会看到类似日志：
+```
+✅ 管理员账号创建成功: admin (邮箱: admin@example.com, ID: 1)
+```
+
+如果账号已存在：
+```
+ℹ️  管理员账号已存在: admin (ID: 1)
+```
 
 ## 📚 相关文档
 
