@@ -8,19 +8,19 @@
 
     <el-row :gutter="20" style="margin-top: 20px">
       <!-- 左侧：知识库信息和检索测试 -->
-      <el-col :span="8">
+      <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8">
         <!-- 知识库信息 -->
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="info-card">
           <template #header>
-            <div style="display: flex; align-items: center; gap: 8px">
-              <el-icon><Document /></el-icon>
-              <span style="font-weight: 600">知识库信息</span>
+            <div class="card-header-title">
+              <el-icon class="header-icon"><Document /></el-icon>
+              <span class="header-text">知识库信息</span>
             </div>
           </template>
 
-          <el-descriptions :column="1" border size="default">
+          <el-descriptions :column="1" border size="default" class="kb-descriptions">
             <el-descriptions-item label="名称">
-              <span style="font-weight: 500">{{ knowledgeBase.name }}</span>
+              <span class="kb-name-value">{{ knowledgeBase.name }}</span>
             </el-descriptions-item>
             <el-descriptions-item label="作用域">
               <el-tag :type="getScopeTagType(knowledgeBase.scope_type)" size="default">
@@ -34,26 +34,26 @@
               <el-tag type="success" size="default">{{ knowledgeBase.chunk_count || 0 }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="总大小">
-              <span style="color: var(--el-text-color-regular)">{{ formatSize(knowledgeBase.total_size) }}</span>
+              <span class="text-regular">{{ formatSize(knowledgeBase.total_size) }}</span>
             </el-descriptions-item>
             <el-descriptions-item label="创建者">
-              <span style="color: var(--el-text-color-regular)">{{ knowledgeBase.owner_name }}</span>
+              <span class="text-regular">{{ knowledgeBase.owner_name }}</span>
             </el-descriptions-item>
             <el-descriptions-item label="创建时间">
-              <span style="color: var(--el-text-color-regular)">{{ formatTime(knowledgeBase.created_at) }}</span>
+              <span class="text-regular">{{ formatTime(knowledgeBase.created_at) }}</span>
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
 
         <!-- 向量检索测试 -->
-        <el-card shadow="hover" style="margin-top: 20px">
+        <el-card shadow="hover" class="search-card">
           <template #header>
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <div style="display: flex; align-items: center; gap: 8px">
-                <el-icon><Search /></el-icon>
-                <span style="font-weight: 600">向量检索测试</span>
+            <div class="search-card-header">
+              <div class="card-header-title">
+                <el-icon class="header-icon"><Search /></el-icon>
+                <span class="header-text">向量检索测试</span>
               </div>
-              <el-tag type="info" size="small" effect="plain">测试知识库效果</el-tag>
+              <el-tag type="info" size="small" effect="plain" class="test-tag">测试知识库效果</el-tag>
             </div>
           </template>
 
@@ -66,44 +66,44 @@
               :disabled="searching"
             />
             
-            <div style="margin-top: 15px">
+            <div class="search-controls">
               <!-- 相似度阈值设置 -->
-              <div style="margin-bottom: 15px; padding: 12px; background: var(--el-fill-color-lighter); border-radius: 6px">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
-                  <span style="font-size: 13px; color: var(--el-text-color-regular); font-weight: 500">相似度阈值:</span>
+              <div class="similarity-threshold-box">
+                <div class="threshold-header">
+                  <span class="threshold-label">相似度阈值:</span>
                   <el-slider
                     v-model="searchSimilarityThreshold"
                     :min="0.3"
                     :max="1.0"
                     :step="0.05"
                     :format-tooltip="(val) => `${(val * 100).toFixed(0)}%`"
-                    style="flex: 1"
+                    class="threshold-slider"
                     @change="saveSimilarityThreshold"
                   />
-                  <span style="font-size: 14px; color: var(--el-color-primary); font-weight: 600; min-width: 45px; text-align: right">
+                  <span class="threshold-value">
                     {{ (searchSimilarityThreshold * 100).toFixed(0) }}%
                   </span>
                   <el-popover placement="top" width="250" trigger="hover">
                     <template #reference>
-                      <el-icon style="cursor: help; color: var(--el-text-color-secondary); font-size: 16px">
+                      <el-icon class="help-icon">
                         <QuestionFilled />
                       </el-icon>
                     </template>
-                    <div style="font-size: 12px; line-height: 1.8">
-                      <p style="margin: 0 0 8px 0; font-weight: 600">相似度阈值说明：</p>
-                      <p style="margin: 4px 0">• 80-100%：极高相关（严格）</p>
-                      <p style="margin: 4px 0">• 70-80%：高相关（推荐）</p>
-                      <p style="margin: 4px 0">• 60-70%：中等相关</p>
-                      <p style="margin: 4px 0">• 50-60%：低相关（宽松）</p>
-                      <p style="margin: 4px 0">• &lt;50%：不推荐</p>
+                    <div class="threshold-help">
+                      <p class="help-title">相似度阈值说明：</p>
+                      <p>• 80-100%：极高相关（严格）</p>
+                      <p>• 70-80%：高相关（推荐）</p>
+                      <p>• 60-70%：中等相关</p>
+                      <p>• 50-60%：低相关（宽松）</p>
+                      <p>• &lt;50%：不推荐</p>
                     </div>
                   </el-popover>
                 </div>
               </div>
               
               <!-- 检索参数和按钮 -->
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
-                <el-select v-model="searchTopK" size="default" style="width: 130px">
+              <div class="search-actions">
+                <el-select v-model="searchTopK" size="default" class="topk-select">
                   <el-option label="返回 3 条" :value="3" />
                   <el-option label="返回 5 条" :value="5" />
                   <el-option label="返回 10 条" :value="10" />
@@ -115,18 +115,18 @@
                   :loading="searching" 
                   @click="handleSearch"
                   :disabled="!searchQuery.trim()"
-                  style="flex: 1"
+                  class="search-button"
                 >
-                  <el-icon v-if="!searching" style="margin-right: 4px"><Search /></el-icon>
+                  <el-icon v-if="!searching" class="button-icon"><Search /></el-icon>
                   {{ searching ? '检索中...' : '开始检索' }}
                 </el-button>
               </div>
             </div>
 
             <!-- 检索结果 -->
-            <div v-if="searchResults.length > 0" style="margin-top: 20px">
+            <div v-if="searchResults.length > 0" class="search-results">
               <el-divider>
-                <el-tag type="success">
+                <el-tag type="success" class="results-tag">
                   找到 {{ searchResults.length }} 个相关结果
                 </el-tag>
               </el-divider>
@@ -134,47 +134,48 @@
               <div 
                 v-for="(result, index) in searchResults" 
                 :key="result.chunk_id"
-                style="margin-bottom: 15px"
+                class="result-item"
               >
-                <el-card shadow="hover" :body-style="{ padding: '15px' }">
+                <el-card shadow="hover" class="result-card">
                   <template #header>
-                    <div style="display: flex; justify-content: space-between; align-items: center">
-                      <div>
-                        <el-tag size="small" type="primary">
+                    <div class="result-header">
+                      <div class="result-title">
+                        <el-tag size="small" type="primary" class="result-index">
                           #{{ index + 1 }}
                         </el-tag>
-                        <span style="margin-left: 10px; font-size: 14px">
+                        <span class="result-doc-title">
                           {{ result.document?.title || '未命名文档' }}
                         </span>
                       </div>
                       <el-tag 
                         :type="result.similarity > 0.8 ? 'success' : result.similarity > 0.6 ? 'warning' : 'info'"
                         size="small"
+                        class="similarity-tag"
                       >
                         相似度: {{ result.similarity_percent }}
                       </el-tag>
                     </div>
                   </template>
 
-                  <div>
+                  <div class="result-content">
                     <el-text 
                       line-clamp="4" 
-                      style="font-size: 13px; color: #606266"
+                      class="result-text"
                     >
                       {{ result.content }}
                     </el-text>
                     
-                    <div style="margin-top: 10px; font-size: 12px; color: #909399">
+                    <div class="result-meta">
                       <el-space :size="15">
-                        <span>
+                        <span class="meta-item">
                           <el-icon><Document /></el-icon>
                           块 #{{ result.chunk_index }}
                         </span>
-                        <span>
+                        <span class="meta-item">
                           <el-icon><EditPen /></el-icon>
                           {{ result.char_count }} 字符
                         </span>
-                        <span>
+                        <span class="meta-item">
                           <el-icon><Coin /></el-icon>
                           {{ result.token_count }} tokens
                         </span>
@@ -190,6 +191,7 @@
               v-else-if="hasSearched && searchResults.length === 0"
               description="未找到相关内容"
               :image-size="80"
+              class="empty-state"
             >
               <template #extra>
                 <el-text type="info" size="small">
@@ -199,9 +201,9 @@
             </el-empty>
 
             <!-- 初始提示 -->
-            <div v-else style="margin-top: 20px; text-align: center; color: #909399; font-size: 13px">
-              <el-icon size="40" color="#C0C4CC"><Search /></el-icon>
-              <div style="margin-top: 10px">
+            <div v-else class="search-placeholder">
+              <el-icon size="40" color="#C0C4CC" class="placeholder-icon"><Search /></el-icon>
+              <div class="placeholder-text">
                 输入查询内容并点击"开始检索"按钮<br>
                 测试知识库的向量检索效果
               </div>
@@ -211,12 +213,15 @@
       </el-col>
 
       <!-- 右侧：文档列表 -->
-      <el-col :span="18">
-        <el-card>
+      <el-col :xs="24" :sm="24" :md="16" :lg="16" :xl="16">
+        <el-card class="documents-card">
           <template #header>
             <div class="card-header">
-              <span>文档列表</span>
-              <el-button type="primary" @click="showUploadDialog = true">
+              <div class="card-header-title">
+                <el-icon class="header-icon"><Document /></el-icon>
+                <span class="header-text">文档列表</span>
+              </div>
+              <el-button type="primary" @click="showUploadDialog = true" class="upload-button">
                 <el-icon><Upload /></el-icon>
                 上传文档
               </el-button>
@@ -276,6 +281,7 @@
             v-model:page-size="pagination.pageSize"
             :total="pagination.total"
             layout="total, sizes, prev, pager, next"
+            class="documents-pagination"
             @size-change="loadDocuments"
             @current-change="loadDocuments"
           />
@@ -685,6 +691,7 @@ import { Upload, View, Check, Back, QuestionFilled, Search, Document, EditPen, C
 import {
   getKnowledgeBase,
   getDocuments,
+  getDocument,
   uploadDocument,
   deleteDocument,
   triggerEmbedding,
@@ -939,17 +946,6 @@ const viewDocument = async (doc) => {
   currentDocument.value = doc
   showChunksDialog.value = true
   
-  // 重新获取完整的文档信息（确保包含最新的向量化完成时间）
-  try {
-    const res = await getDocument(route.params.uuid, doc.uuid, false)
-    if (res.data) {
-      currentDocument.value = res.data
-    }
-  } catch (error) {
-    console.error('获取文档详情失败:', error)
-    // 如果获取失败，继续使用列表中的数据
-  }
-  
   // 加载文档的文本块
   if (currentDocument.value.embedding_status === 'completed' && currentDocument.value.chunk_count > 0) {
     await loadDocumentChunks(currentDocument.value)
@@ -1104,24 +1100,316 @@ onMounted(() => {
 <style scoped>
 .kb-detail {
   padding: 20px;
+  min-height: calc(100vh - 60px);
+  background: var(--el-bg-color-page);
 }
 
 .kb-name {
   font-size: 20px;
   font-weight: bold;
+  color: var(--el-text-color-primary);
 }
 
+/* 卡片样式 */
+.info-card,
+.search-card {
+  margin-bottom: 20px;
+}
+
+.documents-card {
+  min-height: 600px;
+}
+
+/* 卡片标题 */
+.card-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon {
+  font-size: 18px;
+  color: var(--el-color-primary);
+}
+
+.header-text {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--el-text-color-primary);
+}
+
+.search-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.test-tag {
+  margin-left: auto;
+}
+
+/* 知识库信息描述 */
+.kb-descriptions {
+  margin-top: 10px;
+}
+
+.kb-name-value {
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.text-regular {
+  color: var(--el-text-color-regular);
+}
+
+/* 检索控制区域 */
+.search-controls {
+  margin-top: 15px;
+}
+
+.similarity-threshold-box {
+  margin-bottom: 15px;
+  padding: 12px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.threshold-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.threshold-label {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.threshold-slider {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.threshold-value {
+  font-size: 14px;
+  color: var(--el-color-primary);
+  font-weight: 600;
+  min-width: 45px;
+  text-align: right;
+}
+
+.help-icon {
+  cursor: help;
+  color: var(--el-text-color-secondary);
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+.help-icon:hover {
+  color: var(--el-color-primary);
+}
+
+.threshold-help {
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.help-title {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.search-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.topk-select {
+  width: 130px;
+}
+
+.search-button {
+  flex: 1;
+}
+
+.button-icon {
+  margin-right: 4px;
+}
+
+/* 检索结果 */
+.search-results {
+  margin-top: 20px;
+}
+
+.results-tag {
+  font-size: 13px;
+}
+
+.result-item {
+  margin-bottom: 15px;
+}
+
+.result-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.result-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-index {
+  flex-shrink: 0;
+}
+
+.result-doc-title {
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+}
+
+.similarity-tag {
+  flex-shrink: 0;
+}
+
+.result-content {
+  padding: 0;
+}
+
+.result-text {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  line-height: 1.6;
+}
+
+.result-meta {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 空状态和占位符 */
+.empty-state {
+  margin-top: 20px;
+}
+
+.search-placeholder {
+  margin-top: 20px;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  padding: 40px 20px;
+}
+
+.placeholder-icon {
+  display: block;
+  margin: 0 auto 10px;
+}
+
+.placeholder-text {
+  margin-top: 10px;
+  line-height: 1.6;
+}
+
+/* 文档列表 */
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.el-pagination {
-  margin-top: 20px;
-  justify-content: flex-end;
+.upload-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
+.documents-pagination {
+  margin-top: 20px;
+  justify-content: flex-end;
+  padding: 10px 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .kb-detail {
+    padding: 15px;
+  }
+
+  .info-card,
+  .search-card {
+    margin-bottom: 15px;
+  }
+
+  .search-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .test-tag {
+    margin-left: 0;
+  }
+
+  .threshold-header {
+    flex-wrap: wrap;
+  }
+
+  .threshold-slider {
+    width: 100%;
+    margin: 8px 0;
+  }
+
+  .search-actions {
+    flex-direction: column;
+  }
+
+  .topk-select,
+  .search-button {
+    width: 100%;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .upload-button {
+    width: 100%;
+  }
+}
+
+/* 对话框样式 */
 :deep(.chunk-detail-dialog) {
   width: 70%;
   max-width: 800px;
@@ -1134,6 +1422,9 @@ onMounted(() => {
   word-break: break-word;
   font-family: 'Courier New', monospace;
   line-height: 1.6;
+  padding: 15px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 6px;
 }
 </style>
 
