@@ -14,53 +14,30 @@
       </div>
       
       <div class="toolbar-center">
-        <el-button-group>
-          <el-tooltip content="开始节点">
-            <el-button @click="addNodeToCenter(nodeTypes[0])" :disabled="hasNodeType('start')">
-              <el-icon><VideoPlay /></el-icon>
+        <div class="node-selector">
+          <span class="selector-label">添加节点:</span>
+          <div class="node-buttons">
+            <el-button
+              v-for="nodeType in nodeTypes"
+              :key="nodeType.type"
+              @click="addNodeToCenter(nodeType)"
+              :disabled="(nodeType.type === 'start' || nodeType.type === 'end') && hasNodeType(nodeType.type)"
+              :style="{ borderColor: nodeType.color }"
+              class="node-add-btn"
+            >
+              <el-icon :size="18" :color="nodeType.color">
+                <component :is="nodeType.icon" />
+              </el-icon>
+              <span>{{ nodeType.label }}</span>
             </el-button>
-          </el-tooltip>
-          <el-tooltip content="LLM调用">
-            <el-button @click="addNodeToCenter(nodeTypes[1])">
-              <el-icon><ChatDotRound /></el-icon>
-            </el-button>
-          </el-tooltip>
-          <el-tooltip content="HTTP请求">
-            <el-button @click="addNodeToCenter(nodeTypes[2])">
-              <el-icon><Link /></el-icon>
-            </el-button>
-          </el-tooltip>
-          <el-tooltip content="知识库检索">
-            <el-button @click="addNodeToCenter(nodeTypes[3])">
-              <el-icon><Document /></el-icon>
-            </el-button>
-          </el-tooltip>
-          <el-tooltip content="意图识别">
-            <el-button @click="addNodeToCenter(nodeTypes[4])">
-              <el-icon><QuestionFilled /></el-icon>
-            </el-button>
-          </el-tooltip>
-          <el-tooltip content="字符串处理">
-            <el-button @click="addNodeToCenter(nodeTypes[5])">
-              <el-icon><Setting /></el-icon>
-            </el-button>
-          </el-tooltip>
-          <el-tooltip content="结束节点">
-            <el-button @click="addNodeToCenter(nodeTypes[6])" :disabled="hasNodeType('end')">
-              <el-icon><SuccessFilled /></el-icon>
-            </el-button>
-          </el-tooltip>
-        </el-button-group>
+          </div>
+        </div>
         
         <el-divider direction="vertical" />
         
         <el-button-group>
-          <el-tooltip content="自动排列">
-            <el-button @click="autoLayout" icon="MagicStick" />
-          </el-tooltip>
-          <el-tooltip content="居中显示">
-            <el-button @click="fitView" icon="FullScreen" />
-          </el-tooltip>
+          <el-button @click="autoLayout" icon="MagicStick">自动排列</el-button>
+          <el-button @click="fitView" icon="FullScreen">居中显示</el-button>
         </el-button-group>
       </div>
       
@@ -924,6 +901,51 @@ if (workflowUuid.value) {
   gap: 12px;
 }
 
+.node-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.selector-label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.node-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.node-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-width: 2px;
+  transition: all 0.3s;
+}
+
+.node-add-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.node-add-btn:disabled {
+  opacity: 0.5;
+}
+
+.node-add-btn span {
+  font-size: 13px;
+  font-weight: 500;
+}
+
 .canvas-container {
   flex: 1;
   position: relative;
@@ -968,7 +990,8 @@ if (workflowUuid.value) {
 }
 
 .workflow-node {
-  min-width: 180px;
+  width: 200px;
+  max-width: 200px;
   background: #fff;
   border: 2px solid #e4e7ed;
   border-radius: 10px;
