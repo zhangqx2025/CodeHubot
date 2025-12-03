@@ -88,24 +88,14 @@
               class="node-handle"
             />
 
-            <div class="node-content">
-              <div class="node-header" :style="{ background: data.color }">
-                <el-icon :size="18">
-                  <component :is="data.icon" />
-                </el-icon>
-                <span class="node-title">{{ data.label }}</span>
-                <el-button
-                  type="danger"
-                  icon="Close"
-                  circle
-                  size="small"
-                  class="delete-btn"
-                  @click.stop="deleteNode(id)"
-                />
-              </div>
-              <div class="node-body">
-                <el-tag v-if="data.configured" type="success" size="small">✓ 已配置</el-tag>
-                <el-tag v-else type="warning" size="small">待配置</el-tag>
+            <div class="node-header" :style="{ background: data.color }">
+              <el-icon :size="16">
+                <component :is="data.icon" />
+              </el-icon>
+              <span class="node-title">{{ data.label }}</span>
+              <div class="node-status">
+                <span v-if="data.configured" class="status-icon success">✓</span>
+                <span v-else class="status-icon warning">!</span>
               </div>
             </div>
 
@@ -128,7 +118,7 @@
       <!-- 操作提示 -->
       <div class="operation-tips">
         <el-icon><InfoFilled /></el-icon>
-        <span>从节点右侧圆点拖动到目标节点建立连接</span>
+        <span>💡 拖动圆点连接节点 | 单击配置 | 点击连线删除</span>
       </div>
     </div>
 
@@ -888,14 +878,16 @@ const autoLayout = () => {
   })
 
   // 布局节点
-  const layerWidth = 250 // 层间距
-  const nodeHeight = 100 // 节点间距
-  const startX = 100 // 起始X坐标
-  const startY = 150 // 起始Y坐标
+  const layerWidth = 280 // 层间距
+  const nodeHeight = 120 // 节点间距
+  const startX = 150 // 起始X坐标
+  const startY = 200 // 起始Y坐标
 
   layers.forEach((layerNodes, layerIndex) => {
-    // 计算这一层的起始Y坐标，使节点垂直居中
-    const layerStartY = startY + (layerNodes.length - 1) * nodeHeight / 2
+    // 计算这一层的总高度
+    const totalHeight = (layerNodes.length - 1) * nodeHeight
+    // 计算起始Y坐标使整层垂直居中
+    const layerStartY = startY - totalHeight / 2
     
     layerNodes.forEach((nodeId, nodeIndex) => {
       const node = nodeMap.get(nodeId)
@@ -1186,73 +1178,95 @@ if (workflowUuid.value) {
 }
 
 .workflow-node {
-  width: 160px;
-  height: 50px;
-  background: #fff;
-  border: 2px solid #e4e7ed;
+  width: 180px;
+  height: 48px;
+  background: transparent;
+  border: none;
   border-radius: 8px;
   overflow: visible;
   transition: all 0.3s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
 }
 
 .workflow-node:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
-.workflow-node.selected {
-  border-color: #409eff;
-  border-width: 2px;
-  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.2);
-}
-
-.node-content {
-  width: 100%;
-  height: 100%;
+.workflow-node.selected .node-header {
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.3);
+  border: 2px solid #409eff;
 }
 
 .node-header {
+  width: 100%;
   height: 100%;
   padding: 0 12px;
   color: #fff;
   display: flex;
   align-items: center;
   gap: 8px;
-  border-radius: 6px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s;
+}
+
+.node-header:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
 }
 
 .node-title {
   flex: 1;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.status-tag {
-  border: none;
+.node-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
   font-weight: bold;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.status-icon.success {
+  color: #67c23a;
+}
+
+.status-icon.warning {
+  color: #e6a23c;
 }
 
 .node-handle {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border: 2px solid #fff;
-  background: #409eff;
+  background: #909399;
   transition: all 0.3s;
   border-radius: 50%;
+  opacity: 0.8;
 }
 
 .node-handle:hover {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
+  background: #409eff;
   border-width: 3px;
-  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.3);
+  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.2);
+  opacity: 1;
 }
 
 .config-content {
@@ -1261,42 +1275,34 @@ if (workflowUuid.value) {
 
 /* 连接线样式 */
 :deep(.vue-flow__edge-path) {
-  stroke: #409eff;
+  stroke: #909399;
   stroke-width: 2;
+  opacity: 0.6;
 }
 
 :deep(.vue-flow__edge.selected .vue-flow__edge-path) {
-  stroke: #f56c6c;
+  stroke: #409eff;
   stroke-width: 3;
+  opacity: 1;
 }
 
 :deep(.vue-flow__edge:hover .vue-flow__edge-path) {
-  stroke: #66b1ff;
-  stroke-width: 3;
+  stroke: #409eff;
+  stroke-width: 2.5;
+  opacity: 1;
 }
 
 :deep(.vue-flow__connection-path) {
   stroke: #409eff;
   stroke-width: 2;
-  stroke-dasharray: 8, 4;
-  animation: dash 0.8s linear infinite;
+  stroke-dasharray: 5, 5;
+  animation: dash 0.5s linear infinite;
 }
 
 @keyframes dash {
   to {
-    stroke-dashoffset: -12;
+    stroke-dashoffset: -10;
   }
-}
-
-/* 边的文本 */
-:deep(.vue-flow__edge-text) {
-  font-size: 12px;
-  fill: #606266;
-}
-
-/* 边的删除按钮 */
-:deep(.vue-flow__edge-textbg) {
-  fill: #fff;
 }
 
 :deep(.el-drawer__body) {
