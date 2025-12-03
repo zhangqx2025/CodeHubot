@@ -93,9 +93,19 @@
                 <component :is="data.icon" />
               </el-icon>
               <span class="node-title">{{ data.label }}</span>
-              <div class="node-status">
-                <span v-if="data.configured" class="status-icon success">✓</span>
-                <span v-else class="status-icon warning">!</span>
+              <div class="node-actions">
+                <span v-if="data.configured" class="status-icon success" title="已配置">✓</span>
+                <span v-else class="status-icon warning" title="待配置">!</span>
+                <el-button
+                  type="danger"
+                  size="small"
+                  circle
+                  class="delete-btn"
+                  @click.stop="deleteNode(id)"
+                  title="删除节点"
+                >
+                  <el-icon :size="12"><Close /></el-icon>
+                </el-button>
               </div>
             </div>
 
@@ -118,7 +128,7 @@
       <!-- 操作提示 -->
       <div class="operation-tips">
         <el-icon><InfoFilled /></el-icon>
-        <span>💡 拖动圆点连接节点 | 单击配置 | 点击连线删除</span>
+        <span>💡 拖动圆点连线 | 单击节点配置 | 悬停显示删除按钮 | 点击连线可删除</span>
       </div>
     </div>
 
@@ -607,7 +617,7 @@ const nodes = ref([])
 const edges = ref([])
 
 // 连线类型
-const edgeType = ref('smoothstep')
+const edgeType = ref('simplebezier')
 
 let nodeIdCounter = 1
 
@@ -722,18 +732,26 @@ const addNodeToCenter = (nodeType) => {
 
 // 删除节点
 const deleteNode = (nodeId) => {
-  ElMessageBox.confirm('确定删除这个节点吗？', '提示', {
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
+  const node = nodes.value.find(n => n.id === nodeId)
+  const nodeName = node?.data.label || '该节点'
+  
+  ElMessageBox.confirm(
+    `确定要删除「${nodeName}」吗？相关的连接线也会被删除。`,
+    '删除节点',
+    {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+      center: true
+    }
+  ).then(() => {
     nodes.value = nodes.value.filter(n => n.id !== nodeId)
     edges.value = edges.value.filter(e => e.source !== nodeId && e.target !== nodeId)
     if (selectedNodeId.value === nodeId) {
       selectedNodeId.value = null
       showConfigDrawer.value = false
     }
-    ElMessage.success('节点已删除')
+    ElMessage.success(`「${nodeName}」已删除`)
   }).catch(() => {})
 }
 
@@ -743,13 +761,23 @@ const onNodeClick = ({ node }) => {
   showConfigDrawer.value = true
 }
 
-// 边点击
+// 边点击（删除连线）
 const onEdgeClick = ({ edge }) => {
-  ElMessageBox.confirm('确定删除这条连线吗？', '提示', {
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
+  const sourceNode = nodes.value.find(n => n.id === edge.source)
+  const targetNode = nodes.value.find(n => n.id === edge.target)
+  const fromName = sourceNode?.data.label || '节点'
+  const toName = targetNode?.data.label || '节点'
+  
+  ElMessageBox.confirm(
+    `确定要删除从「${fromName}」到「${toName}」的连线吗？`,
+    '删除连线',
+    {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+      center: true
+    }
+  ).then(() => {
     edges.value = edges.value.filter(e => e.id !== edge.id)
     ElMessage.success('连线已删除')
   }).catch(() => {})
@@ -1224,10 +1252,10 @@ if (workflowUuid.value) {
   text-overflow: ellipsis;
 }
 
-.node-status {
+.node-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
 }
 
 .status-icon {
@@ -1240,6 +1268,7 @@ if (workflowUuid.value) {
   font-size: 12px;
   font-weight: bold;
   background: rgba(255, 255, 255, 0.9);
+  cursor: help;
 }
 
 .status-icon.success {
@@ -1248,6 +1277,29 @@ if (workflowUuid.value) {
 
 .status-icon.warning {
   color: #e6a23c;
+}
+
+.delete-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  opacity: 0;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.workflow-node:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  background: #f56c6c;
+  color: #fff;
+  transform: scale(1.1);
 }
 
 .node-handle {
