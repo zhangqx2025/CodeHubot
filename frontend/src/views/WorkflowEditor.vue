@@ -138,25 +138,21 @@
         <el-icon><InfoFilled /></el-icon>
         <span>💡 拖拽节点到画布添加 | 拖动节点间圆点连线 | 单击节点配置 | 悬停显示删除 ✕</span>
       </div>
-    </div>
 
-    <!-- 右侧执行面板 -->
-    <el-drawer
-      v-model="showExecutionPanel"
-      title="运行工作流"
-      size="500px"
-      direction="rtl"
-      :with-header="false"
-    >
-      <ExecutionPanel
-        :nodes="nodes"
-        :start-node-params="startNodeParams"
-        :running="running"
-        :run-result="runResult"
-        @close="showExecutionPanel = false"
-        @run="confirmRun"
-      />
-    </el-drawer>
+      <!-- 右侧执行面板 (Fixed Panel) -->
+      <transition name="slide-fade">
+        <div v-if="showExecutionPanel" class="execution-panel-wrapper">
+          <ExecutionPanel
+            :nodes="nodes"
+            :start-node-params="startNodeParams"
+            :running="running"
+            :run-result="runResult"
+            @close="showExecutionPanel = false"
+            @run="confirmRun"
+          />
+        </div>
+      </transition>
+    </div>
 
     <!-- 右侧配置抽屉 -->
     <el-drawer
@@ -2450,5 +2446,27 @@ if (workflowUuid.value) {
   align-items: center;
   justify-content: center;
   padding: 30px 0;
+}
+
+.execution-panel-wrapper {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 500px;
+  z-index: 10;
+  background: #fff;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05);
+  border-left: 1px solid #e4e7ed;
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(100%);
 }
 </style>
