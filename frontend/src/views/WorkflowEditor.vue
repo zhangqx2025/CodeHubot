@@ -788,9 +788,9 @@ const onDrop = (event) => {
     let canvasX = (screenCenterX - currentX) / currentZoom
     let canvasY = (screenCenterY - currentY) / currentZoom
     
-    // 添加随机偏移，避免节点完全重叠
-    const randomOffsetX = (Math.random() - 0.5) * 60  // -30 到 +30 之间
-    const randomOffsetY = (Math.random() - 0.5) * 60  // -30 到 +30 之间
+    // 添加较大的随机偏移，确保节点明显错开
+    const randomOffsetX = (Math.random() - 0.5) * 200  // -100 到 +100 之间
+    const randomOffsetY = (Math.random() - 0.5) * 200  // -100 到 +100 之间
     canvasX += randomOffsetX
     canvasY += randomOffsetY
     
