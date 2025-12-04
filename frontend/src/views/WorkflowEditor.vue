@@ -150,10 +150,14 @@
           <el-divider content-position="left">基础信息</el-divider>
           
           <el-form-item label="节点名称">
-            <el-input v-model="selectedNode.data.label" placeholder="输入节点名称" />
+            <el-input 
+              v-model="selectedNode.data.label" 
+              placeholder="输入节点名称" 
+              :disabled="selectedNode.data.nodeType === 'start' || selectedNode.data.nodeType === 'end'"
+            />
           </el-form-item>
 
-          <el-form-item label="节点说明">
+          <el-form-item label="节点说明" v-if="selectedNode.data.nodeType !== 'start' && selectedNode.data.nodeType !== 'end'">
             <el-input
               v-model="selectedNode.data.description"
               type="textarea"
@@ -254,32 +258,31 @@
             </el-form-item>
 
             <el-form-item label="系统提示词">
-              <el-input
-                v-model="selectedNode.data.systemPrompt"
-                type="textarea"
-                :rows="4"
-                placeholder='定义AI的角色和行为:
-你是一个专业的客服助手，需要：
-1. 态度友好，回答准确
-2. 遇到不清楚的问题要诚实说明'
-              />
+              <div class="input-with-var">
+                <el-input
+                  v-model="selectedNode.data.systemPrompt"
+                  type="textarea"
+                  :rows="4"
+                  placeholder='定义AI的角色和行为...'
+                />
+                <el-button class="var-trigger" size="small" @click="openVarSelector(selectedNode.data, 'systemPrompt')">
+                  {x}
+                </el-button>
+              </div>
             </el-form-item>
 
             <el-form-item label="用户提示词">
-              <el-input
-                v-model="selectedNode.data.userPrompt"
-                type="textarea"
-                :rows="6"
-                placeholder='输入提示词，支持变量引用:
-用户问题: {input.query}
-上一节点结果: {node-id.response}
-知识库内容: {kb-node.results}
-
-示例：
-根据以下信息回答用户问题：
-问题：{input.query}
-参考资料：{kb-node.results}'
-              />
+              <div class="input-with-var">
+                <el-input
+                  v-model="selectedNode.data.userPrompt"
+                  type="textarea"
+                  :rows="6"
+                  placeholder='输入提示词，支持变量引用...'
+                />
+                <el-button class="var-trigger" size="small" @click="openVarSelector(selectedNode.data, 'userPrompt')">
+                  {x}
+                </el-button>
+              </div>
             </el-form-item>
 
             <el-collapse>
@@ -333,19 +336,24 @@
           <!-- HTTP节点配置 -->
           <template v-if="selectedNode.data.nodeType === 'http'">
             <el-form-item label="请求URL">
-              <el-input
-                v-model="selectedNode.data.url"
-                placeholder="https://api.example.com/endpoint"
-              >
-                <template #prepend>
-                  <el-select v-model="selectedNode.data.method" style="width: 100px">
-                    <el-option label="GET" value="GET" />
-                    <el-option label="POST" value="POST" />
-                    <el-option label="PUT" value="PUT" />
-                    <el-option label="DELETE" value="DELETE" />
-                  </el-select>
-                </template>
-              </el-input>
+              <div class="input-with-var">
+                <el-input
+                  v-model="selectedNode.data.url"
+                  placeholder="https://api.example.com/endpoint"
+                >
+                  <template #prepend>
+                    <el-select v-model="selectedNode.data.method" style="width: 100px">
+                      <el-option label="GET" value="GET" />
+                      <el-option label="POST" value="POST" />
+                      <el-option label="PUT" value="PUT" />
+                      <el-option label="DELETE" value="DELETE" />
+                    </el-select>
+                  </template>
+                </el-input>
+                <el-button class="var-trigger" size="small" @click="openVarSelector(selectedNode.data, 'url')">
+                  {x}
+                </el-button>
+              </div>
             </el-form-item>
 
             <el-form-item label="请求头配置" class="no-label-margin">
@@ -360,8 +368,11 @@
                   <div class="col-main" style="flex: 1; padding-right: 8px;">
                     <el-input v-model="param.key" placeholder="Key" />
                   </div>
-                  <div class="col-main" style="flex: 1">
-                    <el-input v-model="param.value" placeholder="Value" />
+                  <div class="col-main" style="flex: 1; position: relative;">
+                    <el-input v-model="param.value" placeholder="Value" style="padding-right: 32px" />
+                    <el-button class="cell-var-trigger" size="small" link @click="openVarSelector(param, 'value')">
+                      {x}
+                    </el-button>
                   </div>
                   <div class="col-action">
                     <el-button 
@@ -387,16 +398,17 @@
             </el-form-item>
 
             <el-form-item label="请求体">
-              <el-input
-                v-model="selectedNode.data.body"
-                type="textarea"
-                :rows="6"
-                placeholder='JSON格式，支持变量:
-{
-  "query": "{input.query}",
-  "context": "{llm-node.response}"
-}'
-              />
+              <div class="input-with-var">
+                <el-input
+                  v-model="selectedNode.data.body"
+                  type="textarea"
+                  :rows="6"
+                  placeholder='JSON格式，支持变量...'
+                />
+                <el-button class="var-trigger" size="small" @click="openVarSelector(selectedNode.data, 'body')">
+                  {x}
+                </el-button>
+              </div>
             </el-form-item>
 
             <el-row :gutter="16">
@@ -624,12 +636,17 @@
                       placeholder="输出字段名 (如 answer)" 
                       class="param-name-input"
                     />
-                    <el-input 
-                      v-model="output.value" 
-                      placeholder="变量引用 (如 {llm.response})" 
-                      size="small" 
-                      class="param-desc-input"
-                    />
+                    <div class="input-with-var desc-var-input">
+                      <el-input 
+                        v-model="output.value" 
+                        placeholder="变量引用 (如 {llm.response})" 
+                        size="small" 
+                        class="param-desc-input"
+                      />
+                      <el-button class="cell-var-trigger small" size="small" link @click="openVarSelector(output, 'value')">
+                        {x}
+                      </el-button>
+                    </div>
                   </div>
                   <div class="col-type">
                     <el-select v-model="output.type" placeholder="类型" size="small">
@@ -676,6 +693,34 @@
         </el-form>
       </div>
     </el-drawer>
+
+    <!-- 变量选择器弹窗 -->
+    <el-dialog
+      v-model="showVarSelector"
+      title="插入变量"
+      width="500px"
+      class="var-selector-dialog"
+    >
+      <div class="var-list">
+        <div 
+          v-for="variable in availableVars" 
+          :key="variable.reference" 
+          class="var-item"
+          @click="confirmInsertVar(variable)"
+        >
+          <div class="var-info">
+            <div class="var-header">
+              <el-tag size="small" effect="plain">{{ variable.type }}</el-tag>
+              <span class="var-name">{{ variable.name }}</span>
+            </div>
+            <div class="var-desc">{{ variable.desc }}</div>
+          </div>
+          <div class="var-source">
+            来自: {{ variable.nodeLabel }}
+          </div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -731,6 +776,130 @@ const edges = ref([])
 const edgeType = ref('simplebezier')
 
 let nodeIdCounter = 1
+
+// 获取某个节点的输出定义
+const getNodeOutputs = (node) => {
+  const type = node.data.nodeType
+  const outputs = []
+  
+  switch (type) {
+    case 'start':
+      // Start 节点的输出就是它定义的参数
+      (node.data.parameters || []).forEach(p => {
+        outputs.push({
+          name: p.name,
+          type: p.type,
+          label: p.description || p.name,
+          desc: `开始节点参数`
+        })
+      })
+      break
+    case 'llm':
+      outputs.push({ name: 'response', type: 'string', label: 'LLM回复', desc: 'AI生成的文本' })
+      break
+    case 'http':
+      outputs.push({ name: 'status', type: 'number', label: '状态码', desc: 'HTTP状态码' })
+      outputs.push({ name: 'data', type: 'any', label: '响应数据', desc: 'HTTP响应体' })
+      outputs.push({ name: 'headers', type: 'object', label: '响应头', desc: 'HTTP响应头' })
+      break
+    case 'knowledge':
+      outputs.push({ name: 'results', type: 'array', label: '检索结果', desc: '匹配的知识片段' })
+      break
+    case 'intent':
+      outputs.push({ name: 'category', type: 'string', label: '意图分类', desc: '识别出的意图' })
+      outputs.push({ name: 'confidence', type: 'number', label: '置信度', desc: '识别可信度' })
+      break
+    case 'string':
+      outputs.push({ name: 'result', type: 'string', label: '处理结果', desc: '字符串操作结果' })
+      break
+  }
+  
+  return outputs
+}
+
+// 获取当前节点可用的所有上游变量
+const getAvailableVariables = (currentNodeId) => {
+  if (!currentNodeId) return []
+
+  const predecessors = new Set()
+  const queue = [currentNodeId]
+  const visited = new Set()
+  
+  // 构建反向图：target -> [source1, source2...]
+  const reverseEdgeMap = new Map()
+  edges.value.forEach(e => {
+    if (!reverseEdgeMap.has(e.target)) reverseEdgeMap.set(e.target, [])
+    reverseEdgeMap.get(e.target).push(e.source)
+  })
+  
+  // BFS 查找所有上游节点
+  while(queue.length > 0) {
+    const current = queue.shift()
+    if (visited.has(current)) continue
+    visited.add(current)
+    
+    const parents = reverseEdgeMap.get(current) || []
+    parents.forEach(p => {
+      if (!visited.has(p)) {
+        predecessors.add(p)
+        queue.push(p)
+      }
+    })
+  }
+  
+  // 收集变量
+  const variables = []
+  predecessors.forEach(nodeId => {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (node) {
+      const nodeOutputs = getNodeOutputs(node)
+      nodeOutputs.forEach(out => {
+        variables.push({
+          ...out,
+          nodeId: node.id,
+          nodeLabel: node.data.label,
+          // 构造引用字符串，如 {node-1.response}
+          reference: `{${node.id}.${out.name}}` 
+        })
+      })
+    }
+  })
+  
+  return variables
+}
+
+// 变量选择器相关
+const showVarSelector = ref(false)
+const currentVarTarget = ref(null) // { object: dataObject, field: 'fieldName' }
+const availableVars = ref([])
+
+// 打开变量选择器
+const openVarSelector = (targetObj, fieldName) => {
+  if (!selectedNodeId.value) return
+  
+  // 计算可用变量
+  availableVars.value = getAvailableVariables(selectedNodeId.value)
+  
+  if (availableVars.value.length === 0) {
+    ElMessage.warning('当前节点没有前序节点，或前序节点无可用输出')
+    return
+  }
+  
+  currentVarTarget.value = { object: targetObj, field: fieldName }
+  showVarSelector.value = true
+}
+
+// 确认插入变量
+const confirmInsertVar = (variable) => {
+  if (currentVarTarget.value) {
+    const { object, field } = currentVarTarget.value
+    // 简单追加到末尾
+    const currentVal = object[field] || ''
+    object[field] = currentVal + variable.reference
+    ElMessage.success(`已插入变量: ${variable.label}`)
+  }
+  showVarSelector.value = false
+}
 
 // 节点类型定义
 const nodeTypes = [
@@ -1217,9 +1386,29 @@ const fitView = () => {
 // 保存节点配置
 const saveNodeConfig = () => {
   if (selectedNode.value) {
-    // Start 节点特殊处理：从 parameters 生成 inputSchema
+    // Start 节点特殊处理：验证参数名并生成 inputSchema
     if (selectedNode.value.data.nodeType === 'start') {
       const params = selectedNode.value.data.parameters || []
+      
+      // 验证参数名
+      for (const p of params) {
+        if (!p.name || !p.name.trim()) {
+          ElMessage.warning('参数名不能为空')
+          return
+        }
+        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(p.name)) {
+          ElMessage.warning(`参数名 "${p.name}" 不合法，只能包含字母、数字和下划线，且不能以数字开头`)
+          return
+        }
+      }
+
+      // 检查重复参数名
+      const names = params.map(p => p.name)
+      if (new Set(names).size !== names.length) {
+        ElMessage.warning('参数名不能重复')
+        return
+      }
+
       const schema = {
         type: 'object',
         properties: {},
@@ -1852,6 +2041,96 @@ if (workflowUuid.value) {
 .add-param-btn:hover {
   background-color: #f0f9eb;
   color: #67c23a;
+}
+
+/* 变量插入相关 */
+.input-with-var {
+  position: relative;
+  width: 100%;
+}
+
+.var-trigger {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #409eff;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #dcdfe6;
+  z-index: 2;
+}
+
+.var-trigger:hover {
+  background: #ecf5ff;
+  border-color: #c6e2ff;
+}
+
+.cell-var-trigger {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.cell-var-trigger.small {
+  top: 12px;
+}
+
+.desc-var-input {
+  position: relative;
+}
+
+/* 变量选择器列表 */
+.var-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.var-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #f0f2f5;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.var-item:hover {
+  background: #f5f7fa;
+}
+
+.var-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.var-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.var-name {
+  font-weight: 500;
+  color: #303133;
+}
+
+.var-desc {
+  font-size: 12px;
+  color: #909399;
+}
+
+.var-source {
+  font-size: 12px;
+  color: #909399;
+  background: #f4f4f5;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .no-label-margin :deep(.el-form-item__label) {
