@@ -676,23 +676,69 @@
       width="500px"
       class="var-selector-dialog"
     >
-      <div class="var-list">
-        <div 
-          v-for="variable in availableVars" 
-          :key="variable.reference" 
-          class="var-item"
-          @click="confirmInsertVar(variable)"
-        >
-          <div class="var-info">
-            <div class="var-header">
-              <el-tag size="small" effect="plain">{{ variable.type }}</el-tag>
-              <span class="var-name">{{ variable.name }}</span>
+      <div v-if="!showVarConfig">
+        <div class="var-list">
+          <div 
+            v-for="variable in availableVars" 
+            :key="variable.reference" 
+            class="var-item"
+            @click="selectVariable(variable)"
+          >
+            <div class="var-info">
+              <div class="var-header">
+                <el-tag size="small" effect="plain">{{ variable.type }}</el-tag>
+                <span class="var-name">{{ variable.name }}</span>
+              </div>
+              <div class="var-desc">{{ variable.desc }}</div>
             </div>
-            <div class="var-desc">{{ variable.desc }}</div>
+            <div class="var-source">
+              来自: {{ variable.nodeLabel }}
+            </div>
           </div>
-          <div class="var-source">
-            来自: {{ variable.nodeLabel }}
+        </div>
+      </div>
+      
+      <!-- 变量高级配置 -->
+      <div v-else class="var-config">
+        <div class="config-header">
+          <el-button link @click="showVarConfig = false" icon="ArrowLeft">返回列表</el-button>
+          <span class="selected-var-name">{{ selectedVariable?.name }}</span>
+        </div>
+        
+        <div class="config-body">
+          <el-alert
+            type="info"
+            :closable="false"
+            class="mb-3"
+            show-icon
+          >
+            <template #title>
+              该变量为对象类型，您可以指定子属性进行访问
+            </template>
+          </el-alert>
+          
+          <div class="current-ref">
+            <div class="label">当前引用:</div>
+            <div class="value">{{ getFullReference() }}</div>
           </div>
+          
+          <el-form-item label="子属性路径 (可选)">
+            <el-input 
+              v-model="subPropertyPath" 
+              placeholder="例如: user.name 或 data.id"
+              @keyup.enter="confirmInsertVar"
+            >
+              <template #prepend>.</template>
+            </el-input>
+            <div class="form-tip">
+              使用点号分隔访问对象内部属性。留空则引用整个对象。
+            </div>
+          </el-form-item>
+        </div>
+        
+        <div class="config-footer">
+          <el-button @click="showVarConfig = false">取消</el-button>
+          <el-button type="primary" @click="confirmInsertVar">确认插入</el-button>
         </div>
       </div>
     </el-dialog>
@@ -964,10 +1010,19 @@ const getAvailableVariables = (currentNodeId) => {
 const showVarSelector = ref(false)
 const currentVarTarget = ref(null) // { object: dataObject, field: 'fieldName' }
 const availableVars = ref([])
+// 新增：变量配置相关状态
+const showVarConfig = ref(false)
+const selectedVariable = ref(null)
+const subPropertyPath = ref('')
 
 // 打开变量选择器
 const openVarSelector = (targetObj, fieldName) => {
   if (!selectedNodeId.value) return
+  
+  // 重置状态
+  showVarConfig.value = false
+  selectedVariable.value = null
+  subPropertyPath.value = ''
   
   // 计算可用变量
   availableVars.value = getAvailableVariables(selectedNodeId.value)
@@ -981,16 +1036,50 @@ const openVarSelector = (targetObj, fieldName) => {
   showVarSelector.value = true
 }
 
+// 选择变量
+const selectVariable = (variable) => {
+  selectedVariable.value = variable
+  // 如果是对象或Any类型，进入配置模式
+  if (['object', 'any', 'array'].includes(variable.type)) {
+    subPropertyPath.value = ''
+    showVarConfig.value = true
+  } else {
+    // 简单类型直接插入
+    doInsert(variable.reference)
+  }
+}
+
+// 获取完整引用字符串
+const getFullReference = () => {
+  if (!selectedVariable.value) return ''
+  let ref = selectedVariable.value.reference
+  if (subPropertyPath.value) {
+    // 去掉末尾的 }
+    ref = ref.slice(0, -1)
+    // 添加属性路径
+    ref += `.${subPropertyPath.value}}`
+  }
+  return ref
+}
+
 // 确认插入变量
-const confirmInsertVar = (variable) => {
+const confirmInsertVar = () => {
+  if (selectedVariable.value) {
+    doInsert(getFullReference())
+  }
+}
+
+// 执行插入操作
+const doInsert = (reference) => {
   if (currentVarTarget.value) {
     const { object, field } = currentVarTarget.value
     // 简单追加到末尾
     const currentVal = object[field] || ''
-    object[field] = currentVal + variable.reference
-    ElMessage.success(`已插入变量: ${variable.label}`)
+    object[field] = currentVal + reference
+    ElMessage.success(`已插入变量`)
   }
   showVarSelector.value = false
+  showVarConfig.value = false
 }
 
 // 节点类型定义
@@ -2468,5 +2557,64 @@ if (workflowUuid.value) {
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   transform: translateX(100%);
+}
+
+.var-config {
+  padding: 0 10px;
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 10px;
+}
+
+.selected-var-name {
+  font-weight: bold;
+  margin-left: 10px;
+  font-size: 14px;
+}
+
+.config-body {
+  margin-bottom: 20px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
+
+.current-ref {
+  background: #f5f7fa;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 1px dashed #dcdfe6;
+}
+
+.current-ref .label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+
+.current-ref .value {
+  font-family: monospace;
+  color: #409eff;
+  font-weight: bold;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+.config-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 10px;
 }
 </style>
