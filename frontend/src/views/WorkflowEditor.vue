@@ -785,17 +785,24 @@ const onDrop = (event) => {
     
     // 转换为画布坐标：考虑视口的缩放和平移
     // 公式：(屏幕坐标 - 视口平移) / 缩放
-    const canvasX = (screenCenterX - currentX) / currentZoom
-    const canvasY = (screenCenterY - currentY) / currentZoom
+    let canvasX = (screenCenterX - currentX) / currentZoom
+    let canvasY = (screenCenterY - currentY) / currentZoom
     
-    console.log('放置节点到当前视野中心:', {
+    // 添加随机偏移，避免节点完全重叠
+    const randomOffsetX = (Math.random() - 0.5) * 60  // -30 到 +30 之间
+    const randomOffsetY = (Math.random() - 0.5) * 60  // -30 到 +30 之间
+    canvasX += randomOffsetX
+    canvasY += randomOffsetY
+    
+    console.log('放置节点到当前视野中心（带随机偏移）:', {
       容器尺寸: { width: rect.width, height: rect.height },
       屏幕中心: { x: screenCenterX, y: screenCenterY },
       视口状态: { zoom: currentZoom, x: currentX, y: currentY },
+      随机偏移: { x: Math.round(randomOffsetX), y: Math.round(randomOffsetY) },
       画布坐标: { x: Math.round(canvasX), y: Math.round(canvasY) }
     })
     
-    // 创建节点在当前视野中央
+    // 创建节点在当前视野中央（带随机偏移）
     addNodeAtPosition(
       draggedNodeType, 
       Math.round(canvasX),
