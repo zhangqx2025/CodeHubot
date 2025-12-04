@@ -28,6 +28,9 @@
             <el-button @click="autoLayout" icon="MagicStick">自动排列</el-button>
             <el-button @click="fitView" icon="FullScreen">居中显示</el-button>
           </el-button-group>
+          <el-button @click="handleRun" type="success" icon="VideoPlay" :loading="running">
+            运行
+          </el-button>
           <el-button @click="saveWorkflow" type="primary" :loading="saving" icon="Check">
             保存工作流
           </el-button>
@@ -240,19 +243,18 @@
           <!-- LLM节点配置 -->
           <template v-if="selectedNode.data.nodeType === 'llm'">
             <el-form-item label="选择模型">
-              <el-select v-model="selectedNode.data.llmModel" placeholder="请选择LLM模型" filterable>
-                <el-option-group label="OpenAI">
-                  <el-option label="GPT-4" value="gpt-4" />
-                  <el-option label="GPT-3.5 Turbo" value="gpt-3.5-turbo" />
-                </el-option-group>
-                <el-option-group label="通义千问">
-                  <el-option label="Qwen-Max" value="qwen-max" />
-                  <el-option label="Qwen-Plus" value="qwen-plus" />
-                  <el-option label="Qwen-Turbo" value="qwen-turbo" />
-                </el-option-group>
-                <el-option-group label="智谱AI">
-                  <el-option label="GLM-4" value="glm-4" />
-                  <el-option label="GLM-3-Turbo" value="glm-3-turbo" />
+              <el-select v-model="selectedNode.data.llmModel" placeholder="留空则使用系统默认模型" filterable clearable>
+                <el-option-group
+                  v-for="group in llmModelOptions"
+                  :key="group.label"
+                  :label="group.label"
+                >
+                  <el-option
+                    v-for="item in group.options"
+                    :key="item.name"
+                    :label="item.display_name"
+                    :value="item.name"
+                  />
                 </el-option-group>
               </el-select>
             </el-form-item>
@@ -680,6 +682,110 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- 运行配置弹窗 -->
+    <el-dialog
+      v-model="showRunDialog"
+      title="运行工作流"
+      width="500px"
+    >
+      <el-form :model="runParams" label-position="top">
+        <template v-if="startNodeParams.length > 0">
+          <el-form-item
+            v-for="param in startNodeParams"
+            :key="param.name"
+            :label="param.name + (param.description ? ` (${param.description})` : '')"
+            :required="param.required"
+          >
+            <el-input
+              v-if="param.type === 'string'"
+              v-model="runParams[param.name]"
+              :placeholder="'请输入 ' + param.name"
+            />
+            <el-input-number
+              v-else-if="param.type === 'number'"
+              v-model="runParams[param.name]"
+              style="width: 100%"
+            />
+            <el-switch
+              v-else-if="param.type === 'boolean'"
+              v-model="runParams[param.name]"
+            />
+            <el-input
+              v-else
+              v-model="runParams[param.name]"
+            />
+          </el-form-item>
+        </template>
+        <div v-else class="empty-params">
+          <el-icon color="#909399"><InfoFilled /></el-icon>
+          <span style="margin-left: 8px; color: #909399;">该工作流无需输入参数</span>
+        </div>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showRunDialog = false">取消</el-button>
+          <el-button type="primary" @click="confirmRun" :loading="running">
+            开始运行
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 运行结果弹窗 -->
+    <el-dialog
+      v-model="showResultDialog"
+      title="运行结果"
+      width="600px"
+    >
+      <div v-if="runResult" class="run-result">
+        <div class="result-header">
+          <el-tag :type="runResult.status === 'completed' ? 'success' : 'danger'">
+            {{ runResult.status === 'completed' ? '执行成功' : '执行失败' }}
+          </el-tag>
+          <span class="time">耗时: {{ runResult.execution_time }}ms</span>
+        </div>
+        
+        <div class="result-section">
+          <div class="section-title">输出结果</div>
+          <div class="code-block">
+            <pre>{{ JSON.stringify(runResult.output, null, 2) }}</pre>
+          </div>
+        </div>
+
+        <div v-if="runResult.error_message" class="result-section">
+          <div class="section-title error">错误信息</div>
+          <div class="error-msg">{{ runResult.error_message }}</div>
+        </div>
+
+        <el-collapse style="margin-top: 16px;">
+          <el-collapse-item title="节点执行详情" name="1">
+            <el-timeline>
+              <el-timeline-item
+                v-for="node in runResult.node_executions"
+                :key="node.node_id"
+                :type="node.status === 'success' ? 'success' : 'danger'"
+                :timestamp="`${node.execution_time}ms`"
+                placement="top"
+              >
+                <div class="node-exec-card">
+                  <div class="node-exec-header">
+                    <span class="node-id">{{ node.node_id }}</span>
+                    <span class="node-type">{{ node.node_type }}</span>
+                  </div>
+                  <div v-if="node.output" class="node-output">
+                    <pre>{{ JSON.stringify(node.output, null, 2) }}</pre>
+                  </div>
+                  <div v-if="node.error_message" class="node-error">
+                    {{ node.error_message }}
+                  </div>
+                </div>
+              </el-timeline-item>
+            </el-timeline>
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -713,8 +819,10 @@ import '@vue-flow/core/dist/theme-default.css'
 import {
   getWorkflow,
   createWorkflow,
-  updateWorkflow
+  updateWorkflow,
+  executeWorkflow
 } from '@/api/workflow'
+import { getActiveLLMModels } from '@/api/llm-model'
 
 const route = useRoute()
 const router = useRouter()
@@ -724,8 +832,17 @@ const { fitView: vueFlowFitView, project, viewport, vueFlowRef } = useVueFlow()
 const workflowName = ref('')
 const workflowUuid = ref(route.params.uuid)
 const saving = ref(false)
+const running = ref(false)
 const selectedNodeId = ref(null)
 const showConfigDrawer = ref(false)
+
+// 运行相关
+const showRunDialog = ref(false)
+const showResultDialog = ref(false)
+const runParams = ref({})
+const startNodeParams = ref([])
+const runResult = ref(null)
+const llmModelOptions = ref([])
 
 // 节点和边
 const nodes = ref([])
@@ -969,7 +1086,46 @@ const createNode = (nodeType, x, y) => {
 // 组件挂载后初始化
 onMounted(() => {
   loadWorkflow()
+  loadLLMModels()
 })
+
+// 加载 LLM 模型
+const loadLLMModels = async () => {
+  try {
+    const res = await getActiveLLMModels()
+    // 分组处理
+    const groups = {}
+    // res.data 可能是数组或 { items: [] }，根据API定义应该是数组
+    const models = Array.isArray(res) ? res : (res.data || [])
+    
+    models.forEach(model => {
+      const provider = model.provider || 'unknown'
+      if (!groups[provider]) {
+        groups[provider] = []
+      }
+      groups[provider].push(model)
+    })
+    
+    llmModelOptions.value = Object.keys(groups).map(provider => ({
+      label: getProviderLabel(provider),
+      options: groups[provider]
+    }))
+  } catch (e) {
+    console.error('加载LLM模型失败', e)
+  }
+}
+
+const getProviderLabel = (provider) => {
+    const map = {
+        'openai': 'OpenAI',
+        'qwen': '通义千问',
+        'zhipu': '智谱AI',
+        'moonshot': 'Moonshot (Kimi)',
+        'deepseek': 'DeepSeek',
+        'doubao': '豆包 (Doubao)'
+    }
+    return map[provider.toLowerCase()] || provider
+}
 
 // 拖拽相关
 let draggedNodeType = null
@@ -1505,6 +1661,62 @@ const saveWorkflow = async () => {
     ElMessage.error('保存失败: ' + (error.response?.data?.message || error.message))
   } finally {
     saving.value = false
+  }
+}
+
+// 处理运行点击
+const handleRun = async () => {
+  // 先保存
+  await saveWorkflow()
+  
+  // 找到开始节点
+  const startNode = nodes.value.find(n => n.data.nodeType === 'start')
+  if (!startNode) {
+    ElMessage.warning('找不到开始节点')
+    return
+  }
+
+  // 解析参数
+  startNodeParams.value = startNode.data.parameters || []
+  runParams.value = {}
+  
+  // 初始化参数默认值
+  startNodeParams.value.forEach(p => {
+    if (p.type === 'boolean') {
+      runParams.value[p.name] = false
+    } else {
+      runParams.value[p.name] = ''
+    }
+  })
+
+  showRunDialog.value = true
+}
+
+// 确认运行
+const confirmRun = async () => {
+  // 验证必填参数
+  for (const param of startNodeParams.value) {
+    if (param.required && !runParams.value[param.name] && runParams.value[param.name] !== 0 && runParams.value[param.name] !== false) {
+      ElMessage.warning(`请输入 ${param.name}`)
+      return
+    }
+  }
+
+  showRunDialog.value = false
+  running.value = true
+  
+  try {
+    const res = await executeWorkflow(workflowUuid.value, {
+      input: runParams.value
+    })
+    
+    runResult.value = res.data
+    showResultDialog.value = true
+    ElMessage.success('执行完成')
+  } catch (error) {
+    ElMessage.error('执行失败: ' + (error.response?.data?.message || error.message))
+  } finally {
+    running.value = false
   }
 }
 
@@ -2130,5 +2342,96 @@ if (workflowUuid.value) {
 :deep(.el-form-item) {
   display: block; /* 确保 label 和 content 上下排列时占满 */
   margin-bottom: 24px;
+}
+
+.run-result {
+  padding: 10px;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.result-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.section-title.error {
+  color: #f56c6c;
+}
+
+.code-block {
+  background: #f5f7fa;
+  padding: 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #606266;
+  overflow-x: auto;
+}
+
+.code-block pre {
+  margin: 0;
+}
+
+.error-msg {
+  color: #f56c6c;
+  font-size: 13px;
+  background: #fef0f0;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.node-exec-card {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 10px;
+  background: #fff;
+}
+
+.node-exec-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.node-id {
+  font-weight: bold;
+  color: #303133;
+}
+
+.node-type {
+  color: #909399;
+}
+
+.node-output {
+  background: #fafafa;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #606266;
+  overflow-x: auto;
+}
+
+.node-output pre {
+  margin: 0;
+}
+
+.empty-params {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
 }
 </style>
