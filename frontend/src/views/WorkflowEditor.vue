@@ -1430,16 +1430,38 @@ const saveNodeConfig = () => {
       selectedNode.value.data.inputSchema = JSON.stringify(schema, null, 2)
     }
 
-    // End 节点特殊处理：从 outputs 生成 outputMapping
+    // End 节点特殊处理：验证并生成 outputMapping
     if (selectedNode.value.data.nodeType === 'end') {
       const outputs = selectedNode.value.data.outputs || []
+      
+      // 验证输出字段
+      for (const o of outputs) {
+        if (!o.name || !o.name.trim()) {
+          ElMessage.warning('输出字段名不能为空')
+          return
+        }
+        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(o.name)) {
+          ElMessage.warning(`输出字段名 "${o.name}" 不合法，只能包含字母、数字和下划线，且不能以数字开头`)
+          return
+        }
+        if (!o.value || !o.value.trim()) {
+          ElMessage.warning(`输出字段 "${o.name}" 的变量引用不能为空`)
+          return
+        }
+      }
+
+      // 检查重复字段名
+      const names = outputs.map(o => o.name)
+      if (new Set(names).size !== names.length) {
+        ElMessage.warning('输出字段名不能重复')
+        return
+      }
+
       const mapping = {}
       
       outputs.forEach(o => {
         if (o.name) {
           // 简单处理：直接映射值
-          // 如果需要支持类型转换，这里可能需要更复杂的逻辑，目前后端主要接收 JSON
-          // 我们尽量保持值为字符串（如果是变量引用）
           mapping[o.name] = o.value
         }
       })
