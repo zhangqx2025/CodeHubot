@@ -1459,8 +1459,8 @@ const onConnect = (connection) => {
     source: connection.source,
     target: connection.target,
     type: edgeType.value,
-    animated: true,
-    style: { stroke: '#409eff', strokeWidth: 2 }
+    animated: false, // 默认静态
+    style: { stroke: '#b1b3b8', strokeWidth: 2 } // 默认灰色
   }
 
   edges.value.push(newEdge)
@@ -1801,12 +1801,24 @@ const confirmRun = async (params) => {
   running.value = true
   runResult.value = null
   
+  // 重置所有连线样式
+  edges.value.forEach(edge => {
+    edge.animated = false
+    edge.style = { stroke: '#b1b3b8', strokeWidth: 2 }
+  })
+  
   try {
     const res = await executeWorkflow(workflowUuid.value, {
       input: params
     })
     
     runResult.value = res.data
+    
+    // 高亮执行路径
+    if (runResult.value?.node_executions) {
+      highlightExecutionPath(runResult.value.node_executions)
+    }
+    
     ElMessage.success('执行完成')
   } catch (error) {
     runResult.value = {
@@ -1820,6 +1832,32 @@ const confirmRun = async (params) => {
   } finally {
     running.value = false
   }
+}
+
+// 高亮执行路径
+const highlightExecutionPath = (executions) => {
+  // 获取所有执行过的节点ID
+  const executedNodeIds = new Set(executions.map(n => n.node_id))
+  // 获取失败的节点ID
+  const failedNodeIds = new Set(executions.filter(n => n.status === 'failed').map(n => n.node_id))
+  
+  // 遍历边，如果source和target都在executedNodeIds中，则高亮
+  // 简单的逻辑：如果是线性或简单分支，两端都执行意味着边被经过
+  // 对于复杂条件分支，这种逻辑通常也是正确的（未执行的分支节点不在executedNodeIds中）
+  
+  edges.value.forEach(edge => {
+    if (executedNodeIds.has(edge.source) && executedNodeIds.has(edge.target)) {
+      // 检查target是否失败，如果是，这条路径也算走了，但可能用不同颜色？
+      // 这里简化处理，统一高亮为“流过”
+      edge.animated = true
+      edge.style = { stroke: '#409eff', strokeWidth: 3 } // 蓝色高亮
+      
+      // 如果路径上有失败节点，可以用红色
+      if (failedNodeIds.has(edge.target) || failedNodeIds.has(edge.source)) {
+        edge.style = { stroke: '#f56c6c', strokeWidth: 3 }
+      }
+    }
+  })
 }
 
 // 返回
@@ -1863,8 +1901,8 @@ const loadWorkflow = async () => {
     edges.value = (workflow.edges || []).map(edge => ({
       ...edge,
       type: edgeType.value,
-      animated: true,
-      style: { stroke: '#409eff', strokeWidth: 2 }
+      animated: false, // 默认静态
+      style: { stroke: '#b1b3b8', strokeWidth: 2 } // 默认灰色
     }))
     const maxId = Math.max(...nodes.value.map(n => {
       const match = n.id.match(/-(\d+)$/)
