@@ -84,6 +84,7 @@
             <div v-if="runResult?.output">
               <MarkdownViewer 
                 v-if="isMarkdownContent(formattedOutput)"
+                :key="`md-${runStatus}-${runResult?.execution_time}`"
                 :content="formattedOutput"
               />
               <div v-else class="code-block">
@@ -149,6 +150,7 @@
                     <template v-else>
                       <MarkdownViewer 
                         v-if="isMarkdownContent(formatOutput(node.output))"
+                        :key="`node-${node.node_id}-${node.execution_time}`"
                         :content="formatOutput(node.output)"
                         class="small-viewer"
                       />
@@ -221,16 +223,17 @@ watch(() => props.runResult, (res) => {
   if (res) {
     hasExecuted.value = true
     runStatus.value = res.status
+    // 清空并重新设置展开的节点
+    expandedNodes.value = []
     // 默认展开所有失败节点
     if (res.node_executions) {
-      res.node_executions.forEach(node => {
-        if (node.status === 'failed') {
-          expandedNodes.value.push(node.node_id)
-        }
-      })
+      const failedNodes = res.node_executions
+        .filter(node => node.status === 'failed')
+        .map(node => node.node_id)
+      expandedNodes.value = failedNodes
     }
   }
-})
+}, { deep: true })
 
 // 模拟节点输入数据（目前后端未返回，暂留空或尝试从 output 推断）
 // 实际上要显示输入，需要后端记录每个节点的 input

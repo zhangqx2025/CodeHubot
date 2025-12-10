@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { View, Document, DocumentCopy } from '@element-plus/icons-vue'
 import { marked } from 'marked'
@@ -63,6 +63,11 @@ const props = defineProps({
 })
 
 const viewMode = ref(props.defaultMode)
+
+// 当内容变化时，重置为默认模式
+watch(() => props.content, () => {
+  viewMode.value = props.defaultMode
+})
 
 // 配置 marked
 marked.setOptions({
