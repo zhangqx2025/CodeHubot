@@ -197,11 +197,7 @@ class LLMService:
     ) -> Dict[str, Any]:
         """调用阿里通义千问 API（兼容 OpenAI 格式）"""
         # 通义千问使用 DashScope SDK，这里使用 OpenAI 兼容接口
-        # 自动修正旧的 API Base URL
         api_base = self.api_base or 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-        if 'dashscope.aliyuncs.com/api/' in api_base:
-            # 自动替换为兼容模式
-            api_base = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
         url = f"{api_base}/chat/completions"
         
         payload = {
