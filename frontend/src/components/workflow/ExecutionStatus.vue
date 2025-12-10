@@ -214,25 +214,32 @@ const formattedOutput = computed(() => {
 const isMarkdownContent = (content) => {
   if (!content || typeof content !== 'string') return false
   
+  // 如果内容太短（小于20字符），不使用 Markdown 渲染
+  if (content.length < 20) return false
+  
   // 检查是否包含常见的 Markdown 标记
   const markdownPatterns = [
     /^#{1,6}\s/m,           // 标题 (# ## ###)
     /\*\*.*?\*\*/,          // 粗体 (**text**)
-    /\*.*?\*/,              // 斜体 (*text*)
     /\[.*?\]\(.*?\)/,       // 链接 [text](url)
     /^\s*[-*+]\s/m,         // 无序列表
     /^\s*\d+\.\s/m,         // 有序列表
     /^>\s/m,                // 引用
     /```[\s\S]*?```/,       // 代码块
-    /`[^`]+`/,              // 行内代码
     /^\s*\|.+\|/m,          // 表格
     /^---+$/m,              // 分隔线
     /!\[.*?\]\(.*?\)/       // 图片
   ]
   
-  // 如果匹配到2个或以上的 Markdown 模式，认为是 Markdown 内容
+  // 如果匹配到任意一个明确的 Markdown 模式，就使用 Markdown 渲染
   const matchCount = markdownPatterns.filter(pattern => pattern.test(content)).length
-  return matchCount >= 2
+  if (matchCount >= 1) return true
+  
+  // 如果内容包含多个段落（多个连续的换行），也视为 Markdown
+  const paragraphCount = (content.match(/\n\s*\n/g) || []).length
+  if (paragraphCount >= 2) return true
+  
+  return false
 }
 
 // 格式化日期
