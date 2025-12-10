@@ -8,9 +8,10 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# 使用pbkdf2_sha256算法（兼容性更好）
+# 密码加密上下文 - 支持bcrypt和pbkdf2_sha256算法
+# bcrypt 用于新密码（更安全），pbkdf2_sha256 用于兼容旧密码
 pwd_context = CryptContext(
-    schemes=["pbkdf2_sha256"],
+    schemes=["bcrypt", "pbkdf2_sha256"],
     deprecated="auto"
 )
 
@@ -38,13 +39,34 @@ def get_password_hash(password: str) -> str:
         
     Returns:
         str: 哈希后的密码
+        
+    Note:
+        - bcrypt 有 72 字节的密码长度限制
+        - 对于超过 72 字节的密码，自动使用 pbkdf2_sha256
+        - 对于 72 字节以内的密码，优先使用 bcrypt（更安全）
     """
     try:
-        # bcrypt会自动处理密码长度和编码
-        return pwd_context.hash(password)
+        # 检查密码长度（以字节计算）
+        password_bytes = password.encode('utf-8')
+        
+        if len(password_bytes) > 72:
+            # 密码太长，使用 pbkdf2_sha256（无长度限制）
+            logger.info(f"密码长度超过72字节({len(password_bytes)}字节)，使用pbkdf2_sha256算法")
+            return pwd_context.hash(password, scheme="pbkdf2_sha256")
+        else:
+            # 密码长度合适，使用 bcrypt（更安全）
+            return pwd_context.hash(password, scheme="bcrypt")
+            
     except Exception as e:
         logger.error(f"密码哈希失败: {e}", exc_info=True)
-        raise ValueError("密码哈希失败")
+        logger.error(f"密码长度: {len(password.encode('utf-8'))} 字节")
+        # 如果 bcrypt 失败，尝试使用 pbkdf2_sha256 作为后备方案
+        try:
+            logger.warning("尝试使用 pbkdf2_sha256 作为后备方案")
+            return pwd_context.hash(password, scheme="pbkdf2_sha256")
+        except Exception as fallback_e:
+            logger.error(f"后备方案也失败: {fallback_e}", exc_info=True)
+            raise ValueError("密码哈希失败")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """创建access token
