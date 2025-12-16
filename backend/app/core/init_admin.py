@@ -5,9 +5,13 @@
 import logging
 import os
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 from app.core.database import SessionLocal
 from app.models.user import User
 from app.core.security import get_password_hash
+
+# 加载 .env 文件
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 

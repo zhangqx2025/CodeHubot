@@ -145,7 +145,7 @@ services:
   # MQTT服务 - 设备消息处理（独立服务）
   mqtt-service:
     build:
-      context: ../mqtt-service
+      context: ../service/mqtt-service
       dockerfile: Dockerfile
     container_name: codehubot-mqtt-service
     environment:
@@ -173,7 +173,7 @@ services:
   celery_worker:
     build:
       context: ..
-      dockerfile: celery-service/Dockerfile
+      dockerfile: service/celery-service/Dockerfile
     container_name: codehubot-celery-worker
     environment:
       # Redis配置
@@ -214,7 +214,7 @@ services:
   flower:
     build:
       context: ..
-      dockerfile: celery-service/Dockerfile
+      dockerfile: service/celery-service/Dockerfile
     container_name: codehubot-flower
     command: ["bash", "start_flower.sh"]
     ports:
@@ -251,7 +251,7 @@ services:
   # 配置服务
   config-service:
     build:
-      context: ../config-service
+      context: ../service/config-service
       dockerfile: Dockerfile
       args:
         USE_CHINA_MIRROR: ${USE_CHINA_MIRROR:-true}
@@ -312,7 +312,7 @@ services:
   # 插件服务
   plugin-service:
     build:
-      context: ../plugin-service
+      context: ../service/plugin-service
       dockerfile: Dockerfile
       args:
         USE_CHINA_MIRROR: ${USE_CHINA_MIRROR:-true}

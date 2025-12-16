@@ -48,11 +48,28 @@ def success_response(data: Any = None, message: str = "操作成功") -> dict:
     }
 
 
-def error_response(code: int, message: str, detail: Optional[str] = None) -> dict:
-    """创建错误响应"""
-    return {
+def error_response(
+    message: str = "操作失败",
+    code: int = 400,
+    detail: Optional[str] = None,
+    status_code: Optional[int] = None
+) -> dict:
+    """创建错误响应
+    
+    Args:
+        message: 错误消息
+        code: 业务错误码
+        detail: 错误详情（可选）
+        status_code: HTTP状态码（可选，用于兼容性，会被忽略）
+    
+    Returns:
+        dict: 错误响应字典
+    """
+    response = {
         "code": code,
         "message": message,
-        "detail": detail
     }
+    if detail is not None:
+        response["detail"] = detail
+    return response
 

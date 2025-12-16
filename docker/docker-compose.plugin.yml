@@ -101,7 +101,7 @@ services:
   # Plugin Backend Service (新增)
   plugin-backend:
     build:
-      context: ../plugin-backend-service
+      context: ../service/plugin-backend-service
       dockerfile: Dockerfile
     container_name: codehubot-plugin-backend
     environment:
@@ -139,7 +139,7 @@ services:
   # Plugin Service
   plugin-service:
     build:
-      context: ../plugin-service
+      context: ../service/plugin-service
       dockerfile: Dockerfile
     container_name: codehubot-plugin-service
     environment:

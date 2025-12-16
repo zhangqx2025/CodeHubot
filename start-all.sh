@@ -48,7 +48,7 @@ sleep 2
 # 2. MQTT服务
 echo ""
 echo -e "${YELLOW}2️⃣  启动MQTT服务...${NC}"
-cd "$PROJECT_ROOT/mqtt-service"
+cd "$PROJECT_ROOT/service/mqtt-service"
 nohup python main.py > logs/mqtt_nohup.log 2>&1 &
 MQTT_PID=$!
 echo -e "${GREEN}✅ MQTT服务 已启动 (PID: $MQTT_PID)${NC}"
@@ -57,7 +57,7 @@ sleep 2
 # 3. Celery Worker
 echo ""
 echo -e "${YELLOW}3️⃣  启动Celery Worker...${NC}"
-cd "$PROJECT_ROOT/celery-service"
+cd "$PROJECT_ROOT/service/celery-service"
 nohup bash start_worker.sh > logs/worker_nohup.log 2>&1 &
 WORKER_PID=$!
 echo -e "${GREEN}✅ Celery Worker 已启动 (PID: $WORKER_PID)${NC}"
@@ -66,7 +66,7 @@ sleep 2
 # 4. Flower
 echo ""
 echo -e "${YELLOW}4️⃣  启动Flower监控 (5555)...${NC}"
-cd "$PROJECT_ROOT/celery-service"
+cd "$PROJECT_ROOT/service/celery-service"
 nohup bash start_flower.sh > logs/flower_nohup.log 2>&1 &
 FLOWER_PID=$!
 echo -e "${GREEN}✅ Flower 已启动 (PID: $FLOWER_PID)${NC}"
@@ -75,7 +75,7 @@ sleep 2
 # 5. Plugin Backend（可选）
 # echo ""
 # echo -e "${YELLOW}5️⃣  启动Plugin Backend (9001)...${NC}"
-# cd "$PROJECT_ROOT/plugin-backend-service"
+# cd "$PROJECT_ROOT/service/plugin-backend-service"
 # nohup python main.py > logs/plugin_nohup.log 2>&1 &
 # echo -e "${GREEN}✅ Plugin Backend 已启动${NC}"
 
@@ -97,9 +97,9 @@ echo "  - Flower:         $FLOWER_PID"
 echo ""
 echo "📝 查看日志："
 echo "  - Backend:        tail -f backend/logs/backend_nohup.log"
-echo "  - MQTT:           tail -f mqtt-service/logs/mqtt_nohup.log"
-echo "  - Celery:         tail -f celery-service/logs/worker_nohup.log"
-echo "  - Flower:         tail -f celery-service/logs/flower_nohup.log"
+echo "  - MQTT:           tail -f service/mqtt-service/logs/mqtt_nohup.log"
+echo "  - Celery:         tail -f service/celery-service/logs/worker_nohup.log"
+echo "  - Flower:         tail -f service/celery-service/logs/flower_nohup.log"
 echo ""
 echo "🛑 停止所有服务："
 echo "  bash 停止所有服务.sh"

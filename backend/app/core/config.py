@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     use_credentials: bool = True
     validate_certs: bool = True
     
+    # 阿里云VOD配置（可选）
+    aliyun_access_key_id: Optional[str] = None
+    aliyun_access_key_secret: Optional[str] = None
+    aliyun_vod_region_id: str = "cn-beijing"  # 默认北京区域
+    
     # 交互日志配置
     log_batch_size: int = 1000  # 批量写入大小
     log_flush_interval: float = 5.0  # 刷新间隔（秒）

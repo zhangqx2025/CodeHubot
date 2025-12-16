@@ -1,0 +1,309 @@
+"""
+系统配置管理 API
+用于管理系统级别的配置项
+"""
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List, Optional
+import json
+
+from app.db.session import get_db
+from app.models.system_config import SystemConfig
+from app.schemas.system_config import (
+    SystemConfigCreate,
+    SystemConfigUpdate,
+    SystemConfigInDB,
+    SystemConfigPublic,
+    ModuleConfigResponse,
+    ModuleConfigUpdate
+)
+from app.core.deps import get_current_user
+from app.models.user import User
+
+router = APIRouter()
+
+
+def is_platform_admin(current_user: User) -> bool:
+    """检查是否为平台管理员"""
+    return current_user.role == "platform_admin"
+
+
+def get_config_value(db: Session, key: str, default: str = None) -> Optional[str]:
+    """获取配置值"""
+    config = db.query(SystemConfig).filter(SystemConfig.config_key == key).first()
+    return config.config_value if config else default
+
+
+def set_config_value(db: Session, key: str, value: str, config_type: str = "string", 
+                     description: str = None, category: str = "system", is_public: bool = False):
+    """设置配置值"""
+    config = db.query(SystemConfig).filter(SystemConfig.config_key == key).first()
+    if config:
+        config.config_value = value
+        if description:
+            config.description = description
+    else:
+        config = SystemConfig(
+            config_key=key,
+            config_value=value,
+            config_type=config_type,
+            description=description,
+            category=category,
+            is_public=is_public
+        )
+        db.add(config)
+    db.commit()
+    db.refresh(config)
+    return config
+
+
+@router.get("/configs", response_model=List[SystemConfigInDB])
+async def get_all_configs(
+    category: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    获取所有系统配置（仅平台管理员）
+    """
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以查看系统配置"
+        )
+    
+    query = db.query(SystemConfig)
+    if category:
+        query = query.filter(SystemConfig.category == category)
+    
+    configs = query.all()
+    return configs
+
+
+@router.get("/configs/public", response_model=List[SystemConfigPublic])
+async def get_public_configs(db: Session = Depends(get_db)):
+    """
+    获取公开的系统配置（无需认证）
+    用于前端判断是否显示某些功能模块
+    """
+    configs = db.query(SystemConfig).filter(SystemConfig.is_public == True).all()
+    return configs
+
+
+@router.get("/configs/{config_key}", response_model=SystemConfigInDB)
+async def get_config(
+    config_key: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    获取单个配置项（仅平台管理员）
+    """
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以查看系统配置"
+        )
+    
+    config = db.query(SystemConfig).filter(SystemConfig.config_key == config_key).first()
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"配置项 {config_key} 不存在"
+        )
+    
+    return config
+
+
+@router.post("/configs", response_model=SystemConfigInDB)
+async def create_config(
+    config: SystemConfigCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    创建系统配置（仅平台管理员）
+    """
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以创建系统配置"
+        )
+    
+    # 检查配置键是否已存在
+    existing = db.query(SystemConfig).filter(SystemConfig.config_key == config.config_key).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"配置项 {config.config_key} 已存在"
+        )
+    
+    db_config = SystemConfig(**config.model_dump())
+    db.add(db_config)
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+
+@router.put("/configs/{config_key}", response_model=SystemConfigInDB)
+async def update_config(
+    config_key: str,
+    config_update: SystemConfigUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    更新系统配置（仅平台管理员）
+    """
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以更新系统配置"
+        )
+    
+    config = db.query(SystemConfig).filter(SystemConfig.config_key == config_key).first()
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"配置项 {config_key} 不存在"
+        )
+    
+    update_data = config_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(config, field, value)
+    
+    db.commit()
+    db.refresh(config)
+    return config
+
+
+@router.delete("/configs/{config_key}")
+async def delete_config(
+    config_key: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    删除系统配置（仅平台管理员）
+    """
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以删除系统配置"
+        )
+    
+    config = db.query(SystemConfig).filter(SystemConfig.config_key == config_key).first()
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"配置项 {config_key} 不存在"
+        )
+    
+    db.delete(config)
+    db.commit()
+    return {"message": f"配置项 {config_key} 已删除"}
+
+
+# ==================== 模块配置专用接口 ====================
+
+@router.get("/modules", response_model=ModuleConfigResponse)
+async def get_module_config(db: Session = Depends(get_db)):
+    """
+    获取模块配置（公开接口，无需认证）
+    返回各个模块的启用状态
+    """
+    def get_bool_config(key: str, default: bool = True) -> bool:
+        value = get_config_value(db, key, str(default).lower())
+        return value.lower() in ('true', '1', 'yes') if value else default
+    
+    return ModuleConfigResponse(
+        enable_user_registration=get_bool_config("enable_user_registration", True),
+        enable_device_module=get_bool_config("enable_device_module", True),
+        enable_ai_module=get_bool_config("enable_ai_module", True),
+        enable_pbl_module=get_bool_config("enable_pbl_module", True)
+    )
+
+
+@router.put("/modules", response_model=ModuleConfigResponse)
+async def update_module_config(
+    module_config: ModuleConfigUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    更新模块配置（仅平台管理员）
+    """
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以更新模块配置"
+        )
+    
+    update_data = module_config.model_dump(exclude_unset=True)
+    
+    config_mapping = {
+        "enable_user_registration": ("是否开启用户注册", "module"),
+        "enable_device_module": ("是否开启设备管理模块", "module"),
+        "enable_ai_module": ("是否开启AI模块", "module"),
+        "enable_pbl_module": ("是否开启PBL模块", "module")
+    }
+    
+    for key, value in update_data.items():
+        description, category = config_mapping[key]
+        set_config_value(
+            db=db,
+            key=key,
+            value=str(value).lower(),
+            config_type="boolean",
+            description=description,
+            category=category,
+            is_public=True
+        )
+    
+    # 返回更新后的配置
+    return await get_module_config(db)
+
+
+@router.post("/modules/init")
+async def init_module_config(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    初始化模块配置（仅平台管理员）
+    如果配置不存在，则创建默认配置
+    """
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以初始化模块配置"
+        )
+    
+    default_configs = [
+        ("enable_user_registration", "true", "boolean", "是否开启用户注册", "module", True),
+        ("enable_device_module", "true", "boolean", "是否开启设备管理模块", "module", True),
+        ("enable_ai_module", "true", "boolean", "是否开启AI模块", "module", True),
+        ("enable_pbl_module", "true", "boolean", "是否开启PBL模块", "module", True),
+    ]
+    
+    created_count = 0
+    for key, value, config_type, description, category, is_public in default_configs:
+        existing = db.query(SystemConfig).filter(SystemConfig.config_key == key).first()
+        if not existing:
+            config = SystemConfig(
+                config_key=key,
+                config_value=value,
+                config_type=config_type,
+                description=description,
+                category=category,
+                is_public=is_public
+            )
+            db.add(config)
+            created_count += 1
+    
+    db.commit()
+    
+    return {
+        "message": f"模块配置初始化完成，创建了 {created_count} 个配置项",
+        "created_count": created_count
+    }

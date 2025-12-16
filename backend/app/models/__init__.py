@@ -18,6 +18,7 @@ from .pbl_group_device_authorization import PBLGroupDeviceAuthorization
 from .prompt_template import PromptTemplate
 from .workflow import Workflow
 from .workflow_execution import WorkflowExecution
+from .system_config import SystemConfig
 
 # 确保所有模型都被导入，以便 SQLAlchemy 能够正确创建表结构和关系
 __all__ = [
@@ -30,5 +31,6 @@ __all__ = [
     "PBLGroupDeviceAuthorization",
     # "InteractionLog", "InteractionStatsHourly", "InteractionStatsDaily",  # 已删除日志表
     "PromptTemplate",
-    "Workflow", "WorkflowExecution"
+    "Workflow", "WorkflowExecution",
+    "SystemConfig"
 ]

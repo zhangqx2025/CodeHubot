@@ -18,7 +18,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     
     # 角色和归属
-    role = Column(String(50), default='individual', nullable=False, comment='用户角色：individual/platform_admin/school_admin/teacher/student')
+    role = Column(String(50), default='individual', nullable=False, comment='用户角色：individual/platform_admin/school_admin/channel_manager/channel_partner/teacher/student')
     school_id = Column(Integer, ForeignKey('core_schools.id', ondelete='SET NULL'), nullable=True, index=True, comment='所属学校ID（独立用户为NULL）')
     school_name = Column(String(200), nullable=True, comment='学校名称（冗余字段，便于查询）')
     
@@ -49,3 +49,16 @@ class User(Base):
     group_memberships = relationship("GroupMember", back_populates="student", cascade="all, delete-orphan")
     # 设备关系
     devices = relationship("Device", back_populates="user")
+    
+    def __repr__(self):
+        return f"<User(username='{self.username}', email='{self.email}', role='{self.role}')>"
+    
+    @property
+    def full_name(self):
+        """兼容性属性：返回 name 或 real_name 或 nickname"""
+        return self.name or self.real_name or self.nickname or self.username
+    
+    @property
+    def is_super_admin(self):
+        """兼容性属性：platform_admin 角色视为超级管理员"""
+        return self.role == 'platform_admin'

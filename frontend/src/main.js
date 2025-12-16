@@ -1,30 +1,47 @@
+/**
+ * 应用入口文件
+ */
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+
 import App from './App.vue'
 import router from './router'
-import { useUserStore } from './store/user'
+import { useAuthStore } from './stores/auth'
 
+// 创建应用实例
 const app = createApp(App)
 
-// 注册所有图标
+// 使用Pinia
+const pinia = createPinia()
+app.use(pinia)
+
+// 初始化认证store
+const authStore = useAuthStore()
+authStore.init()
+
+// 使用路由
+app.use(router)
+
+// 使用Element Plus
+app.use(ElementPlus, {
+  locale: zhCn,
+  size: 'default'
+})
+
+// 注册所有Element Plus图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
-const pinia = createPinia()
-app.use(pinia)
-app.use(router)
-app.use(ElementPlus)
+// 全局错误处理
+app.config.errorHandler = (err, instance, info) => {
+  console.error('全局错误:', err, info)
+}
 
-// 初始化用户认证状态
-const userStore = useUserStore()
-userStore.initializeAuth()
-
-// 设置页面标题
-const appTitle = import.meta.env.VITE_APP_TITLE || '物联网设备服务系统'
-document.title = appTitle
-
+// 挂载应用
 app.mount('#app')

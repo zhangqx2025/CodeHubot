@@ -7,9 +7,13 @@ import os
 import json
 import uuid as uuid_lib
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 from app.core.database import SessionLocal
 from app.models.llm_model import LLMModel
 from app.models.product import Product
+
+# 加载 .env 文件
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 

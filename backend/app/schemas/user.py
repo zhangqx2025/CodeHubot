@@ -129,6 +129,9 @@ class PasswordResetRequest(BaseModel):
     """请求密码重置Schema"""
     email: EmailStr
 
+# 别名：保持向后兼容性
+ResetPasswordRequest = PasswordResetRequest
+
 class PasswordResetConfirm(BaseModel):
     """确认密码重置Schema"""
     token: str = Field(..., description="重置令牌")
@@ -253,3 +256,30 @@ class UpdateProfileRequest(BaseModel):
             raise ValueError('用户名不能全是数字')
         
         return v
+
+
+class TokenResponse(BaseModel):
+    """Token响应Schema（PBL模块使用）"""
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
+class RefreshTokenRequest(BaseModel):
+    """刷新Token请求Schema（PBL模块使用）"""
+    refresh_token: str
+
+
+class RefreshTokenResponse(BaseModel):
+    """刷新Token响应Schema（PBL模块使用）"""
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class InstitutionLoginRequest(BaseModel):
+    """机构登录请求Schema（PBL模块使用）"""
+    school_code: str = Field(..., min_length=2, max_length=50, description="学校代码")
+    number: str = Field(..., min_length=1, max_length=50, description="工号或学号")
+    password: str = Field(..., min_length=1, description="密码")

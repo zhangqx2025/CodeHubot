@@ -4,37 +4,42 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/',  // 部署到根目录，确保资源路径正确
+  base: '/',
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      '@': resolve(__dirname, 'src'),
+      '@device': resolve(__dirname, 'src/modules/device'),
+      '@ai': resolve(__dirname, 'src/modules/ai'),
+      '@pbl': resolve(__dirname, 'src/modules/pbl'),
+      '@shared': resolve(__dirname, 'src/shared')
+    }
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler' // 使用新的 Sass API，避免弃用警告
+      }
     }
   },
   server: {
-    port: process.env.VITE_DEV_PORT ? parseInt(process.env.VITE_DEV_PORT) : 3001,
+    port: 3000,
     proxy: {
       '/api': {
-        target: process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true
       }
     }
   },
   build: {
-    // 生产环境移除console和debugger
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,  // 移除所有console
-        drop_debugger: true,  // 移除debugger
-        pure_funcs: ['console.log', 'console.debug']  // 额外确保移除
+        drop_console: true,
+        drop_debugger: true
       }
     },
-    // 生成source map（调试用，生产环境可关闭）
-    sourcemap: false,
-    // 优化chunk分割
     rollupOptions: {
       output: {
-        // 使用函数形式分割代码，避免循环依赖
         manualChunks(id) {
           // Element Plus 单独打包
           if (id.includes('node_modules/element-plus')) {
@@ -51,9 +56,25 @@ export default defineConfig({
               id.includes('node_modules/pinia/')) {
             return 'vue-vendor'
           }
-          // ECharts 单独打包
-          if (id.includes('node_modules/echarts')) {
-            return 'echarts'
+          // Device模块
+          if (id.includes('/src/modules/device/')) {
+            return 'module-device'
+          }
+          // AI模块
+          if (id.includes('/src/modules/ai/')) {
+            return 'module-ai'
+          }
+          // PBL学生模块
+          if (id.includes('/src/modules/pbl/student/')) {
+            return 'module-pbl-student'
+          }
+          // PBL教师模块
+          if (id.includes('/src/modules/pbl/teacher/')) {
+            return 'module-pbl-teacher'
+          }
+          // PBL管理模块
+          if (id.includes('/src/modules/pbl/admin/')) {
+            return 'module-pbl-admin'
           }
           // 其他第三方库
           if (id.includes('node_modules')) {
