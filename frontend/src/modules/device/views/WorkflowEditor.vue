@@ -1105,11 +1105,11 @@ import {
   createWorkflow,
   updateWorkflow,
   executeWorkflow
-} from '@device/api/workflow'
-import { getActiveLLMModels } from '@device/api/llm-model'
-import { getKnowledgeBases } from '@device/api/knowledgeBases'
-import { getAgents } from '@device/api/agent'
-import ExecutionPanel from '@device/components/workflow/ExecutionPanel.vue'
+} from '@/api/workflow'
+import { getActiveLLMModels } from '@/api/llm-model'
+import { getKnowledgeBases } from '@/api/knowledgeBases'
+import { getAgents } from '@/api/agent'
+import ExecutionPanel from '../components/workflow/ExecutionPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -2271,9 +2271,9 @@ const goBack = () => {
       confirmButtonText: '离开',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(() => router.push('/workflows')).catch(() => {})
+    }).then(() => router.push('/device/workflows')).catch(() => {})
   } else {
-    router.push('/workflows')
+    router.push('/device/workflows')
   }
 }
 

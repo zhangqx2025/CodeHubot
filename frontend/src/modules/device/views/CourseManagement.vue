@@ -288,9 +288,9 @@ import { Plus, View, Edit, Delete, CopyDocument, User, UserFilled } from '@eleme
 import {
   getCourses, createCourse, updateCourse, deleteCourse as deleteCourseAPI,
   getCourseTeachers, addCourseTeacher, removeCourseTeacher
-} from '@device/api/courses'
-import { getUsers } from '@device/api/userManagement'
-import { formatDate } from '@device/utils/format'
+} from '@/api/courses'
+import { getUsers } from '@/api/userManagement'
+import { formatDate } from '@/utils/format'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
@@ -404,7 +404,7 @@ const viewClassDetail = (courseItem) => {
 // 管理教师
 const manageTeachers = (courseItem) => {
   router.push({
-    path: `/courses/${courseItem.uuid}/teachers`,
+    path: `/device/courses/${courseItem.uuid}/teachers`,
     query: { name: courseItem.course_name }
   })
 }
@@ -412,7 +412,7 @@ const manageTeachers = (courseItem) => {
 // 管理学生
 const manageStudents = (courseItem) => {
   router.push({
-    path: `/courses/${courseItem.uuid}/students`,
+    path: `/device/courses/${courseItem.uuid}/students`,
     query: { name: courseItem.course_name }
   })
 }

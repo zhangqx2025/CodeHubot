@@ -79,8 +79,12 @@ def get_db():
     try:
         yield db
     except Exception as e:
+        # 回滚数据库事务
         db.rollback()
-        logger.error(f"数据库会话异常: {e}", exc_info=True)
+        # 只记录真正的数据库异常，不记录业务逻辑异常（如HTTPException）
+        from fastapi.exceptions import HTTPException
+        if not isinstance(e, HTTPException):
+            logger.error(f"数据库会话异常: {e}", exc_info=True)
         raise
     finally:
         db.close()

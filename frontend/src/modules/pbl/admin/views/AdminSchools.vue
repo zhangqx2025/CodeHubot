@@ -236,7 +236,8 @@
           />
         </el-form-item>
 
-        <!-- 视频权限设置 -->
+        <!-- 视频权限设置 - 暂时隐藏 -->
+        <!-- 
         <el-divider>视频权限设置</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -266,6 +267,7 @@
             </el-form-item>
           </el-col>
         </el-row>
+        -->
 
         <!-- 管理员信息（仅创建时显示） -->
         <el-divider v-if="dialogMode === 'create'">学校管理员信息（可选）</el-divider>
@@ -417,12 +419,14 @@
         </el-descriptions-item>
         <el-descriptions-item label="设备容量">{{ detailData.max_devices }}</el-descriptions-item>
         <el-descriptions-item label="授权到期">{{ detailData.license_expire_at || '-' }}</el-descriptions-item>
+        <!-- 视频权限信息 - 暂时隐藏
         <el-descriptions-item label="学生观看限制">
           {{ detailData.video_student_view_limit ? `${detailData.video_student_view_limit}次` : '不限制' }}
         </el-descriptions-item>
         <el-descriptions-item label="教师观看限制">
           {{ detailData.video_teacher_view_limit ? `${detailData.video_teacher_view_limit}次` : '不限制' }}
         </el-descriptions-item>
+        -->
         <el-descriptions-item label="学校管理员" :span="2">
           {{ detailData.admin_user ? `${detailData.admin_user.name} (${detailData.admin_user.username})` : '-' }}
         </el-descriptions-item>
@@ -531,7 +535,14 @@ const adminRules = computed(() => getAdminRules())
 
 // API请求
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('admin_access_token')
+  // 尝试多个可能的token key
+  const token = localStorage.getItem('admin_access_token') || 
+                localStorage.getItem('access_token')
+  
+  if (!token || token === 'null' || token === 'undefined') {
+    // Token无效，跳转到登录页
+    window.location.href = '/login'
+  }
   return { Authorization: `Bearer ${token}` }
 }
 
@@ -546,12 +557,13 @@ const loadSchools = async () => {
       is_active: filters.isActive !== null ? filters.isActive : undefined
     }
     
-    const response = await axios.get('/api/v1/admin/schools/list', {
+    const response = await axios.get('/api/pbl/admin/schools/list', {
       params,
       headers: getAuthHeaders()
     })
     
-    if (response.data && response.data.code === 0) {
+    // 后端返回 code: 200 或 code: 0 都视为成功
+    if (response.data && (response.data.code === 200 || response.data.code === 0 || response.data.success)) {
       schools.value = response.data.data.items || []
       pagination.total = response.data.data.total || 0
     }
@@ -567,11 +579,11 @@ const loadSchools = async () => {
 const handleView = async (row) => {
   try {
     loading.value = true
-    const response = await axios.get(`/api/v1/admin/schools/${row.id}`, {
+    const response = await axios.get(`/api/pbl/admin/schools/${row.id}`, {
       headers: getAuthHeaders()
     })
     
-    if (response.data && response.data.code === 0) {
+    if (response.data && (response.data.code === 200 || response.data.code === 0 || response.data.success)) {
       detailData.value = response.data.data
       detailDialogVisible.value = true
     }
@@ -662,11 +674,11 @@ const handleSubmit = async () => {
     
     let response
     if (dialogMode.value === 'create') {
-      response = await axios.post('/api/v1/admin/schools', data, {
+      response = await axios.post('/api/pbl/admin/schools', data, {
         headers: getAuthHeaders()
       })
     } else {
-      response = await axios.put(`/api/v1/admin/schools/${form.school_id}`, data, {
+      response = await axios.put(`/api/pbl/admin/schools/${form.school_id}`, data, {
         headers: getAuthHeaders()
       })
     }
@@ -693,11 +705,11 @@ const handleManageAdmin = async (row) => {
   
   try {
     loading.value = true
-    const response = await axios.get(`/api/v1/admin/schools/${row.id}/admin`, {
+    const response = await axios.get(`/api/pbl/admin/schools/${row.id}/admin`, {
       headers: getAuthHeaders()
     })
     
-    if (response.data && response.data.code === 0) {
+    if (response.data && (response.data.code === 200 || response.data.code === 0 || response.data.success)) {
       adminInfo.value = response.data.data
       
       // 如果已有管理员，填充表单
@@ -751,7 +763,7 @@ const handleSubmitAdmin = async () => {
     if (adminForm.email) data.append('email', adminForm.email)
     
     const response = await axios.post(
-      `/api/v1/admin/schools/${currentSchool.value.id}/admin`,
+      `/api/pbl/admin/schools/${currentSchool.value.id}/admin`,
       data,
       { headers: getAuthHeaders() }
     )
@@ -786,7 +798,7 @@ const handleToggleActive = async (row) => {
     )
     
     loading.value = true
-    const response = await axios.patch(`/api/v1/admin/schools/${row.id}/toggle-active`, {}, {
+    const response = await axios.patch(`/api/pbl/admin/schools/${row.id}/toggle-active`, {}, {
       headers: getAuthHeaders()
     })
     

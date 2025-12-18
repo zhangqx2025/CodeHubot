@@ -216,8 +216,8 @@ import {
   User, Lock, Key, Setting, Check, CircleCheck, Warning, Document,
   Monitor, UserFilled, Edit
 } from '@element-plus/icons-vue'
-import { getUserInfo, updateProfile as updateUserProfile, changePassword as changeUserPassword, getUserStats } from '@device/api/auth'
-import logger from '@device/utils/logger'
+import { getUserInfo, updateProfile as updateUserProfile, changePassword as changeUserPassword, getUserStats } from '@/api/auth'
+import logger from '@/utils/logger'
 
 const router = useRouter()
 const userStore = useUserStore()

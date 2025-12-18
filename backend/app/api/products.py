@@ -20,8 +20,17 @@ router = APIRouter()
 
 
 def is_admin_user(user: User) -> bool:
-    """判断用户是否为管理员（通过邮箱判断）"""
-    return user.email == "admin@aiot.com" or user.username == "admin"
+    """判断用户是否为管理员
+    
+    管理员权限判断规则：
+    1. platform_admin 角色（平台管理员）
+    2. 传统的 admin 用户名或邮箱（兼容旧版本）
+    """
+    return (
+        user.role == 'platform_admin' or 
+        user.email == "admin@aiot.com" or 
+        user.username == "admin"
+    )
 
 
 def can_access_product(product: Product, user: User) -> bool:
@@ -246,7 +255,7 @@ def get_product_categories(
     """获取所有产品类别"""
     categories = db.execute(text("""
         SELECT DISTINCT category, COUNT(*) as count
-        FROM aiot_core_products 
+        FROM device_products
         WHERE category IS NOT NULL
         GROUP BY category
         ORDER BY count DESC, category
@@ -388,4 +397,5 @@ def get_product_devices(
         LIMIT :limit OFFSET :skip
     """), {"product_id": product_id, "limit": limit, "skip": skip}).fetchall()
     
-    return [dict(device) for device in devices]
+    # 将 Row 对象转换为字典
+    return [dict(device._mapping) for device in devices]

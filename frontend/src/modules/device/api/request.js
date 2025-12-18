@@ -44,64 +44,6 @@ const isTokenExpired = (token) => {
   return Date.now() > expiry
 }
 
-// 请求拦截器
-request.interceptors.request.use(
-  config => {
-    const token = getToken()
-    
-    // 如果是 FormData，删除手动设置的 Content-Type，让浏览器自动设置（包括 boundary）
-    if (config.data instanceof FormData) {
-      delete config.headers['Content-Type']
-    }
-    
-    logger.api(config.method, config.url, config.data)
-    
-    if (token) {
-      // 先检查token格式
-      if (!isValidTokenFormat(token)) {
-        logger.error('Token格式无效，清除并登出')
-        clearAuth()
-        ElMessage.error('登录信息无效，请重新登录')
-        
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-          window.location.href = '/device/login'
-        }
-        return Promise.reject(new Error('Token format invalid'))
-      }
-      
-      // 检查token是否已过期
-      if (isTokenExpired(token)) {
-        const refreshToken = getRefreshToken()
-        // 如果 refresh token 也过期了，直接登出
-        if (!refreshToken || isTokenExpired(refreshToken)) {
-          logger.error('Access token 和 Refresh token 都已过期，执行登出')
-          clearAuth()
-          ElMessage.error('登录已过期，请重新登录')
-          if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-            window.location.href = '/device/login'
-          }
-          return Promise.reject(new Error('Token expired'))
-        }
-        logger.warn('Token已过期，尝试自动刷新')
-        // 不阻塞请求，让响应拦截器处理401并自动刷新
-      } else if (isTokenExpiringSoon(token)) {
-        logger.warn('Token即将过期，建议刷新')
-      }
-      
-      // 添加 Authorization header
-      config.headers.Authorization = `Bearer ${token}`
-      logger.debug('已添加Authorization头')
-    } else {
-      logger.debug('未找到token，匿名请求')
-    }
-    return config
-  },
-  error => {
-    logger.error('API请求拦截器错误:', error)
-    return Promise.reject(error)
-  }
-)
-
 // 存储正在等待的请求队列（当token正在刷新时）
 let isRefreshing = false
 let failedQueue = []
@@ -120,6 +62,145 @@ const processQueue = (error, token = null) => {
   })
   failedQueue = []
 }
+
+// 刷新token的函数（在请求拦截器中使用）
+const refreshTokenInInterceptor = async (refreshToken) => {
+  try {
+    logger.info('🔄 [请求拦截器] 检测到token已过期，主动刷新token')
+    const response = await axios.post(`${baseURL}/auth/refresh`, {
+      refresh_token: refreshToken
+    })
+    
+    const newToken = response.data?.access_token || response.data?.data?.access_token
+    if (newToken) {
+      // 保存新token
+      localStorage.setItem('access_token', newToken)
+      if (response.data?.refresh_token || response.data?.data?.refresh_token) {
+        localStorage.setItem('refresh_token', response.data?.refresh_token || response.data?.data?.refresh_token)
+      }
+      logger.info('✅ [请求拦截器] Token刷新成功')
+      return newToken
+    } else {
+      throw new Error('Token刷新失败：未返回新token')
+    }
+  } catch (err) {
+    logger.error('❌ [请求拦截器] Token刷新失败:', err.message)
+    throw err
+  }
+}
+
+// 请求拦截器
+request.interceptors.request.use(
+  async config => {
+    const token = getToken()
+    
+    // 如果是 FormData，删除手动设置的 Content-Type，让浏览器自动设置（包括 boundary）
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    }
+    
+    logger.api(config.method, config.url, config.data)
+    
+    if (token) {
+      // 先检查token格式
+      if (!isValidTokenFormat(token)) {
+        logger.error('Token格式无效，清除并登出')
+        clearAuth()
+        ElMessage.error('登录信息无效，请重新登录')
+        
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
+        return Promise.reject(new Error('Token format invalid'))
+      }
+      
+      // 检查token是否已过期
+      if (isTokenExpired(token)) {
+        logger.warn('⚠️ Access Token已过期')
+        const refreshToken = getRefreshToken()
+        
+        // 如果 refresh token 也过期了或不存在，直接登出
+        if (!refreshToken) {
+          logger.error('❌ Refresh Token不存在，执行登出')
+          clearAuth()
+          ElMessage.error('登录已过期，请重新登录')
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
+          }
+          return Promise.reject(new Error('Refresh token not found'))
+        }
+        
+        if (isTokenExpired(refreshToken)) {
+          logger.error('❌ Refresh Token也已过期，执行登出')
+          clearAuth()
+          ElMessage.error('登录已过期，请重新登录')
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
+          }
+          return Promise.reject(new Error('Refresh token expired'))
+        }
+        
+        // refresh token 还有效，主动刷新token
+        logger.warn('🔄 Access Token已过期，Refresh Token有效，主动刷新token')
+        
+        // 如果正在刷新，将请求加入队列
+        if (isRefreshing) {
+          logger.debug('Token刷新中，请求加入队列等待')
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ 
+              resolve, 
+              reject,
+              config
+            })
+          }).then(newToken => {
+            config.headers.Authorization = `Bearer ${newToken}`
+            return config
+          }).catch(err => {
+            return Promise.reject(err)
+          })
+        }
+        
+        // 开始刷新token
+        isRefreshing = true
+        
+        try {
+          const newToken = await refreshTokenInInterceptor(refreshToken)
+          
+          // 处理等待队列中的所有请求
+          processQueue(null, newToken)
+          
+          // 更新当前请求的token
+          config.headers.Authorization = `Bearer ${newToken}`
+        } catch (err) {
+          // 刷新失败，处理等待队列并登出
+          processQueue(err, null)
+          clearAuth()
+          ElMessage.error('登录已过期，请重新登录')
+          
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
+          }
+          return Promise.reject(err)
+        } finally {
+          isRefreshing = false
+        }
+      } else if (isTokenExpiringSoon(token)) {
+        logger.warn('⚠️ Token即将过期（5分钟内），建议尽快刷新')
+      }
+      
+      // 添加 Authorization header
+      config.headers.Authorization = `Bearer ${token}`
+      logger.debug('已添加Authorization头')
+    } else {
+      logger.debug('未找到token，匿名请求')
+    }
+    return config
+  },
+  error => {
+    logger.error('API请求拦截器错误:', error)
+    return Promise.reject(error)
+  }
+)
 
 // 响应拦截器
 request.interceptors.response.use(
@@ -159,8 +240,8 @@ request.interceptors.response.use(
         clearAuth()
         ElMessage.error('登录已过期，请重新登录')
         
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-          window.location.href = '/device/login'
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
         }
         return Promise.reject(error)
       }
@@ -175,8 +256,8 @@ request.interceptors.response.use(
         clearAuth()
         ElMessage.error('登录已过期，请重新登录')
         
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-          window.location.href = '/device/login'
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
         }
         return Promise.reject(error)
       }
@@ -236,8 +317,8 @@ request.interceptors.response.use(
         clearAuth()
         ElMessage.error('登录已过期，请重新登录')
         
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-          window.location.href = '/device/login'
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
         }
         return Promise.reject(err)
       } finally {

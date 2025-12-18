@@ -516,7 +516,7 @@ import {
   getCourseTemplateTasks,
   copyResourceFromTemplate,
   copyTaskFromTemplate
-} from '@pbl/admin/api/admin'
+} from '@/api/admin'
 
 const router = useRouter()
 const route = useRoute()

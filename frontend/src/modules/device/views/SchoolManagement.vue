@@ -392,7 +392,7 @@
             v-model="selectAdminForm.teacher_number"
             placeholder="请输入工号"
           />
-          <span class="form-tip">工号在该学校内唯一，可用于机构登录</span>
+          <span class="form-tip">工号在该学校内唯一</span>
         </el-form-item>
       </el-form>
 
@@ -424,7 +424,7 @@
             placeholder="请输入工号"
             autocomplete="off"
           />
-          <span class="form-tip">工号在该学校内唯一，可用于机构登录</span>
+          <span class="form-tip">工号在该学校内唯一</span>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="adminForm.email" placeholder="请输入邮箱（选填）" autocomplete="off" />
@@ -472,9 +472,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, User, UserFilled, Monitor, View, Edit, Delete, Search } from '@element-plus/icons-vue'
-import { getSchools, createSchool, updateSchool, deleteSchool, getSchool } from '@device/api/schools'
-import { createSchoolAdmin, searchIndividualUsers, assignRole } from '@device/api/userManagement'
-import { formatDate } from '@device/utils/format'
+import { getSchools, createSchool, updateSchool, deleteSchool, getSchool } from '@/api/schools'
+import { createSchoolAdmin, searchIndividualUsers, assignRole } from '@/api/userManagement'
+import { formatDate } from '@/utils/format'
 
 // 数据
 const loading = ref(false)
@@ -916,7 +916,7 @@ const handleAssignAdmin = async () => {
       `<div style="line-height: 1.8;">
         <p><strong>用户名：</strong>${selectedUser?.username}</p>
         <p><strong>工号：</strong>${selectAdminForm.teacher_number}</p>
-        <p><strong>登录方式：</strong>使用"机构登录"，输入学校代码 + 工号 + 密码</p>
+        <p><strong>登录方式：</strong>使用用户名 + 密码登录</p>
         <p style="color: #E6A23C; margin-top: 10px;">请通知管理员使用原密码登录</p>
       </div>`,
       '管理员信息',
@@ -975,9 +975,7 @@ const handleCreateAdmin = async () => {
               ⚠️ 请妥善保管登录信息，管理员首次登录后需修改密码。
             </p>
             <p style="margin-top: 10px; color: #909399; font-size: 13px;">
-              登录方式：<br/>
-              1. 普通登录：用户名 + 密码<br/>
-              2. 机构登录：学校代码 + 工号 + 密码
+              登录方式：用户名 + 密码
             </p>
           </div>`,
           '管理员信息',

@@ -67,6 +67,10 @@ export function clearAuth() {
   removeToken()
   localStorage.removeItem('refresh_token')
   removeUserInfo()
+  // 清除PBL管理端相关token
+  localStorage.removeItem('admin_access_token')
+  localStorage.removeItem('admin_refresh_token')
+  localStorage.removeItem('admin_info')
 }
 
 /**

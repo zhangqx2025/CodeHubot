@@ -154,9 +154,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Upload } from '@element-plus/icons-vue'
-import { getStudents, createStudent, deleteUser } from '@device/api/userManagement'
-import { formatDate } from '@device/utils/format'
-import BatchImport from '@device/components/BatchImport.vue'
+import { getStudents, createStudent, deleteUser } from '@/api/userManagement'
+import { formatDate } from '@/utils/format'
+import BatchImport from '../components/BatchImport.vue'
 import { useUserStore } from '@/store/user'
 
 const userStore = useUserStore()

@@ -160,8 +160,8 @@ const handleSearch = () => {
   // 搜索会通过 computed 自动触发
 }
 
-const gotoCourseDetail = (courseId) => {
-  router.push(`/course/${courseId}`)
+const gotoCourseDetail = (courseUuid) => {
+  router.push(`/pbl/student/courses/${courseUuid}`)
 }
 
 onMounted(() => {

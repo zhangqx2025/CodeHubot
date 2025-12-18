@@ -3,13 +3,6 @@
  */
 import request from './request'
 
-/**
- * 机构登录
- */
-export const institutionLogin = (data) => {
-  return request.post('auth/institution-login', data)
-}
-
 // ===== 学校管理员 =====
 
 /**

@@ -27,8 +27,17 @@ router = APIRouter()
 
 
 def is_admin_user(user: User) -> bool:
-    """判断用户是否为管理员（通过邮箱判断）"""
-    return user.email == "admin@aiot.com" or user.username == "admin"
+    """判断用户是否为管理员
+    
+    管理员权限判断规则：
+    1. platform_admin 角色（平台管理员）
+    2. 传统的 admin 用户名或邮箱（兼容旧版本）
+    """
+    return (
+        user.role == 'platform_admin' or 
+        user.email == "admin@aiot.com" or 
+        user.username == "admin"
+    )
 
 
 def get_accessible_product_ids(db: Session, user: User) -> List[int]:
@@ -688,7 +697,8 @@ def get_devices_by_product(
             LIMIT :limit OFFSET :skip
         """), {"product_id": product_id, "user_id": current_user.id, "limit": limit, "skip": skip}).fetchall()
     
-    return [dict(device) for device in devices]
+    # 将 Row 对象转换为字典
+    return [dict(device._mapping) for device in devices]
 
 
 @router.post("/{device_uuid}/activate")
@@ -772,16 +782,18 @@ def get_device_product_info(
         SELECT 
             d.id, d.name, d.uuid,
             p.id as product_id, p.name as product_name, p.product_code,
-            p.category as product_category, p.firmware_version, p.hardware_version
-        FROM devices d
-        LEFT JOIN aiot_core_products p ON d.product_id = p.id
+            p.category as product_category, p.firmware_version, p.hardware_version,
+            p.manufacturer
+        FROM device_main d
+        LEFT JOIN device_products p ON d.product_id = p.id
         WHERE d.uuid = :device_uuid
     """), {"device_uuid": device_uuid}).fetchone()
     
     if not device_info:
         raise HTTPException(status_code=404, detail="设备信息不存在")
     
-    return dict(device_info)
+    # 将 Row 对象转换为字典
+    return dict(device_info._mapping)
 
 @router.post("/{device_uuid}/heartbeat")
 async def device_heartbeat(
@@ -822,18 +834,12 @@ async def pre_register_device(
     - 如果MAC地址对应的设备已绑定其他用户，则拒绝注册
     - 如果MAC地址不存在，创建新设备记录
     
-    支持教师注册设备：
+    支持所有用户注册设备：
+    - 所有用户都可以注册设备
     - 教师注册的设备自动设置school_id
-    - 设备归教师所有（user_id = 教师ID）
+    - 设备归注册用户所有（user_id = 注册用户ID）
     """
-    # 权限检查：允许教师注册
-    if current_user.role not in ['platform_admin', 'school_admin', 'teacher']:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="只有管理员和教师可以注册设备"
-        )
-    
-    # 教师必须关联学校
+    # 教师注册设备时必须关联学校
     if current_user.role == 'teacher' and not current_user.school_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1143,8 +1149,8 @@ async def get_device_full_config(
             p.id as product_id, p.name as product_name, p.product_code as product_code_db,
             p.sensor_types, p.control_ports, p.device_capabilities as product_capabilities,
             p.default_device_config, p.category, p.manufacturer
-        FROM devices d
-        LEFT JOIN aiot_core_products p ON d.product_id = p.id
+        FROM device_main d
+        LEFT JOIN device_products p ON d.product_id = p.id
         WHERE d.uuid = :device_uuid
     """), {"device_uuid": device_uuid}).fetchone()
     
@@ -1464,8 +1470,8 @@ async def get_device_product_history(
             p_old.name as old_product_name,
             p_new.name as new_product_name
         FROM aiot_device_product_history dph
-        LEFT JOIN aiot_core_products p_old ON dph.old_product_id = p_old.id
-        LEFT JOIN aiot_core_products p_new ON dph.new_product_id = p_new.id
+        LEFT JOIN device_products p_old ON dph.old_product_id = p_old.id
+        LEFT JOIN device_products p_new ON dph.new_product_id = p_new.id
         WHERE dph.device_id = :device_id
         ORDER BY dph.switched_at DESC
     """)

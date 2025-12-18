@@ -86,25 +86,149 @@
     </el-row>
 
     <!-- 编辑设备对话框 -->
-    <el-dialog v-model="editDialogVisible" title="编辑设备" width="600px">
-      <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="100px">
-        <el-form-item label="设备名称" prop="name">
-          <el-input v-model="editForm.name" placeholder="请输入设备名称" />
-        </el-form-item>
-        <el-form-item label="设备类型" prop="device_type">
-          <el-select v-model="editForm.device_type" placeholder="请选择设备类型">
-            <el-option label="温湿度传感器" value="temperature_humidity" />
-            <el-option label="压力传感器" value="pressure" />
-            <el-option label="光照传感器" value="light" />
-            <el-option label="运动传感器" value="motion" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="设备位置" prop="location">
-          <el-input v-model="editForm.location" placeholder="请输入设备位置" />
-        </el-form-item>
+    <el-dialog v-model="editDialogVisible" title="编辑设备" width="800px">
+      <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="120px">
+        <!-- 基本信息 -->
+        <el-divider content-position="left">基本信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="设备名称" prop="name">
+              <el-input v-model="editForm.name" placeholder="请输入设备名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="设备位置" prop="location">
+              <el-input v-model="editForm.location" placeholder="例如：教室A101" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="所属分组">
+              <el-input v-model="editForm.group_name" placeholder="例如：教学设备组" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="房间号">
+              <el-input v-model="editForm.room" placeholder="例如：101" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="楼层">
+              <el-input v-model="editForm.floor" placeholder="例如：3楼" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="MAC地址">
+              <el-input v-model="editForm.mac_address" placeholder="MAC地址（不可编辑）" disabled>
+                <template #append>
+                  <el-tooltip content="MAC地址是设备的唯一标识，不可修改" placement="top">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
         <el-form-item label="设备描述">
-          <el-input v-model="editForm.description" type="textarea" rows="3" placeholder="请输入设备描述" />
+          <el-input v-model="editForm.description" type="textarea" rows="2" placeholder="请输入设备描述" />
         </el-form-item>
+
+        <!-- 硬件信息 -->
+        <el-divider content-position="left">硬件信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="固件版本">
+              <el-input v-model="editForm.firmware_version" placeholder="例如：v1.0.0">
+                <template #append>
+                  <el-tooltip content="固件版本通常由设备自动上报" placement="top">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="硬件版本">
+              <el-input v-model="editForm.hardware_version" placeholder="例如：v2.0" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="序列号">
+              <el-input v-model="editForm.serial_number" placeholder="请输入设备序列号" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="质量等级">
+              <el-select v-model="editForm.quality_grade" placeholder="请选择质量等级" clearable>
+                <el-option label="优质" value="excellent" />
+                <el-option label="良好" value="good" />
+                <el-option label="合格" value="qualified" />
+                <el-option label="待检" value="pending" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 日期信息 -->
+        <el-divider content-position="left">日期信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="生产日期">
+              <el-date-picker
+                v-model="editForm.production_date"
+                type="date"
+                placeholder="选择生产日期"
+                style="width: 100%"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="安装日期">
+              <el-date-picker
+                v-model="editForm.installation_date"
+                type="date"
+                placeholder="选择安装日期"
+                style="width: 100%"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="保修到期日">
+              <el-date-picker
+                v-model="editForm.warranty_expiry"
+                type="date"
+                placeholder="选择保修到期日"
+                style="width: 100%"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="下次维护日期">
+              <el-date-picker
+                v-model="editForm.next_maintenance"
+                type="date"
+                placeholder="选择下次维护日期"
+                style="width: 100%"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -121,8 +245,8 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Edit } from '@element-plus/icons-vue'
-import { getDeviceDetail, updateDevice, getDeviceConfig, getDeviceFullConfig } from '@device/api/device'
+import { ArrowLeft, Edit, QuestionFilled } from '@element-plus/icons-vue'
+import { getDeviceDetail, updateDevice, getDeviceConfig, getDeviceFullConfig } from '../api/device'
 
 // 导入组件
 import DeviceBasicInfo from '../components/device/DeviceBasicInfo.vue'
@@ -164,6 +288,15 @@ const deviceInfo = reactive({
   battery_level: undefined,
   location: '',
   group_name: '',
+  room: '',
+  floor: '',
+  description: '',
+  serial_number: '',
+  quality_grade: '',
+  production_date: '',
+  installation_date: '',
+  warranty_expiry: '',
+  next_maintenance: '',
   uptime: 0,
   created_at: '',
   updated_at: '',
@@ -189,21 +322,27 @@ const realTimeData = reactive({
 // 编辑表单
 const editForm = reactive({
   name: '',
-  device_type: '',
   location: '',
-  description: ''
+  group_name: '',
+  room: '',
+  floor: '',
+  mac_address: '',
+  description: '',
+  firmware_version: '',
+  hardware_version: '',
+  serial_number: '',
+  quality_grade: '',
+  production_date: '',
+  installation_date: '',
+  warranty_expiry: '',
+  next_maintenance: ''
 })
 
 // 编辑表单验证规则
 const editRules = {
   name: [
-    { required: true, message: '请输入设备名称', trigger: 'blur' }
-  ],
-  device_type: [
-    { required: true, message: '请选择设备类型', trigger: 'change' }
-  ],
-  location: [
-    { required: true, message: '请输入设备位置', trigger: 'blur' }
+    { required: true, message: '请输入设备名称', trigger: 'blur' },
+    { min: 1, max: 100, message: '设备名称长度在 1 到 100 个字符', trigger: 'blur' }
   ]
 }
 
@@ -213,6 +352,21 @@ let realTimeTimer = null
 // 方法
 const goBack = () => {
   router.go(-1)
+}
+
+// 日期格式化函数 - 只返回日期部分 YYYY-MM-DD
+const formatDateOnly = (dateStr) => {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(dateStr)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  } catch (error) {
+    console.error('日期格式化失败:', error)
+    return ''
+  }
 }
 
 const toggleRealTime = (enabled) => {
@@ -275,9 +429,21 @@ const loadDeviceInfo = async () => {
     // 填充编辑表单
     Object.assign(editForm, {
       name: deviceInfo.name,
-      device_type: deviceInfo.device_type,
-      location: deviceInfo.location,
-      description: deviceInfo.description || ''
+      location: deviceInfo.location || '',
+      group_name: deviceInfo.group_name || '',
+      room: deviceInfo.room || '',
+      floor: deviceInfo.floor || '',
+      mac_address: deviceInfo.mac_address || '',
+      description: deviceInfo.description || '',
+      firmware_version: deviceInfo.firmware_version || '',
+      hardware_version: deviceInfo.hardware_version || '',
+      serial_number: deviceInfo.serial_number || '',
+      quality_grade: deviceInfo.quality_grade || '',
+      // 日期字段需要格式化为YYYY-MM-DD
+      production_date: deviceInfo.production_date ? formatDateOnly(deviceInfo.production_date) : '',
+      installation_date: deviceInfo.installation_date ? formatDateOnly(deviceInfo.installation_date) : '',
+      warranty_expiry: deviceInfo.warranty_expiry ? formatDateOnly(deviceInfo.warranty_expiry) : '',
+      next_maintenance: deviceInfo.next_maintenance ? formatDateOnly(deviceInfo.next_maintenance) : ''
     })
     
   } catch (error) {
@@ -294,17 +460,31 @@ const saveDevice = async () => {
     await editFormRef.value.validate()
     saveLoading.value = true
     
-    // 模拟保存设备信息
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const deviceUuid = route.params.id
     
-    // 更新设备信息
+    // 准备更新数据（只发送有值的字段）
+    const updateData = {}
+    Object.keys(editForm).forEach(key => {
+      if (editForm[key] !== '' && editForm[key] !== null && editForm[key] !== undefined) {
+        updateData[key] = editForm[key]
+      }
+    })
+    
+    // 调用后端API更新设备信息
+    await updateDevice(deviceUuid, updateData)
+    
+    // 更新本地设备信息
     Object.assign(deviceInfo, editForm)
     
     ElMessage.success('设备信息已更新')
     editDialogVisible.value = false
+    
+    // 重新加载设备信息
+    await loadDeviceInfo()
   } catch (error) {
     if (error !== false) { // 不是验证失败
-      ElMessage.error('保存设备信息失败')
+      console.error('保存设备失败:', error)
+      ElMessage.error(error.response?.data?.detail || '保存设备信息失败')
     }
   } finally {
     saveLoading.value = false
@@ -371,6 +551,32 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+/* 编辑对话框样式 */
+:deep(.el-dialog__body) {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+:deep(.el-divider--horizontal) {
+  margin: 16px 0;
+}
+
+:deep(.el-divider__text) {
+  font-weight: 600;
+  color: #303133;
+  background-color: #fff;
+}
+
+/* 表单样式优化 */
+:deep(.el-form-item__label) {
+  font-weight: 500;
+}
+
+:deep(.el-input.is-disabled .el-input__wrapper) {
+  background-color: #f5f7fa;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

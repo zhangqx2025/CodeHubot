@@ -20,30 +20,16 @@
         >
           <!-- 平台管理员菜单 -->
           <template v-if="isPlatformAdmin">
-            <el-menu-item index="/admin">
+            <el-menu-item index="/pbl/admin">
               <el-icon><HomeFilled /></el-icon>
               <template #title>概览</template>
             </el-menu-item>
             
             <!-- 学校管理 -->
-            <el-sub-menu index="school-management">
-              <template #title>
-                <el-icon><OfficeBuilding /></el-icon>
-                <span>学校管理</span>
-              </template>
-              <el-menu-item index="/admin/schools">
-                <el-icon><School /></el-icon>
-                <span>学校列表</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/school-courses">
-                <el-icon><Reading /></el-icon>
-                <span>学校课程配置</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/video-permissions">
-                <el-icon><VideoPlay /></el-icon>
-                <span>视频权限</span>
-              </el-menu-item>
-            </el-sub-menu>
+            <el-menu-item index="/pbl/admin/schools">
+              <el-icon><OfficeBuilding /></el-icon>
+              <template #title>学校管理</template>
+            </el-menu-item>
             
             <!-- 课程管理 -->
             <el-sub-menu index="course-management">
@@ -51,148 +37,47 @@
                 <el-icon><Reading /></el-icon>
                 <span>课程管理</span>
               </template>
-              <el-menu-item index="/admin/courses">
+              <el-menu-item index="/pbl/admin/courses">
                 <el-icon><Document /></el-icon>
                 <span>课程列表</span>
               </el-menu-item>
-              <el-menu-item index="/admin/units">
+              <el-menu-item index="/pbl/admin/units">
                 <el-icon><Collection /></el-icon>
                 <span>学习单元</span>
               </el-menu-item>
-              <el-menu-item index="/admin/resources">
+              <el-menu-item index="/pbl/admin/resources">
                 <el-icon><FolderOpened /></el-icon>
                 <span>资料管理</span>
               </el-menu-item>
-              <el-menu-item index="/admin/tasks">
+              <el-menu-item index="/pbl/admin/tasks">
                 <el-icon><Tickets /></el-icon>
                 <span>任务管理</span>
               </el-menu-item>
             </el-sub-menu>
             
-            <!-- 项目管理 -->
-            <el-sub-menu index="project-management">
-              <template #title>
-                <el-icon><Operation /></el-icon>
-                <span>项目管理</span>
-              </template>
-              <el-menu-item index="/admin/projects">
-                <el-icon><Files /></el-icon>
-                <span>项目列表</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/outputs">
-                <el-icon><Briefcase /></el-icon>
-                <span>成果管理</span>
-              </el-menu-item>
-            </el-sub-menu>
-            
-            <!-- 用户管理 -->
-            <el-sub-menu index="user-management">
-              <template #title>
-                <el-icon><User /></el-icon>
-                <span>用户管理</span>
-              </template>
-              <el-menu-item index="/admin/users">
-                <el-icon><Avatar /></el-icon>
-                <span>用户列表</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/classes">
-                <el-icon><School /></el-icon>
-                <span>项目式课程</span>
-              </el-menu-item>
-            </el-sub-menu>
-            
-            <!-- 教学管理 -->
-            <el-sub-menu index="teaching-management">
-              <template #title>
-                <el-icon><DataAnalysis /></el-icon>
-                <span>教学管理</span>
-              </template>
-              <el-menu-item index="/admin/progress">
-                <el-icon><TrendCharts /></el-icon>
-                <span>学习进度</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/portfolios">
-                <el-icon><Stamp /></el-icon>
-                <span>学习档案</span>
-              </el-menu-item>
-            </el-sub-menu>
-            
-            <!-- 评价管理 -->
-            <el-sub-menu index="assessment-management">
-              <template #title>
-                <el-icon><Edit /></el-icon>
-                <span>评价管理</span>
-              </template>
-              <el-menu-item index="/admin/assessments">
-                <el-icon><DocumentChecked /></el-icon>
-                <span>评价列表</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/assessment-templates">
-                <el-icon><DocumentCopy /></el-icon>
-                <span>评价模板</span>
-              </el-menu-item>
-            </el-sub-menu>
-            
-            <!-- 资源中心 -->
-            <el-sub-menu index="resource-center">
-              <template #title>
-                <el-icon><Box /></el-icon>
-                <span>资源中心</span>
-              </template>
-              <el-menu-item index="/admin/datasets">
-                <el-icon><Coin /></el-icon>
-                <span>数据集库</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/experts">
-                <el-icon><MagicStick /></el-icon>
-                <span>专家管理</span>
-              </el-menu-item>
-            </el-sub-menu>
-            
-            <!-- 伦理教育 -->
-            <el-sub-menu index="ethics-management">
-              <template #title>
-                <el-icon><View /></el-icon>
-                <span>伦理教育</span>
-              </template>
-              <el-menu-item index="/admin/ethics-cases">
-                <el-icon><Memo /></el-icon>
-                <span>伦理案例</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/ethics-activities">
-                <el-icon><ChatDotRound /></el-icon>
-                <span>伦理活动</span>
-              </el-menu-item>
-            </el-sub-menu>
-            
-            <!-- 社会实践 -->
-            <el-menu-item index="/admin/social-activities">
-              <el-icon><MapLocation /></el-icon>
-              <template #title>社会活动</template>
-            </el-menu-item>
           </template>
           
           <!-- 学校管理员菜单 -->
           <template v-else-if="isSchoolAdmin">
-            <el-menu-item index="/admin">
+            <el-menu-item index="/pbl/admin">
               <el-icon><HomeFilled /></el-icon>
               <template #title>概览</template>
             </el-menu-item>
             
             <!-- 用户管理 -->
-            <el-menu-item index="/admin/school-user-management">
+            <el-menu-item index="/pbl/admin/school-user-management">
               <el-icon><UserFilled /></el-icon>
               <template #title>用户管理</template>
             </el-menu-item>
             
-            <!-- 项目式课程管理 -->
-            <el-menu-item index="/admin/classes">
+            <!-- 班级管理 -->
+            <el-menu-item index="/pbl/admin/classes">
               <el-icon><School /></el-icon>
-              <template #title>项目式课程管理</template>
+              <template #title>班级管理</template>
             </el-menu-item>
             
             <!-- 课程模板库 - 仅学校管理员 -->
-            <el-menu-item index="/admin/available-templates" v-if="!isPlatformAdmin">
+            <el-menu-item index="/pbl/admin/available-templates" v-if="!isPlatformAdmin">
               <el-icon><Files /></el-icon>
               <template #title>课程模板库</template>
             </el-menu-item>
@@ -205,11 +90,11 @@
                 <el-icon><Collection /></el-icon>
                 <span>模板库管理</span>
               </template>
-              <el-menu-item index="/admin/course-templates">
+              <el-menu-item index="/pbl/admin/course-templates">
                 <el-icon><Document /></el-icon>
                 <span>课程模板管理</span>
               </el-menu-item>
-              <el-menu-item index="/admin/template-permissions">
+              <el-menu-item index="/pbl/admin/template-permissions">
                 <el-icon><Key /></el-icon>
                 <span>课程模板授权</span>
               </el-menu-item>
@@ -218,9 +103,15 @@
           
           <!-- 教师菜单 -->
           <template v-else-if="isTeacher">
-            <el-menu-item index="/admin/classes">
+            <el-menu-item index="/pbl/admin/my-classes">
               <el-icon><School /></el-icon>
-              <template #title>我的班级课程</template>
+              <template #title>我的班级</template>
+            </el-menu-item>
+            
+            <!-- 课程模板库 - 教师可查看 -->
+            <el-menu-item index="/pbl/admin/available-templates">
+              <el-icon><Files /></el-icon>
+              <template #title>课程模板库</template>
             </el-menu-item>
           </template>
         </el-menu>
@@ -330,6 +221,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 import { 
   HomeFilled, 
@@ -370,10 +262,11 @@ import {
   Setting,
   Key
 } from '@element-plus/icons-vue'
-import { getCurrentAdmin } from '@pbl/admin/api/admin'
+import { getCurrentAdmin } from '@/api/admin'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 
 const adminInfo = ref(null)
 const isCollapse = ref(false)
@@ -401,37 +294,23 @@ const userRoleText = computed(() => {
 
 const pageTitle = computed(() => {
   // 根据角色和路径返回不同的标题
-  if (route.path === '/admin/classes' && isTeacher.value) {
+  if (route.path === '/pbl/admin/classes' && isTeacher.value) {
     return '我的班级课程'
   }
   
   const titles = {
-    '/admin': '概览',
-    '/admin/schools': '学校管理',
-    '/admin/courses': '课程管理',
-    '/admin/school-courses': '学校课程配置',
-    '/admin/course-templates': '课程模板管理',
-    '/admin/template-permissions': '课程模板授权',
-    '/admin/available-templates': '课程模板库',
-    '/admin/template-detail': '课程模板详情',
-    '/admin/units': '学习单元',
-    '/admin/resources': '资料管理',
-    '/admin/video-permissions': '视频权限管理',
-    '/admin/tasks': '任务管理',
-    '/admin/projects': '项目管理',
-    '/admin/outputs': '成果管理',
-    '/admin/users': '用户管理',
-    '/admin/school-user-management': '用户管理',
-    '/admin/classes': '项目式课程管理',
-    '/admin/progress': '学习进度',
-    '/admin/portfolios': '学习档案',
-    '/admin/assessments': '评价管理',
-    '/admin/assessment-templates': '评价模板',
-    '/admin/datasets': '数据集管理',
-    '/admin/experts': '专家管理',
-    '/admin/ethics-cases': '伦理案例',
-    '/admin/ethics-activities': '伦理活动',
-    '/admin/social-activities': '社会活动'
+    '/pbl/admin': '概览',
+    '/pbl/admin/schools': '学校管理',
+    '/pbl/admin/courses': '课程管理',
+    '/pbl/admin/course-templates': '课程模板管理',
+    '/pbl/admin/template-permissions': '课程模板授权',
+    '/pbl/admin/available-templates': '课程模板库',
+    '/pbl/admin/template-detail': '课程模板详情',
+    '/pbl/admin/units': '学习单元',
+    '/pbl/admin/resources': '资料管理',
+    '/pbl/admin/tasks': '任务管理',
+    '/pbl/admin/school-user-management': '用户管理',
+    '/pbl/admin/classes': '项目式课程管理'
   }
   return titles[route.path] || '管理后台'
 })
@@ -453,10 +332,11 @@ const profileDialogVisible = ref(false)
 
 const handleCommand = (command) => {
   if (command === 'logout') {
-    localStorage.removeItem('admin_access_token')
-    localStorage.removeItem('admin_info')
+    // 使用 authStore 的 logout 方法清除所有认证信息
+    authStore.logout()
     ElMessage.success('已退出登录')
-    router.push('/admin/login')
+    // 使用 router.replace 而不是 push，避免可以通过后退按钮返回
+    router.replace('/login')
   } else if (command === 'profile') {
     profileDialogVisible.value = true
   }

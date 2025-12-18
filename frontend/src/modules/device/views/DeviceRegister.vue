@@ -244,8 +244,8 @@ import {
   RefreshLeft, 
   SuccessFilled 
 } from '@element-plus/icons-vue'
-import { preRegisterDevice } from '@device/api/device'
-import { getProductsSummary } from '@device/api/product'
+import { preRegisterDevice } from '@/api/device'
+import { getProductsSummary } from '@/api/product'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
@@ -529,7 +529,7 @@ const handleSuccessDialogClose = () => {
 // 跳转到设备列表
 const goToDeviceList = () => {
   successDialogVisible.value = false
-  router.push('/devices')
+  router.push('/device/devices')
 }
 </script>
 

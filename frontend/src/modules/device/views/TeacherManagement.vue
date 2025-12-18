@@ -218,9 +218,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, UserFilled, Upload } from '@element-plus/icons-vue'
-import { getTeachers, createTeacher, deleteUser, searchIndividualUsers as searchIndividualUsersAPI, assignRole } from '@device/api/userManagement'
-import { formatDate } from '@device/utils/format'
-import BatchImport from '@device/components/BatchImport.vue'
+import { getTeachers, createTeacher, deleteUser, searchIndividualUsers as searchIndividualUsersAPI, assignRole } from '@/api/userManagement'
+import { formatDate } from '@/utils/format'
+import BatchImport from '../components/BatchImport.vue'
 
 const loading = ref(false)
 const submitting = ref(false)

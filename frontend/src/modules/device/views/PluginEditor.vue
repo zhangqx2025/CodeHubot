@@ -269,7 +269,7 @@ const templates = [
 
 // 返回
 const goBack = () => {
-  router.push('/plugins')
+  router.push('/device/plugins')
 }
 
 // 加载插件详情

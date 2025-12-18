@@ -244,7 +244,7 @@ const handleUnbind = async () => {
     
     // 延迟跳转到设备列表
     setTimeout(() => {
-      router.push('/devices')
+      router.push('/device/devices')
     }, 1500)
     
   } catch (error) {

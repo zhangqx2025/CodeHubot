@@ -16,17 +16,6 @@ export function login(data) {
 }
 
 /**
- * 机构登录（学校代码 + 工号/学号 + 密码）
- */
-export function institutionLogin(data) {
-  return request({
-    url: '/auth/institution-login',
-    method: 'post',
-    data
-  })
-}
-
-/**
  * PBL学生登录
  */
 export function pblStudentLogin(data) {

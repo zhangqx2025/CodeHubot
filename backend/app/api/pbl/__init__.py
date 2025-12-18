@@ -17,13 +17,13 @@ except ImportError as e:
 
 try:
     from app.api.pbl.student_courses import router as student_courses_router
-    pbl_router.include_router(student_courses_router, prefix="/student/courses", tags=["PBL-学生课程"])
+    pbl_router.include_router(student_courses_router, prefix="/student", tags=["PBL-学生课程"])
 except ImportError as e:
     print(f"警告: 无法导入student_courses: {e}")
 
 try:
     from app.api.pbl.student_tasks import router as student_tasks_router
-    pbl_router.include_router(student_tasks_router, prefix="/student/tasks", tags=["PBL-学生任务"])
+    pbl_router.include_router(student_tasks_router, prefix="/student", tags=["PBL-学生任务"])
 except ImportError as e:
     print(f"警告: 无法导入student_tasks: {e}")
 
@@ -42,7 +42,7 @@ except ImportError as e:
 
 try:
     from app.api.pbl.teacher_courses import router as teacher_courses_router
-    pbl_router.include_router(teacher_courses_router, prefix="/teacher/courses", tags=["PBL-教师课程"])
+    pbl_router.include_router(teacher_courses_router, prefix="/teacher", tags=["PBL-教师课程"])
 except ImportError as e:
     print(f"警告: 无法导入teacher_courses: {e}")
 
@@ -54,14 +54,8 @@ except ImportError as e:
     print(f"警告: 无法导入admin_auth: {e}")
 
 try:
-    from app.api.pbl.admin_users import router as admin_users_router
-    pbl_router.include_router(admin_users_router, prefix="/admin/users", tags=["PBL-用户管理"])
-except ImportError as e:
-    print(f"警告: 无法导入admin_users: {e}")
-
-try:
     from app.api.pbl.admin_courses import router as admin_courses_router
-    pbl_router.include_router(admin_courses_router, prefix="/admin/courses", tags=["PBL-课程管理"])
+    pbl_router.include_router(admin_courses_router, prefix="/admin/courses", tags=["PBL-管理员课程管理"])
 except ImportError as e:
     print(f"警告: 无法导入admin_courses: {e}")
 
@@ -83,112 +77,46 @@ try:
 except ImportError as e:
     print(f"警告: 无法导入admin_resources: {e}")
 
-try:
-    from app.api.pbl.admin_outputs import router as admin_outputs_router
-    pbl_router.include_router(admin_outputs_router, prefix="/admin/outputs", tags=["PBL-成果管理"])
-except ImportError as e:
-    print(f"警告: 无法导入admin_outputs: {e}")
-
 # 其他PBL功能路由
 try:
     from app.api.pbl.schools import router as schools_router
-    pbl_router.include_router(schools_router, prefix="/schools", tags=["PBL-学校管理"])
+    pbl_router.include_router(schools_router, prefix="/admin/schools", tags=["PBL-学校管理"])
 except ImportError as e:
     print(f"警告: 无法导入schools: {e}")
 
 try:
     from app.api.pbl.classes_groups import router as classes_groups_router
-    pbl_router.include_router(classes_groups_router, prefix="/classes-groups", tags=["PBL-班级分组"])
+    pbl_router.include_router(classes_groups_router, prefix="/admin/classes-groups", tags=["PBL-小组管理"])
 except ImportError as e:
     print(f"警告: 无法导入classes_groups: {e}")
 
 try:
-    from app.api.pbl.projects import router as projects_router
-    pbl_router.include_router(projects_router, prefix="/projects", tags=["PBL-项目管理"])
-except ImportError as e:
-    print(f"警告: 无法导入projects: {e}")
-
-try:
-    from app.api.pbl.assessments import router as assessments_router
-    pbl_router.include_router(assessments_router, prefix="/assessments", tags=["PBL-评估管理"])
-except ImportError as e:
-    print(f"警告: 无法导入assessments: {e}")
-
-try:
-    from app.api.pbl.portfolios import router as portfolios_router
-    pbl_router.include_router(portfolios_router, prefix="/portfolios", tags=["PBL-作品集"])
-except ImportError as e:
-    print(f"警告: 无法导入portfolios: {e}")
-
-try:
-    from app.api.pbl.learning_progress import router as learning_progress_router
-    pbl_router.include_router(learning_progress_router, prefix="/learning-progress", tags=["PBL-学习进度"])
-except ImportError as e:
-    print(f"警告: 无法导入learning_progress: {e}")
-
-try:
-    from app.api.pbl.social_activities import router as social_activities_router
-    pbl_router.include_router(social_activities_router, prefix="/social-activities", tags=["PBL-社会活动"])
-except ImportError as e:
-    print(f"警告: 无法导入social_activities: {e}")
-
-try:
-    from app.api.pbl.ethics import router as ethics_router
-    pbl_router.include_router(ethics_router, prefix="/ethics", tags=["PBL-伦理教育"])
-except ImportError as e:
-    print(f"警告: 无法导入ethics: {e}")
-
-try:
-    from app.api.pbl.experts import router as experts_router
-    pbl_router.include_router(experts_router, prefix="/experts", tags=["PBL-专家资源"])
-except ImportError as e:
-    print(f"警告: 无法导入experts: {e}")
-
-try:
-    from app.api.pbl.datasets import router as datasets_router
-    pbl_router.include_router(datasets_router, prefix="/datasets", tags=["PBL-数据集"])
-except ImportError as e:
-    print(f"警告: 无法导入datasets: {e}")
-
-try:
     from app.api.pbl.video_play import router as video_play_router
-    pbl_router.include_router(video_play_router, prefix="/video-play", tags=["PBL-视频播放"])
+    pbl_router.include_router(video_play_router, prefix="/video", tags=["PBL-视频播放"])
 except ImportError as e:
     print(f"警告: 无法导入video_play: {e}")
 
 try:
     from app.api.pbl.video_progress import router as video_progress_router
-    pbl_router.include_router(video_progress_router, prefix="/video-progress", tags=["PBL-视频进度"])
+    pbl_router.include_router(video_progress_router, prefix="/video/progress", tags=["PBL-视频进度"])
 except ImportError as e:
     print(f"警告: 无法导入video_progress: {e}")
 
 try:
-    from app.api.pbl.assessment_templates import router as assessment_templates_router
-    pbl_router.include_router(assessment_templates_router, prefix="/assessment-templates", tags=["PBL-评估模板"])
-except ImportError as e:
-    print(f"警告: 无法导入assessment_templates: {e}")
-
-try:
     from app.api.pbl.available_templates import router as available_templates_router
-    pbl_router.include_router(available_templates_router, prefix="/available-templates", tags=["PBL-可用模板"])
+    pbl_router.include_router(available_templates_router, prefix="/admin/available-templates", tags=["PBL-可用模板"])
 except ImportError as e:
     print(f"警告: 无法导入available_templates: {e}")
 
 try:
     from app.api.pbl.template_permissions import router as template_permissions_router
-    pbl_router.include_router(template_permissions_router, prefix="/template-permissions", tags=["PBL-模板权限"])
+    pbl_router.include_router(template_permissions_router, prefix="/admin", tags=["PBL-模板权限"])
 except ImportError as e:
     print(f"警告: 无法导入template_permissions: {e}")
 
 try:
-    from app.api.pbl.school_courses import router as school_courses_router
-    pbl_router.include_router(school_courses_router, prefix="/school-courses", tags=["PBL-校本课程"])
-except ImportError as e:
-    print(f"警告: 无法导入school_courses: {e}")
-
-try:
     from app.api.pbl.club_classes import router as club_classes_router
-    pbl_router.include_router(club_classes_router, prefix="/club-classes", tags=["PBL-社团课程"])
+    pbl_router.include_router(club_classes_router, prefix="/admin/club", tags=["PBL-班级管理"])
 except ImportError as e:
     print(f"警告: 无法导入club_classes: {e}")
 

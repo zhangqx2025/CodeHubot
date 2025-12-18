@@ -44,7 +44,7 @@ teacherClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('teacher_refresh_token')
         if (refreshToken) {
-          const response = await teacherClient.post('/api/v1/teacher/auth/refresh', {
+          const response = await teacherClient.post('/api/pbl/teacher/auth/refresh', {
             refresh_token: refreshToken
           })
           
@@ -65,7 +65,7 @@ teacherClient.interceptors.response.use(
         localStorage.removeItem('teacher_access_token')
         localStorage.removeItem('teacher_refresh_token')
         localStorage.removeItem('teacher_info')
-        window.location.href = '/teacher/login'
+        window.location.href = '/login'
         return Promise.reject(refreshError)
       }
     }
@@ -84,14 +84,14 @@ teacherClient.interceptors.response.use(
  * @param {string} loginData.password - 密码
  */
 export const teacherLogin = (loginData) => {
-  return teacherClient.post('/api/v1/teacher/auth/login', loginData)
+  return teacherClient.post('/api/pbl/teacher/auth/login', loginData)
 }
 
 /**
  * 获取当前教师信息
  */
 export const getTeacherInfo = () => {
-  return teacherClient.get('/api/v1/teacher/auth/me')
+  return teacherClient.get('/api/pbl/teacher/auth/me')
 }
 
 /**
@@ -99,7 +99,7 @@ export const getTeacherInfo = () => {
  * @param {string} refreshToken - 刷新令牌
  */
 export const refreshTeacherToken = (refreshToken) => {
-  return teacherClient.post('/api/v1/teacher/auth/refresh', {
+  return teacherClient.post('/api/pbl/teacher/auth/refresh', {
     refresh_token: refreshToken
   })
 }
@@ -111,7 +111,7 @@ export const refreshTeacherToken = (refreshToken) => {
  * @param {string} passwordData.new_password - 新密码
  */
 export const changePassword = (passwordData) => {
-  return teacherClient.post('/api/v1/teacher/auth/change-password', passwordData)
+  return teacherClient.post('/api/pbl/teacher/auth/change-password', passwordData)
 }
 
 /**
@@ -122,7 +122,7 @@ export const changePassword = (passwordData) => {
  * @param {string} profileData.subject - 科目
  */
 export const updateProfile = (profileData) => {
-  return teacherClient.put('/api/v1/teacher/auth/profile', profileData)
+  return teacherClient.put('/api/pbl/teacher/auth/profile', profileData)
 }
 
 // ===== 课程管理 =====
@@ -131,7 +131,7 @@ export const updateProfile = (profileData) => {
  * 获取教师负责的课程列表
  */
 export const getTeacherCourses = () => {
-  return teacherClient.get('/api/v1/teacher/courses')
+  return teacherClient.get('/api/pbl/teacher/courses')
 }
 
 /**
@@ -139,7 +139,7 @@ export const getTeacherCourses = () => {
  * @param {string} courseUuid - 课程UUID
  */
 export const getTeacherCourseDetail = (courseUuid) => {
-  return teacherClient.get(`/api/v1/teacher/courses/${courseUuid}`)
+  return teacherClient.get(`/api/pbl/teacher/courses/${courseUuid}`)
 }
 
 // ===== 分组管理 =====
@@ -149,7 +149,7 @@ export const getTeacherCourseDetail = (courseUuid) => {
  * @param {string} courseUuid - 课程UUID
  */
 export const getCourseGroups = (courseUuid) => {
-  return teacherClient.get(`/api/v1/teacher/courses/${courseUuid}/groups`)
+  return teacherClient.get(`/api/pbl/teacher/courses/${courseUuid}/groups`)
 }
 
 /**
@@ -161,7 +161,7 @@ export const getCourseGroups = (courseUuid) => {
  * @param {number} groupData.max_members - 最大成员数
  */
 export const createGroup = (courseUuid, groupData) => {
-  return teacherClient.post(`/api/v1/teacher/courses/${courseUuid}/groups`, groupData)
+  return teacherClient.post(`/api/pbl/teacher/courses/${courseUuid}/groups`, groupData)
 }
 
 /**
@@ -171,7 +171,7 @@ export const createGroup = (courseUuid, groupData) => {
  * @param {Object} groupData - 小组数据
  */
 export const updateGroup = (courseUuid, groupId, groupData) => {
-  return teacherClient.put(`/api/v1/teacher/courses/${courseUuid}/groups/${groupId}`, groupData)
+  return teacherClient.put(`/api/pbl/teacher/courses/${courseUuid}/groups/${groupId}`, groupData)
 }
 
 /**
@@ -180,7 +180,7 @@ export const updateGroup = (courseUuid, groupId, groupData) => {
  * @param {number} groupId - 小组ID
  */
 export const deleteGroup = (courseUuid, groupId) => {
-  return teacherClient.delete(`/api/v1/teacher/courses/${courseUuid}/groups/${groupId}`)
+  return teacherClient.delete(`/api/pbl/teacher/courses/${courseUuid}/groups/${groupId}`)
 }
 
 /**
@@ -190,7 +190,7 @@ export const deleteGroup = (courseUuid, groupId) => {
  * @param {Array<number>} userIds - 用户ID列表
  */
 export const addGroupMembers = (courseUuid, groupId, userIds) => {
-  return teacherClient.post(`/api/v1/teacher/courses/${courseUuid}/groups/${groupId}/members`, {
+  return teacherClient.post(`/api/pbl/teacher/courses/${courseUuid}/groups/${groupId}/members`, {
     user_ids: userIds
   })
 }
@@ -202,7 +202,7 @@ export const addGroupMembers = (courseUuid, groupId, userIds) => {
  * @param {number} userId - 用户ID
  */
 export const removeGroupMember = (courseUuid, groupId, userId) => {
-  return teacherClient.delete(`/api/v1/teacher/courses/${courseUuid}/groups/${groupId}/members/${userId}`)
+  return teacherClient.delete(`/api/pbl/teacher/courses/${courseUuid}/groups/${groupId}/members/${userId}`)
 }
 
 // ===== 班级成员 =====
@@ -212,7 +212,7 @@ export const removeGroupMember = (courseUuid, groupId, userId) => {
  * @param {string} courseUuid - 课程UUID
  */
 export const getClassMembers = (courseUuid) => {
-  return teacherClient.get(`/api/v1/teacher/courses/${courseUuid}/members`)
+  return teacherClient.get(`/api/pbl/teacher/courses/${courseUuid}/members`)
 }
 
 // ===== 单元管理 =====
@@ -222,7 +222,7 @@ export const getClassMembers = (courseUuid) => {
  * @param {string} courseUuid - 课程UUID
  */
 export const getCourseUnits = (courseUuid) => {
-  return teacherClient.get(`/api/v1/teacher/courses/${courseUuid}/units`)
+  return teacherClient.get(`/api/pbl/teacher/courses/${courseUuid}/units`)
 }
 
 // ===== 学习进度 =====
@@ -233,7 +233,7 @@ export const getCourseUnits = (courseUuid) => {
  * @param {number} unitId - 单元ID
  */
 export const getUnitProgress = (courseUuid, unitId) => {
-  return teacherClient.get(`/api/v1/teacher/courses/${courseUuid}/units/${unitId}/progress`)
+  return teacherClient.get(`/api/pbl/teacher/courses/${courseUuid}/units/${unitId}/progress`)
 }
 
 /**
@@ -241,7 +241,7 @@ export const getUnitProgress = (courseUuid, unitId) => {
  * @param {string} courseUuid - 课程UUID
  */
 export const getCourseProgress = (courseUuid) => {
-  return teacherClient.get(`/api/v1/teacher/courses/${courseUuid}/progress`)
+  return teacherClient.get(`/api/pbl/teacher/courses/${courseUuid}/progress`)
 }
 
 // ===== 作业管理 =====
@@ -252,7 +252,7 @@ export const getCourseProgress = (courseUuid) => {
  * @param {number} unitId - 单元ID
  */
 export const getUnitHomework = (courseUuid, unitId) => {
-  return teacherClient.get(`/api/v1/teacher/courses/${courseUuid}/units/${unitId}/homework`)
+  return teacherClient.get(`/api/pbl/teacher/courses/${courseUuid}/units/${unitId}/homework`)
 }
 
 /**
@@ -263,7 +263,7 @@ export const getUnitHomework = (courseUuid, unitId) => {
  * @param {string} params.status - 状态（可选）
  */
 export const getCourseHomework = (courseUuid, params = {}) => {
-  return teacherClient.get(`/api/v1/teacher/courses/${courseUuid}/homework`, { params })
+  return teacherClient.get(`/api/pbl/teacher/courses/${courseUuid}/homework`, { params })
 }
 
 /**
@@ -271,7 +271,7 @@ export const getCourseHomework = (courseUuid, params = {}) => {
  * @param {number} taskId - 任务ID
  */
 export const getHomeworkSubmissions = (taskId) => {
-  return teacherClient.get(`/api/v1/teacher/homework/${taskId}/submissions`)
+  return teacherClient.get(`/api/pbl/teacher/homework/${taskId}/submissions`)
 }
 
 /**
@@ -282,7 +282,7 @@ export const getHomeworkSubmissions = (taskId) => {
  * @param {string} gradeData.feedback - 反馈
  */
 export const gradeHomework = (progressId, gradeData) => {
-  return teacherClient.put(`/api/v1/teacher/homework/${progressId}/grade`, gradeData)
+  return teacherClient.put(`/api/pbl/teacher/homework/${progressId}/grade`, gradeData)
 }
 
 export default {

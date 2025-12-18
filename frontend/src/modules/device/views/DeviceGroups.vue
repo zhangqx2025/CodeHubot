@@ -1,7 +1,10 @@
 <template>
   <div class="device-groups-container">
     <div class="page-header">
-      <h2>设备分组管理</h2>
+      <div>
+        <h2>设备分组管理</h2>
+        <p class="page-subtitle">按教室、机房或其他场景对设备进行分组管理</p>
+      </div>
       <el-button type="primary" @click="showAddDialog = true">
         <el-icon><Plus /></el-icon>
         创建分组
@@ -26,9 +29,10 @@
         <el-col :span="6">
           <el-select v-model="typeFilter" placeholder="分组类型" clearable>
             <el-option label="全部" value="" />
-            <el-option label="区域分组" value="area" />
-            <el-option label="功能分组" value="function" />
-            <el-option label="设备类型分组" value="device_type" />
+            <el-option label="教室" value="classroom" />
+            <el-option label="机房" value="lab" />
+            <el-option label="实验室" value="laboratory" />
+            <el-option label="其他" value="other" />
           </el-select>
         </el-col>
       </el-row>
@@ -99,9 +103,10 @@
         </el-form-item>
         <el-form-item label="分组类型" prop="type">
           <el-select v-model="deviceGroupForm.type" placeholder="请选择分组类型">
-            <el-option label="区域分组" value="area" />
-            <el-option label="功能分组" value="function" />
-            <el-option label="设备类型分组" value="device_type" />
+            <el-option label="教室" value="classroom" />
+            <el-option label="机房" value="lab" />
+            <el-option label="实验室" value="laboratory" />
+            <el-option label="其他" value="other" />
           </el-select>
         </el-form-item>
         <el-form-item label="父分组" prop="parent_group">
@@ -163,37 +168,37 @@ const deviceGroupFormRef = ref()
 const deviceGroups = ref([
   {
     id: 1,
-    name: '一楼办公区',
-    description: '一楼办公区域的所有设备',
-    type: 'area',
-    device_count: 15,
+    name: '101教室',
+    description: '一号教学楼101教室',
+    type: 'classroom',
+    device_count: 30,
     parent_group: null,
     created_at: '2024-01-15T10:30:00Z'
   },
   {
     id: 2,
-    name: '温度监控设备',
-    description: '所有温度监控相关设备',
-    type: 'function',
-    device_count: 8,
+    name: '计算机机房A',
+    description: '计算机实验楼A机房',
+    type: 'lab',
+    device_count: 50,
     parent_group: null,
     created_at: '2024-01-12T14:20:00Z'
   },
   {
     id: 3,
-    name: '会议室A',
-    description: '会议室A的设备分组',
-    type: 'area',
-    device_count: 5,
-    parent_group: '一楼办公区',
+    name: '物理实验室',
+    description: '实验楼物理实验室',
+    type: 'laboratory',
+    device_count: 25,
+    parent_group: null,
     created_at: '2024-01-10T09:15:00Z'
   },
   {
     id: 4,
-    name: '安防设备',
-    description: '安全防护相关设备',
-    type: 'function',
-    device_count: 12,
+    name: '202教室',
+    description: '二号教学楼202教室',
+    type: 'classroom',
+    device_count: 28,
     parent_group: null,
     created_at: '2024-01-08T16:45:00Z'
   }
@@ -249,6 +254,11 @@ const availableParentGroups = computed(() => {
 // 方法
 const getTypeLabel = (type) => {
   const labels = {
+    classroom: '教室',
+    lab: '机房',
+    laboratory: '实验室',
+    other: '其他',
+    // 兼容旧数据
     area: '区域分组',
     function: '功能分组',
     device_type: '设备类型分组'
@@ -258,6 +268,11 @@ const getTypeLabel = (type) => {
 
 const getTypeTagType = (type) => {
   const types = {
+    classroom: 'primary',
+    lab: 'success',
+    laboratory: 'warning',
+    other: 'info',
+    // 兼容旧数据
     area: 'primary',
     function: 'success',
     device_type: 'warning'

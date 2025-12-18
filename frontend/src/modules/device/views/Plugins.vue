@@ -324,12 +324,12 @@ const addPlugin = () => {
 
 // 编辑插件
 const editPlugin = (plugin) => {
-  router.push(`/plugins/${plugin.uuid}/edit`)
+  router.push(`/device/plugins/${plugin.uuid}/edit`)
 }
 
 // 查看插件
 const viewPlugin = (plugin) => {
-  router.push(`/plugins/${plugin.uuid}/view`)
+  router.push(`/device/plugins/${plugin.uuid}/view`)
 }
 
 // 删除插件

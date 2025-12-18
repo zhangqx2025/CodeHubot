@@ -12,11 +12,14 @@
         </div>
       </div>
       <div class="header-controls">
-        <el-button @click="resetForm">重置</el-button>
-        <el-button type="primary" @click="saveConfig" :loading="saving">
+        <el-tag v-if="saving" type="info" effect="plain">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          正在保存...
+        </el-tag>
+        <el-tag v-else-if="lastSaveTime" type="success" effect="plain">
           <el-icon><Check /></el-icon>
-          保存配置
-        </el-button>
+          已自动保存 ({{ lastSaveTime }})
+        </el-tag>
       </div>
     </div>
 
@@ -558,12 +561,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Check, Plus, CopyDocument } from '@element-plus/icons-vue'
-import { getDevicesWithProductInfo } from '@device/api/device'
-import { getDeviceConfig, updateDeviceConfig, getDeviceProductConfig } from '@device/api/device'
+import { ArrowLeft, Check, Plus, CopyDocument, Loading } from '@element-plus/icons-vue'
+import { getDevicesWithProductInfo } from '@/api/device'
+import { getDeviceConfig, updateDeviceConfig, getDeviceProductConfig } from '@/api/device'
 import logger from '../utils/logger'
 
 const route = useRoute()
@@ -577,6 +580,8 @@ const sensorConfigs = ref([])
 const controlConfigs = ref([])
 const presetCommands = ref([])
 const originalConfig = ref(null)
+const lastSaveTime = ref('')
+let saveTimer = null // 防抖定时器
 
 // 预设指令对话框
 const presetDialogVisible = ref(false)
@@ -825,8 +830,21 @@ const loadDeviceConfig = async () => {
   }
 }
 
+// 防抖保存配置（自动保存）
+const autoSaveConfig = () => {
+  // 清除之前的定时器
+  if (saveTimer) {
+    clearTimeout(saveTimer)
+  }
+  
+  // 设置新的定时器，1秒后执行保存
+  saveTimer = setTimeout(() => {
+    saveConfig(true) // true 表示是自动保存
+  }, 1000)
+}
+
 // 保存配置
-const saveConfig = async () => {
+const saveConfig = async (isAutoSave = false) => {
   if (!deviceId.value) return
   
   try {
@@ -858,10 +876,17 @@ const saveConfig = async () => {
     }
     
     await updateDeviceConfig(deviceUuid.value, configData)
-    ElMessage.success('设备配置保存成功')
     
-    // 重新加载配置
-    await loadDeviceConfig()
+    // 更新最后保存时间
+    const now = new Date()
+    lastSaveTime.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+    
+    if (!isAutoSave) {
+      ElMessage.success('设备配置保存成功')
+    }
+    
+    // 更新原始配置，避免重复触发保存
+    originalConfig.value = JSON.parse(JSON.stringify(configData))
   } catch (error) {
     if (error !== false) { // 表单验证失败时不显示错误
       logger.error('保存设备配置失败:', error)
@@ -872,25 +897,17 @@ const saveConfig = async () => {
   }
 }
 
-// 重置表单
-const resetForm = async () => {
-  try {
-    await ElMessageBox.confirm('确定要重置配置吗？未保存的修改将丢失。', '确认重置', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    await loadDeviceConfig()
-    ElMessage.success('配置已重置')
-  } catch (error) {
-    // 用户取消
+// 监听配置变化，自动保存
+watch([sensorConfigs, controlConfigs], () => {
+  // 只有在初始加载完成后才触发自动保存
+  if (device.value && !loading.value) {
+    autoSaveConfig()
   }
-}
+}, { deep: true })
 
 // 返回设备列表
 const goBack = () => {
-  router.push('/devices')
+  router.push('/device/devices')
 }
 
 // 预设指令管理方法
@@ -1001,6 +1018,9 @@ const deletePreset = async (index) => {
     
     presetCommands.value.splice(index, 1)
     ElMessage.success('预设指令已删除')
+    
+    // 自动保存配置
+    autoSaveConfig()
   } catch (error) {
     // 用户取消
   }
@@ -1323,6 +1343,9 @@ const savePreset = () => {
   
   presetDialogVisible.value = false
   resetPresetForm()
+  
+  // 自动保存配置
+  autoSaveConfig()
 }
 
 const getPresetTypeLabel = (deviceType, presetType) => {
@@ -1533,6 +1556,13 @@ const copyPresetKey = async (presetKey) => {
 onMounted(() => {
   loadDeviceInfo()
 })
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (saveTimer) {
+    clearTimeout(saveTimer)
+  }
+})
 </script>
 
 <style scoped>
@@ -1568,6 +1598,12 @@ onMounted(() => {
 .header-controls {
   display: flex;
   gap: 12px;
+  align-items: center;
+}
+
+.header-controls .el-tag {
+  font-size: 13px;
+  padding: 8px 16px;
 }
 
 .page-content {

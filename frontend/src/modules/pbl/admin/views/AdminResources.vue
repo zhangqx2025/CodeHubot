@@ -132,9 +132,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCourses } from '@pbl/admin/api/admin'
-import { getUnits } from '@pbl/admin/api/admin'
-import { getResources, createResource, updateResource, deleteResource, uploadResourceFile } from '@pbl/admin/api/admin'
+import { getCourses } from '@/api/admin'
+import { getUnits } from '@/api/admin'
+import { getResources, createResource, updateResource, deleteResource, uploadResourceFile } from '@/api/admin'
 
 const router = useRouter()
 
@@ -169,7 +169,7 @@ const formRules = {
 
 const uploadUrl = computed(() => {
   if (!selectedUnitUuid.value) return ''
-  return `/api/v1/admin/resources/upload?unit_uuid=${selectedUnitUuid.value}&file_type=${formData.type}`
+  return `/api/pbl/admin/resources/upload?unit_uuid=${selectedUnitUuid.value}&file_type=${formData.type}`
 })
 
 const getTypeType = (type) => {

@@ -11,6 +11,7 @@ from app.utils.timezone import get_beijing_time_naive
 import uuid
 
 from ...core.deps import get_db, get_current_admin
+from ...core.response import success_response
 from ...models.pbl import (
     PBLTemplateSchoolPermission, 
     PBLCourseTemplate,
@@ -68,15 +69,12 @@ async def list_available_templates(
     template_ids = [p.template_id for p in permission_query.all()]
     
     if not template_ids:
-        return {
-            "success": True,
-            "data": {
-                "total": 0,
-                "page": page,
-                "page_size": page_size,
-                "items": []
-            }
-        }
+        return success_response(data={
+            "total": 0,
+            "page": page,
+            "page_size": page_size,
+            "items": []
+        })
     
     # 查询模板
     query = db.query(PBLCourseTemplate).filter(
@@ -148,15 +146,12 @@ async def list_available_templates(
             "updated_at": template.updated_at
         })
     
-    return {
-        "success": True,
-        "data": {
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "items": result
-        }
-    }
+    return success_response(data={
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "items": result
+    })
 
 
 @router.get("/available-templates/{template_uuid}", response_model=dict)
@@ -274,36 +269,33 @@ async def get_available_template_detail(
             ]
         })
     
-    return {
-        "success": True,
-        "data": {
-            "id": template.id,
-            "uuid": template.uuid,
-            "title": template.title,
-            "description": template.description,
-            "cover_image": template.cover_image,
-            "duration": template.duration,
-            "difficulty": template.difficulty,
-            "category": template.category,
-            "version": template.version,
-            "is_public": template.is_public,
-            "usage_count": template.usage_count,
-            "permission": {
-                "id": permission.id,
-                "uuid": permission.uuid,
-                "can_customize": permission.can_customize,
-                "max_instances": permission.max_instances,
-                "current_instances": instance_count,
-                "can_create_instance": can_create_instance,
-                "valid_from": permission.valid_from,
-                "valid_until": permission.valid_until,
-                "remarks": permission.remarks
-            },
-            "units": units_data,
-            "created_at": template.created_at,
-            "updated_at": template.updated_at
-        }
-    }
+    return success_response(data={
+        "id": template.id,
+        "uuid": template.uuid,
+        "title": template.title,
+        "description": template.description,
+        "cover_image": template.cover_image,
+        "duration": template.duration,
+        "difficulty": template.difficulty,
+        "category": template.category,
+        "version": template.version,
+        "is_public": template.is_public,
+        "usage_count": template.usage_count,
+        "permission": {
+            "id": permission.id,
+            "uuid": permission.uuid,
+            "can_customize": permission.can_customize,
+            "max_instances": permission.max_instances,
+            "current_instances": instance_count,
+            "can_create_instance": can_create_instance,
+            "valid_from": permission.valid_from,
+            "valid_until": permission.valid_until,
+            "remarks": permission.remarks
+        },
+        "units": units_data,
+        "created_at": template.created_at,
+        "updated_at": template.updated_at
+    })
 
 
 @router.post("/available-templates/{template_uuid}/create-course", response_model=dict)
@@ -386,13 +378,12 @@ async def create_course_from_template(
     db.commit()
     db.refresh(course)
     
-    return {
-        "success": True,
-        "message": f"成功基于模板「{template.title}」创建课程",
-        "data": {
+    return success_response(
+        message=f"成功基于模板「{template.title}」创建课程",
+        data={
             "course_id": course.id,
             "course_uuid": course.uuid,
             "course_title": course.title,
             "template_title": template.title
         }
-    }
+    )

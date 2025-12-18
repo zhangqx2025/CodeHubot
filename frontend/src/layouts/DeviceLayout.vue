@@ -12,35 +12,54 @@
         :router="true"
         class="layout-menu"
       >
+        <!-- 所有用户都可以看到的菜单 -->
         <el-menu-item index="/device/dashboard">
           <el-icon><HomeFilled /></el-icon>
           <span>控制台</span>
         </el-menu-item>
         
+        <el-menu-item index="/device/device-register">
+          <el-icon><Plus /></el-icon>
+          <span>设备注册</span>
+        </el-menu-item>
+        
         <el-menu-item index="/device/devices">
           <el-icon><Cpu /></el-icon>
-          <span>设备管理</span>
+          <span>设备列表</span>
         </el-menu-item>
         
-        <el-menu-item index="/device/device-groups">
+        <!-- 教师、学校管理员、平台管理员可以看到设备授权 -->
+        <el-menu-item 
+          v-if="canAccessAuthorization"
+          index="/device/device-pbl-authorization"
+        >
+          <el-icon><Key /></el-icon>
+          <span>设备授权</span>
+        </el-menu-item>
+        
+        <!-- 设备分组暂时隐藏 -->
+        <!-- <el-menu-item index="/device/device-groups">
           <el-icon><FolderOpened /></el-icon>
           <span>设备分组</span>
-        </el-menu-item>
+        </el-menu-item> -->
         
-        <el-menu-item index="/device/products">
+        <!-- 只有平台管理员可以看到产品管理 -->
+        <el-menu-item 
+          v-if="isPlatformAdmin"
+          index="/device/products"
+        >
           <el-icon><Box /></el-icon>
           <span>产品管理</span>
         </el-menu-item>
         
-        <el-menu-item index="/device/device-groups">
-          <el-icon><FolderOpened /></el-icon>
-          <span>设备分组</span>
-        </el-menu-item>
-        
-        <el-menu-item index="/device/firmware">
+        <!-- 固件管理暂时隐藏 -->
+        <!-- <el-menu-item 
+          v-if="isPlatformAdmin"
+          index="/device/firmware"
+        >
           <el-icon><Document /></el-icon>
           <span>固件管理</span>
-        </el-menu-item>
+        </el-menu-item> -->
       </el-menu>
     </el-aside>
     
@@ -98,8 +117,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  HomeFilled, Cpu, FolderOpened, Box, Document,
-  Expand, Fold, Grid, Setting
+  HomeFilled, Cpu, FolderOpened, Box, Document, Key,
+  Expand, Fold, Grid, Setting, Plus
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -108,6 +127,20 @@ const authStore = useAuthStore()
 
 const isCollapse = ref(false)
 const activeMenu = computed(() => route.path)
+
+// 角色判断
+const userRole = computed(() => authStore.userInfo?.role || 'individual')
+const isPlatformAdmin = computed(() => userRole.value === 'platform_admin')
+const isSchoolAdmin = computed(() => userRole.value === 'school_admin')
+const isTeacher = computed(() => userRole.value === 'teacher')
+const isStudent = computed(() => userRole.value === 'student')
+const isIndividual = computed(() => userRole.value === 'individual')
+
+// 权限判断
+// 教师、学校管理员、平台管理员可以访问设备授权功能
+const canAccessAuthorization = computed(() => 
+  isPlatformAdmin.value || isSchoolAdmin.value || isTeacher.value
+)
 
 function toggleCollapse() {
   isCollapse.value = !isCollapse.value

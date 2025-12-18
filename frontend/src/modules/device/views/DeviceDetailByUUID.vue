@@ -42,138 +42,161 @@
     <div class="page-content" v-if="!loading">
       <!-- 设备基本信息卡片 -->
       <div class="info-section">
-        <h3>基本信息</h3>
-        <div class="info-cards">
-          <div class="info-card">
-            <div class="card-header">
-              <el-icon><Cpu /></el-icon>
-              <span>设备信息</span>
+        <h3>设备基本信息</h3>
+        <div class="info-card">
+          <div class="card-header">
+            <el-icon><Cpu /></el-icon>
+            <span>基本信息</span>
+          </div>
+          <div class="card-content">
+            <div class="info-item">
+              <span class="label">设备名称:</span>
+              <span class="value">{{ deviceInfo.name || '-' }}</span>
             </div>
-            <div class="card-content">
-              <div class="info-item">
-                <span class="label">设备名称:</span>
-                <span class="value">{{ deviceInfo.name }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">设备ID:</span>
-                <span class="value">{{ deviceInfo.device_id }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">设备UUID:</span>
-                <span class="value">{{ deviceInfo.uuid }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">设备类型:</span>
-                <span class="value">{{ deviceInfo.device_type }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">制造商:</span>
-                <span class="value">{{ deviceInfo.manufacturer }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">型号:</span>
-                <span class="value">{{ deviceInfo.model }}</span>
-              </div>
+            <div class="info-item">
+              <span class="label">设备ID:</span>
+              <span class="value">{{ deviceInfo.device_id || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">设备UUID:</span>
+              <span class="value">{{ deviceInfo.uuid || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">设备描述:</span>
+              <span class="value">{{ deviceInfo.description || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">产品ID:</span>
+              <span class="value">{{ deviceInfo.product_id || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">设备类型:</span>
+              <span class="value">{{ deviceInfo.device_type || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">制造商:</span>
+              <span class="value">{{ deviceInfo.manufacturer || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">型号:</span>
+              <span class="value">{{ deviceInfo.model || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">在线状态:</span>
+              <el-tag :type="deviceInfo.is_online ? 'success' : 'danger'" size="small">
+                {{ deviceInfo.is_online ? '在线' : '离线' }}
+              </el-tag>
+            </div>
+            <div class="info-item">
+              <span class="label">激活状态:</span>
+              <el-tag :type="deviceInfo.is_active ? 'success' : 'info'" size="small">
+                {{ deviceInfo.is_active ? '已激活' : '未激活' }}
+              </el-tag>
+            </div>
+            <div class="info-item">
+              <span class="label">注册时间:</span>
+              <span class="value">{{ deviceInfo.created_at || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">更新时间:</span>
+              <span class="value">{{ deviceInfo.updated_at || '-' }}</span>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="info-card">
-            <div class="card-header">
-              <el-icon><Connection /></el-icon>
-              <span>连接状态</span>
+      <!-- 硬件信息 -->
+      <div class="info-section">
+        <h3>硬件信息</h3>
+        <div class="info-card">
+          <div class="card-header">
+            <el-icon><Setting /></el-icon>
+            <span>硬件配置</span>
+          </div>
+          <div class="card-content">
+            <div class="info-item">
+              <span class="label">固件版本:</span>
+              <span class="value">{{ deviceInfo.firmware_version || '-' }}</span>
             </div>
-            <div class="card-content">
-              <div class="info-item">
-                <span class="label">在线状态:</span>
-                <el-tag :type="deviceInfo.is_online ? 'success' : 'danger'" size="small">
-                  {{ deviceInfo.is_online ? '在线' : '离线' }}
-                </el-tag>
-              </div>
-              <div class="info-item">
-                <span class="label">最后上线:</span>
-                <span class="value">{{ deviceInfo.last_seen }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">IP地址:</span>
-                <span class="value">{{ deviceInfo.ip_address }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">MAC地址:</span>
-                <span class="value">{{ deviceInfo.mac_address }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">网络状态:</span>
-                <el-tag :type="getNetworkStatusType(deviceInfo.network_status)" size="small">
-                  {{ getNetworkStatusText(deviceInfo.network_status) }}
-                </el-tag>
-              </div>
-              <div class="info-item">
-                <span class="label">信号强度:</span>
-                <span class="value">{{ deviceInfo.signal_strength }}%</span>
-              </div>
+            <div class="info-item">
+              <span class="label">硬件版本:</span>
+              <span class="value">{{ deviceInfo.hardware_version || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">序列号:</span>
+              <span class="value">{{ deviceInfo.serial_number || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">MAC地址:</span>
+              <span class="value">{{ deviceInfo.mac_address || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">IP地址:</span>
+              <span class="value">{{ deviceInfo.ip_address || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">质量等级:</span>
+              <span class="value">{{ deviceInfo.quality_grade || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">生产日期:</span>
+              <span class="value">{{ deviceInfo.production_date || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">运行时长:</span>
+              <span class="value">{{ deviceInfo.uptime || 0 }} 秒</span>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="info-card">
-            <div class="card-header">
-              <el-icon><Tools /></el-icon>
-              <span>硬件信息</span>
+      <!-- 位置信息 -->
+      <div class="info-section" v-if="deviceInfo.location || deviceInfo.group_name || deviceInfo.room || deviceInfo.floor">
+        <h3>位置信息</h3>
+        <div class="info-card">
+          <div class="card-header">
+            <el-icon><Location /></el-icon>
+            <span>部署位置</span>
+          </div>
+          <div class="card-content">
+            <div class="info-item" v-if="deviceInfo.location">
+              <span class="label">位置:</span>
+              <span class="value">{{ deviceInfo.location }}</span>
             </div>
-            <div class="card-content">
-              <div class="info-item">
-                <span class="label">固件版本:</span>
-                <span class="value">{{ deviceInfo.firmware_version }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">硬件版本:</span>
-                <span class="value">{{ deviceInfo.hardware_version }}</span>
-              </div>
-              <div class="info-item" v-if="deviceInfo.battery_level !== undefined">
-                <span class="label">电池电量:</span>
-                <span class="value">{{ deviceInfo.battery_level }}%</span>
-              </div>
-              <div class="info-item">
-                <span class="label">运行时间:</span>
-                <span class="value">{{ formatUptime(deviceInfo.uptime) }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">设备位置:</span>
-                <span class="value">{{ deviceInfo.location }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">设备组:</span>
-                <span class="value">{{ deviceInfo.group_name }}</span>
-              </div>
+            <div class="info-item" v-if="deviceInfo.group_name">
+              <span class="label">设备组:</span>
+              <span class="value">{{ deviceInfo.group_name }}</span>
+            </div>
+            <div class="info-item" v-if="deviceInfo.room">
+              <span class="label">房间:</span>
+              <span class="value">{{ deviceInfo.room }}</span>
+            </div>
+            <div class="info-item" v-if="deviceInfo.floor">
+              <span class="label">楼层:</span>
+              <span class="value">{{ deviceInfo.floor }}</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 传感器配置 -->
-      <div class="sensor-section" v-if="deviceInfo.sensor_config">
+      <div class="info-section" v-if="deviceInfo.device_sensor_config && Object.keys(deviceInfo.device_sensor_config).length > 0">
         <h3>传感器配置</h3>
-        <div class="sensor-grid">
-          <div 
-            v-for="(sensor, key) in deviceInfo.sensor_config" 
-            :key="key"
-            class="sensor-card"
-          >
-            <div class="sensor-header">
-              <span class="sensor-name">{{ getSensorName(key) }}</span>
-              <el-tag size="small" type="info">{{ sensor.port }}</el-tag>
-            </div>
-            <div class="sensor-details">
-              <div class="sensor-item">
-                <span class="label">类型:</span>
-                <span class="value">{{ sensor.type }}</span>
-              </div>
-              <div class="sensor-item">
-                <span class="label">单位:</span>
-                <span class="value">{{ sensor.unit }}</span>
-              </div>
-              <div class="sensor-item">
-                <span class="label">范围:</span>
-                <span class="value">{{ sensor.min }} ~ {{ sensor.max }}</span>
+        <div class="info-card">
+          <div class="card-header">
+            <el-icon><Monitor /></el-icon>
+            <span>传感器列表</span>
+          </div>
+          <div class="card-content">
+            <div class="sensor-list">
+              <div class="sensor-item" v-for="(config, key) in deviceInfo.device_sensor_config" :key="key">
+                <div class="sensor-name">
+                  <el-tag :type="config.enabled ? 'success' : 'info'" size="small">
+                    {{ config.enabled ? '启用' : '禁用' }}
+                  </el-tag>
+                  <span>{{ config.custom_name || key }}</span>
+                </div>
+                <span class="sensor-key">{{ key }}</span>
               </div>
             </div>
           </div>
@@ -181,80 +204,92 @@
       </div>
 
       <!-- 控制配置 -->
-      <div class="control-section" v-if="deviceInfo.control_config">
+      <div class="info-section" v-if="deviceInfo.device_control_config && Object.keys(deviceInfo.device_control_config).length > 0">
         <h3>控制配置</h3>
-        <div class="control-grid">
-          <div 
-            v-for="(control, key) in deviceInfo.control_config" 
-            :key="key"
-            class="control-card"
-          >
-            <div class="control-header">
-              <span class="control-name">{{ control.name }}</span>
-              <el-tag size="small" type="warning">{{ control.port }}</el-tag>
-            </div>
-            <div class="control-details">
-              <div class="control-item">
-                <span class="label">类型:</span>
-                <span class="value">{{ control.type }}</span>
-              </div>
-              <div class="control-item" v-if="control.min !== undefined">
-                <span class="label">范围:</span>
-                <span class="value">{{ control.min }} ~ {{ control.max }}</span>
+        <div class="info-card">
+          <div class="card-header">
+            <el-icon><Operation /></el-icon>
+            <span>控制端口列表</span>
+          </div>
+          <div class="card-content">
+            <div class="sensor-list">
+              <div class="sensor-item" v-for="(config, key) in deviceInfo.device_control_config" :key="key">
+                <div class="sensor-name">
+                  <el-tag :type="config.enabled ? 'success' : 'info'" size="small">
+                    {{ config.enabled ? '启用' : '禁用' }}
+                  </el-tag>
+                  <span>{{ config.custom_name || key }}</span>
+                </div>
+                <span class="sensor-key">{{ key }}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 设备能力 -->
-      <div class="capabilities-section" v-if="deviceInfo.device_capabilities">
-        <h3>设备能力</h3>
-        <div class="capabilities-card">
-          <div class="capability-item">
-            <span class="label">支持OTA升级:</span>
-            <el-tag :type="deviceInfo.device_capabilities.supports_ota ? 'success' : 'danger'" size="small">
-              {{ deviceInfo.device_capabilities.supports_ota ? '支持' : '不支持' }}
-            </el-tag>
+      <!-- 预设命令 -->
+      <div class="info-section" v-if="deviceInfo.device_settings?.preset_commands && deviceInfo.device_settings.preset_commands.length > 0">
+        <h3>预设命令</h3>
+        <div class="info-card">
+          <div class="card-header">
+            <el-icon><DocumentCopy /></el-icon>
+            <span>命令列表</span>
           </div>
-          <div class="capability-item">
-            <span class="label">支持远程配置:</span>
-            <el-tag :type="deviceInfo.device_capabilities.supports_remote_config ? 'success' : 'danger'" size="small">
-              {{ deviceInfo.device_capabilities.supports_remote_config ? '支持' : '不支持' }}
-            </el-tag>
-          </div>
-          <div class="capability-item">
-            <span class="label">最大传感器数:</span>
-            <span class="value">{{ deviceInfo.device_capabilities.max_sensors }}</span>
-          </div>
-          <div class="capability-item">
-            <span class="label">最大控制器数:</span>
-            <span class="value">{{ deviceInfo.device_capabilities.max_controls }}</span>
+          <div class="card-content">
+            <div class="preset-list">
+              <div class="preset-item" v-for="(preset, index) in deviceInfo.device_settings.preset_commands" :key="index">
+                <div class="preset-header">
+                  <span class="preset-name">{{ preset.name }}</span>
+                  <el-tag type="info" size="small">{{ preset.preset_type }}</el-tag>
+                </div>
+                <div class="preset-desc">{{ preset.description || '-' }}</div>
+                <div class="preset-info">
+                  <span>设备类型: {{ preset.device_type }}</span>
+                  <span v-if="preset.steps">步骤数: {{ preset.steps.length }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 时间信息 -->
-      <div class="time-section">
-        <h3>时间信息</h3>
-        <div class="time-card">
-          <div class="time-item">
-            <span class="label">创建时间:</span>
-            <span class="value">{{ deviceInfo.created_at }}</span>
+      <!-- 维护信息 -->
+      <div class="info-section" v-if="deviceInfo.installation_date || deviceInfo.warranty_expiry || deviceInfo.last_maintenance || deviceInfo.next_maintenance">
+        <h3>维护信息</h3>
+        <div class="info-card">
+          <div class="card-header">
+            <el-icon><Tools /></el-icon>
+            <span>维护记录</span>
           </div>
-          <div class="time-item">
-            <span class="label">更新时间:</span>
-            <span class="value">{{ deviceInfo.updated_at }}</span>
+          <div class="card-content">
+            <div class="info-item" v-if="deviceInfo.installation_date">
+              <span class="label">安装日期:</span>
+              <span class="value">{{ deviceInfo.installation_date }}</span>
+            </div>
+            <div class="info-item" v-if="deviceInfo.warranty_expiry">
+              <span class="label">保修到期:</span>
+              <span class="value">{{ deviceInfo.warranty_expiry }}</span>
+            </div>
+            <div class="info-item" v-if="deviceInfo.last_maintenance">
+              <span class="label">上次维护:</span>
+              <span class="value">{{ deviceInfo.last_maintenance }}</span>
+            </div>
+            <div class="info-item" v-if="deviceInfo.next_maintenance">
+              <span class="label">下次维护:</span>
+              <span class="value">{{ deviceInfo.next_maintenance }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">错误计数:</span>
+              <span class="value">{{ deviceInfo.error_count || 0 }}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 加载状态 -->
-    <div v-else class="loading-container">
-      <el-loading-directive v-loading="loading" text="加载设备信息中...">
-        <div style="height: 200px;"></div>
-      </el-loading-directive>
+    <div v-else class="loading-container" v-loading="loading" element-loading-text="加载设备信息中...">
+      <div style="height: 200px;"></div>
     </div>
 
     <!-- 编辑设备对话框 -->
@@ -262,16 +297,6 @@
       <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="100px">
         <el-form-item label="设备名称" prop="name">
           <el-input v-model="editForm.name" placeholder="请输入设备名称" />
-        </el-form-item>
-        <el-form-item label="设备类型" prop="device_type">
-          <el-select v-model="editForm.device_type" placeholder="请选择设备类型">
-            <el-option label="温度传感器" value="温度传感器" />
-            <el-option label="湿度传感器" value="湿度传感器" />
-            <el-option label="压力传感器" value="压力传感器" />
-            <el-option label="光照传感器" value="光照传感器" />
-            <el-option label="运动传感器" value="运动传感器" />
-            <el-option label="智能开关" value="智能开关" />
-          </el-select>
         </el-form-item>
         <el-form-item label="设备位置" prop="location">
           <el-input v-model="editForm.location" placeholder="请输入设备位置" />
@@ -301,9 +326,11 @@ import {
   Operation,
   Setting,
   Cpu,
-  Connection,
+  Location,
+  DocumentCopy,
   Tools
 } from '@element-plus/icons-vue'
+import { getDevice, updateDevice, getDeviceProductInfo } from '../api/device'
 
 const route = useRoute()
 const router = useRouter()
@@ -320,33 +347,43 @@ const deviceInfo = reactive({
   device_id: '',
   uuid: '',
   name: '',
+  description: '',
+  product_id: null,
   device_type: '',
   manufacturer: '',
   model: '',
   is_online: false,
-  last_seen: '',
-  firmware_version: '',
-  hardware_version: '',
-  ip_address: '',
-  mac_address: '',
-  network_status: 'connected',
-  signal_strength: 75,
-  battery_level: undefined,
-  location: '',
-  group_name: '',
-  uptime: 0,
+  is_active: false,
   created_at: '',
   updated_at: '',
-  sensor_config: null,
-  control_config: null,
-  device_capabilities: null,
-  description: ''
+  firmware_version: '',
+  hardware_version: '',
+  serial_number: '',
+  mac_address: '',
+  ip_address: '',
+  quality_grade: '',
+  production_date: '',
+  uptime: 0,
+  location: '',
+  group_name: '',
+  room: '',
+  floor: '',
+  device_sensor_config: {},
+  device_control_config: {},
+  device_settings: null,
+  installation_date: '',
+  warranty_expiry: '',
+  last_maintenance: '',
+  next_maintenance: '',
+  error_count: 0,
+  last_heartbeat: '',
+  last_seen: '',
+  last_report_data: null
 })
 
 // 编辑表单
 const editForm = reactive({
   name: '',
-  device_type: '',
   location: '',
   description: ''
 })
@@ -355,18 +392,12 @@ const editForm = reactive({
 const editRules = {
   name: [
     { required: true, message: '请输入设备名称', trigger: 'blur' }
-  ],
-  device_type: [
-    { required: true, message: '请选择设备类型', trigger: 'change' }
-  ],
-  location: [
-    { required: true, message: '请输入设备位置', trigger: 'blur' }
   ]
 }
 
 // 返回设备列表
 const goBack = () => {
-  router.push('/devices')
+  router.push('/device/devices')
 }
 
 // 跳转到实时数据页面
@@ -394,69 +425,94 @@ const loadDeviceInfo = async () => {
       return
     }
 
-    // 模拟API调用获取设备信息
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 调用真实的API获取设备信息
+    const res = await getDevice(uuid)
+    const response = res.data // 获取响应数据
     
-    // 模拟传感器配置
-    const sensorConfig = {
-      temperature: { port: 'A0', type: 'analog', unit: '°C', min: -40, max: 85 },
-      humidity: { port: 'A1', type: 'analog', unit: '%', min: 0, max: 100 },
-      pressure: { port: 'A2', type: 'analog', unit: 'hPa', min: 300, max: 1100 },
-      light: { port: 'A3', type: 'analog', unit: 'lux', min: 0, max: 1000 }
+    console.log('设备详情数据:', response) // 添加调试日志
+    
+    // 尝试获取产品信息（如果设备有关联产品）
+    let productInfo = null
+    if (response.product_id) {
+      try {
+        const productRes = await getDeviceProductInfo(uuid)
+        productInfo = productRes.data
+      } catch (error) {
+        console.warn('获取产品信息失败:', error)
+      }
     }
     
-    // 模拟控制配置
-    const controlConfig = {
-      led1: { port: 'D2', type: 'digital', name: 'LED灯1' },
-      led2: { port: 'D3', type: 'digital', name: 'LED灯2' },
-      motor: { port: 'D5', type: 'pwm', name: '电机控制', min: 0, max: 255 },
-      servo: { port: 'D6', type: 'servo', name: '舵机', min: 0, max: 180 }
-    }
-    
+    // 更新设备信息 - 直接使用后台返回的所有字段
     Object.assign(deviceInfo, {
-      id: Math.floor(Math.random() * 1000),
-      device_id: `DEVICE_${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
-      uuid: uuid,
-      name: '智能温湿度传感器-001',
-      device_type: '温度传感器',
-      manufacturer: '智能科技有限公司',
-      model: 'TH-2024-Pro',
-      is_online: Math.random() > 0.3,
-      last_seen: new Date().toLocaleString(),
-      firmware_version: 'v2.1.0',
-      hardware_version: 'v1.5',
-      ip_address: '192.168.1.100',
-      mac_address: '00:11:22:33:44:55',
-      network_status: ['connected', 'disconnected', 'unstable'][Math.floor(Math.random() * 3)],
-      signal_strength: Math.floor(Math.random() * 100),
-      battery_level: Math.random() > 0.5 ? Math.floor(Math.random() * 100) : undefined,
-      location: '办公室A区-工位001',
-      group_name: '环境监测设备组',
-      uptime: Math.floor(Math.random() * 86400 * 30),
-      created_at: '2023-12-01 10:00:00',
-      updated_at: new Date().toLocaleString(),
-      sensor_config: sensorConfig,
-      control_config: controlConfig,
-      device_capabilities: {
-        supports_ota: true,
-        supports_remote_config: true,
-        max_sensors: 8,
-        max_controls: 6
-      },
-      description: '用于监测环境温湿度的智能传感器设备'
+      // 基本信息
+      id: response.id,
+      device_id: response.device_id,
+      uuid: response.uuid,
+      name: response.name,
+      description: response.description,
+      product_id: response.product_id,
+      
+      // 从产品信息获取或使用默认值
+      device_type: productInfo?.product_name || productInfo?.product_code || '未绑定产品',
+      manufacturer: productInfo?.manufacturer || '未知',
+      model: productInfo?.hardware_version || productInfo?.product_code || '未知',
+      
+      // 状态信息
+      is_online: response.is_online,
+      is_active: response.is_active,
+      
+      // 硬件信息
+      firmware_version: response.firmware_version,
+      hardware_version: response.hardware_version,
+      serial_number: response.serial_number,
+      mac_address: response.mac_address,
+      ip_address: response.ip_address,
+      quality_grade: response.quality_grade,
+      production_date: response.production_date,
+      uptime: response.uptime,
+      
+      // 位置信息
+      location: response.location,
+      group_name: response.group_name,
+      room: response.room,
+      floor: response.floor,
+      
+      // 配置信息
+      device_sensor_config: response.device_sensor_config || {},
+      device_control_config: response.device_control_config || {},
+      device_settings: response.device_settings,
+      
+      // 时间信息
+      created_at: response.created_at,
+      updated_at: response.updated_at,
+      last_heartbeat: response.last_heartbeat,
+      last_seen: response.last_seen,
+      
+      // 维护信息
+      installation_date: response.installation_date,
+      warranty_expiry: response.warranty_expiry,
+      last_maintenance: response.last_maintenance,
+      next_maintenance: response.next_maintenance,
+      
+      // 其他
+      error_count: response.error_count,
+      last_report_data: response.last_report_data
     })
     
     // 填充编辑表单
     Object.assign(editForm, {
       name: deviceInfo.name,
-      device_type: deviceInfo.device_type,
       location: deviceInfo.location,
       description: deviceInfo.description
     })
     
   } catch (error) {
-    ElMessage.error('加载设备信息失败')
+    ElMessage.error('加载设备信息失败: ' + (error.response?.data?.detail || error.message))
     console.error('Load device error:', error)
+    // 如果设备不存在或无权限，返回列表页
+    if (error.response?.status === 404 || error.response?.status === 403) {
+      setTimeout(() => goBack(), 1500)
+    }
   } finally {
     loading.value = false
   }
@@ -470,69 +526,31 @@ const saveDevice = async () => {
     await editFormRef.value.validate()
     saveLoading.value = true
     
-    // 模拟保存设备信息
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 调用真实的API更新设备信息
+    const updateData = {
+      name: editForm.name,
+      location: editForm.location,
+      description: editForm.description
+    }
     
-    // 更新设备信息
+    await updateDevice(deviceInfo.uuid, updateData)
+    
+    // 更新本地设备信息
     Object.assign(deviceInfo, editForm)
-    deviceInfo.updated_at = new Date().toLocaleString()
     
     ElMessage.success('设备信息已更新')
     editDialogVisible.value = false
   } catch (error) {
     if (error !== false) { // 不是验证失败
-      ElMessage.error('保存设备信息失败')
+      const errorMsg = error.response?.data?.detail || error.message || '保存设备信息失败'
+      ElMessage.error(errorMsg)
+      console.error('Save device error:', error)
     }
   } finally {
     saveLoading.value = false
   }
 }
 
-// 获取传感器名称
-const getSensorName = (key) => {
-  const names = {
-    temperature: '温度传感器',
-    humidity: '湿度传感器',
-    pressure: '压力传感器',
-    light: '光照传感器'
-  }
-  return names[key] || key
-}
-
-// 获取网络状态类型
-const getNetworkStatusType = (status) => {
-  const types = {
-    connected: 'success',
-    disconnected: 'danger',
-    unstable: 'warning'
-  }
-  return types[status] || 'info'
-}
-
-// 获取网络状态文本
-const getNetworkStatusText = (status) => {
-  const texts = {
-    connected: '已连接',
-    disconnected: '已断开',
-    unstable: '不稳定'
-  }
-  return texts[status] || status
-}
-
-// 格式化运行时间
-const formatUptime = (seconds) => {
-  const days = Math.floor(seconds / 86400)
-  const hours = Math.floor((seconds % 86400) / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  
-  if (days > 0) {
-    return `${days}天 ${hours}小时 ${minutes}分钟`
-  } else if (hours > 0) {
-    return `${hours}小时 ${minutes}分钟`
-  } else {
-    return `${minutes}分钟`
-  }
-}
 
 // 组件挂载
 onMounted(() => {
@@ -591,20 +609,11 @@ onMounted(() => {
   gap: 24px;
 }
 
-.info-section h3,
-.sensor-section h3,
-.control-section h3,
-.capabilities-section h3,
-.time-section h3 {
+.info-section h3 {
   margin: 0 0 16px 0;
   color: #303133;
   font-size: 18px;
-}
-
-.info-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 20px;
+  text-align: center;
 }
 
 .info-card {
@@ -613,6 +622,8 @@ onMounted(() => {
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #e4e7ed;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .card-header {
@@ -648,74 +659,84 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.sensor-grid,
-.control-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-}
-
-.sensor-card,
-.control-card {
-  background: white;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e4e7ed;
-}
-
-.sensor-header,
-.control-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.sensor-name,
-.control-name {
-  font-weight: 500;
-  color: #303133;
-}
-
-.sensor-details,
-.control-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sensor-item,
-.control-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-}
-
-.capabilities-card,
-.time-card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e4e7ed;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-}
-
-.capability-item,
-.time-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
 .loading-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 50vh;
+}
+
+/* 传感器和控制列表样式 */
+.sensor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sensor-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.sensor-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.sensor-key {
+  font-size: 12px;
+  color: #909399;
+  font-family: monospace;
+}
+
+/* 预设命令列表样式 */
+.preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preset-item {
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.preset-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.preset-name {
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.preset-desc {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 8px;
+}
+
+.preset-info {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #909399;
 }
 
 @media (max-width: 768px) {
@@ -729,18 +750,14 @@ onMounted(() => {
     justify-content: center;
   }
   
-  .info-cards {
-    grid-template-columns: 1fr;
+  .info-card {
+    max-width: 100%;
   }
   
-  .sensor-grid,
-  .control-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .capabilities-card,
-  .time-card {
-    grid-template-columns: 1fr;
+  .sensor-item,
+  .preset-item {
+    flex-direction: column;
+    gap: 8px;
   }
 }
 </style>

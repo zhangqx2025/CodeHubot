@@ -44,7 +44,7 @@ channelClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('channel_refresh_token')
         if (refreshToken) {
-          const response = await channelClient.post('/api/v1/channel/auth/refresh', {
+          const response = await channelClient.post('/api/pbl/channel/auth/refresh', {
             refresh_token: refreshToken
           })
           
@@ -65,7 +65,7 @@ channelClient.interceptors.response.use(
         localStorage.removeItem('channel_access_token')
         localStorage.removeItem('channel_refresh_token')
         localStorage.removeItem('channel_info')
-        window.location.href = '/channel/login'
+        window.location.href = '/login'
         return Promise.reject(refreshError)
       }
     }
@@ -83,14 +83,14 @@ channelClient.interceptors.response.use(
  * @param {string} loginData.password - 密码
  */
 export const channelLogin = (loginData) => {
-  return channelClient.post('/api/v1/channel/auth/login', loginData)
+  return channelClient.post('/api/pbl/channel/auth/login', loginData)
 }
 
 /**
  * 获取当前渠道商信息
  */
 export const getChannelInfo = () => {
-  return channelClient.get('/api/v1/channel/auth/me')
+  return channelClient.get('/api/pbl/channel/auth/me')
 }
 
 /**
@@ -98,7 +98,7 @@ export const getChannelInfo = () => {
  * @param {string} refreshToken - 刷新令牌
  */
 export const refreshChannelToken = (refreshToken) => {
-  return channelClient.post('/api/v1/channel/auth/refresh', {
+  return channelClient.post('/api/pbl/channel/auth/refresh', {
     refresh_token: refreshToken
   })
 }
@@ -109,7 +109,7 @@ export const refreshChannelToken = (refreshToken) => {
  * 获取渠道商负责的学校列表
  */
 export const getChannelSchools = () => {
-  return channelClient.get('/api/v1/channel/schools')
+  return channelClient.get('/api/pbl/channel/schools')
 }
 
 /**
@@ -117,7 +117,7 @@ export const getChannelSchools = () => {
  * @param {number} schoolId - 学校ID
  */
 export const getSchoolDetail = (schoolId) => {
-  return channelClient.get(`/api/v1/channel/schools/${schoolId}`)
+  return channelClient.get(`/api/pbl/channel/schools/${schoolId}`)
 }
 
 /**
@@ -125,7 +125,7 @@ export const getSchoolDetail = (schoolId) => {
  * @param {number} schoolId - 学校ID
  */
 export const getSchoolCourses = (schoolId) => {
-  return channelClient.get(`/api/v1/channel/schools/${schoolId}/courses`)
+  return channelClient.get(`/api/pbl/channel/schools/${schoolId}/courses`)
 }
 
 // ===== 课程查看 =====
@@ -135,7 +135,7 @@ export const getSchoolCourses = (schoolId) => {
  * @param {string} courseUuid - 课程UUID
  */
 export const getCourseDetail = (courseUuid) => {
-  return channelClient.get(`/api/v1/channel/courses/${courseUuid}`)
+  return channelClient.get(`/api/pbl/channel/courses/${courseUuid}`)
 }
 
 /**
@@ -143,7 +143,7 @@ export const getCourseDetail = (courseUuid) => {
  * @param {string} courseUuid - 课程UUID
  */
 export const getCourseProgress = (courseUuid) => {
-  return channelClient.get(`/api/v1/channel/courses/${courseUuid}/progress`)
+  return channelClient.get(`/api/pbl/channel/courses/${courseUuid}/progress`)
 }
 
 /**
@@ -151,7 +151,7 @@ export const getCourseProgress = (courseUuid) => {
  * @param {string} courseUuid - 课程UUID
  */
 export const getCourseHomework = (courseUuid) => {
-  return channelClient.get(`/api/v1/channel/courses/${courseUuid}/homework`)
+  return channelClient.get(`/api/pbl/channel/courses/${courseUuid}/homework`)
 }
 
 export default {

@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from app.api import api_router
 from app.core.config import settings
 from app.core.database import engine
-from app.core.response import StandardResponse, ErrorResponse, success_response, error_response
+from app.core.response import StandardResponse, ErrorResponse, success_response, error_response, error_response_dict
 from app.models import user, device, product, firmware
 # from app.services.mqtt_service import mqtt_service  # MQTT服务已独立部署
 import logging
@@ -169,7 +169,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             content={"detail": exc.detail}
         )
     
-    error_resp = error_response(
+    error_resp = error_response_dict(
         code=exc.status_code,
         message=exc.detail if isinstance(exc.detail, str) else "请求失败",
         detail=str(exc.detail) if not isinstance(exc.detail, str) else None
@@ -182,7 +182,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """请求验证异常处理器"""
-    error_resp = error_response(
+    error_resp = error_response_dict(
         code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         message="请求参数验证失败",
         detail=str(exc.errors())

@@ -6,105 +6,47 @@
         <p>统一管理平台</p>
       </div>
       
-      <el-tabs v-model="activeTab" class="login-tabs">
-        <!-- 通用登录 -->
-        <el-tab-pane label="通用登录" name="general">
-          <el-form
-            ref="generalFormRef"
-            :model="generalForm"
-            :rules="generalRules"
-            @submit.prevent="handleGeneralLogin"
-          >
-            <el-form-item prop="username">
-              <el-input
-                v-model="generalForm.username"
-                placeholder="用户名/邮箱"
-                prefix-icon="User"
-                size="large"
-                clearable
-              />
-            </el-form-item>
-            
-            <el-form-item prop="password">
-              <el-input
-                v-model="generalForm.password"
-                type="password"
-                placeholder="密码"
-                prefix-icon="Lock"
-                size="large"
-                show-password
-                @keyup.enter="handleGeneralLogin"
-              />
-            </el-form-item>
-            
-            <el-form-item>
-              <el-button
-                type="primary"
-                size="large"
-                style="width: 100%"
-                :loading="loading"
-                @click="handleGeneralLogin"
-              >
-                登录
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
+      <el-form
+        ref="generalFormRef"
+        :model="generalForm"
+        :rules="generalRules"
+        @submit.prevent="handleGeneralLogin"
+        class="login-form"
+      >
+        <el-form-item prop="username">
+          <el-input
+            v-model="generalForm.username"
+            placeholder="用户名/邮箱"
+            prefix-icon="User"
+            size="large"
+            clearable
+          />
+        </el-form-item>
         
-        <!-- 机构登录 -->
-        <el-tab-pane label="机构登录" name="institution">
-          <el-form
-            ref="institutionFormRef"
-            :model="institutionForm"
-            :rules="institutionRules"
-            @submit.prevent="handleInstitutionLogin"
+        <el-form-item prop="password">
+          <el-input
+            v-model="generalForm.password"
+            type="password"
+            placeholder="密码"
+            prefix-icon="Lock"
+            size="large"
+            show-password
+            @keyup.enter="handleGeneralLogin"
+          />
+        </el-form-item>
+        
+        <el-form-item>
+          <el-button
+            type="primary"
+            size="large"
+            style="width: 100%"
+            :loading="loading"
+            @click="handleGeneralLogin"
           >
-            <el-form-item prop="school_code">
-              <el-input
-                v-model="institutionForm.school_code"
-                placeholder="学校代码"
-                prefix-icon="School"
-                size="large"
-                clearable
-              />
-            </el-form-item>
-            
-            <el-form-item prop="number">
-              <el-input
-                v-model="institutionForm.number"
-                placeholder="工号/学号"
-                prefix-icon="Postcard"
-                size="large"
-                clearable
-              />
-            </el-form-item>
-            
-            <el-form-item prop="password">
-              <el-input
-                v-model="institutionForm.password"
-                type="password"
-                placeholder="密码"
-                prefix-icon="Lock"
-                size="large"
-                show-password
-                @keyup.enter="handleInstitutionLogin"
-              />
-            </el-form-item>
-            
-            <el-form-item>
-              <el-button
-                type="primary"
-                size="large"
-                style="width: 100%"
-                :loading="loading"
-                @click="handleInstitutionLogin"
-              >
-                登录
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-      </el-tabs>
+            登录
+          </el-button>
+        </el-form-item>
+      </el-form>
       
       <div class="login-footer">
         <el-link type="primary" :underline="false">忘记密码？</el-link>
@@ -126,7 +68,7 @@ import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
-import { login, institutionLogin } from '@shared/api/auth'
+import { login } from '@shared/api/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -134,10 +76,6 @@ const authStore = useAuthStore()
 
 // 表单引用
 const generalFormRef = ref()
-const institutionFormRef = ref()
-
-// 当前标签页
-const activeTab = ref('general')
 const loading = ref(false)
 
 // 通用登录表单
@@ -149,26 +87,6 @@ const generalForm = reactive({
 const generalRules = {
   username: [
     { required: true, message: '请输入用户名或邮箱', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码至少6位', trigger: 'blur' }
-  ]
-}
-
-// 机构登录表单
-const institutionForm = reactive({
-  school_code: '',
-  number: '',
-  password: ''
-})
-
-const institutionRules = {
-  school_code: [
-    { required: true, message: '请输入学校代码', trigger: 'blur' }
-  ],
-  number: [
-    { required: true, message: '请输入工号或学号', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -191,30 +109,6 @@ async function handleGeneralLogin() {
       }
       
       await authStore.login(login, loginData)
-      
-      ElMessage.success('登录成功')
-      
-      // 跳转到目标页面或门户页
-      const redirect = route.query.redirect || '/'
-      router.push(redirect)
-    } catch (error) {
-      ElMessage.error(error.response?.data?.detail || error.message || '登录失败')
-    } finally {
-      loading.value = false
-    }
-  })
-}
-
-// 机构登录
-async function handleInstitutionLogin() {
-  if (!institutionFormRef.value) return
-  
-  await institutionFormRef.value.validate(async (valid) => {
-    if (!valid) return
-    
-    loading.value = true
-    try {
-      await authStore.login(institutionLogin, institutionForm)
       
       ElMessage.success('登录成功')
       
@@ -269,18 +163,7 @@ async function handleInstitutionLogin() {
   }
 }
 
-.login-tabs {
-  :deep(.el-tabs__nav-wrap::after) {
-    display: none;
-  }
-  
-  :deep(.el-tabs__item) {
-    font-size: 16px;
-    font-weight: 500;
-  }
-}
-
-.el-form {
+.login-form {
   margin-top: 30px;
   
   .el-form-item {

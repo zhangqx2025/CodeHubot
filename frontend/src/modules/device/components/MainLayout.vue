@@ -38,8 +38,8 @@
             <div class="nav-items">
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/agents' }"
-                @click="handleNavItemClick({route: '/agents'}, $event)"
+                :class="{ active: $route.path === '/device/agents' }"
+                @click="handleNavItemClick({route: '/device/agents'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><ChatDotRound /></el-icon>
@@ -53,8 +53,8 @@
 
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/knowledge-bases' || $route.path.startsWith('/knowledge-bases/') }"
-                @click="handleNavItemClick({route: '/knowledge-bases'}, $event)"
+                :class="{ active: $route.path === '/device/knowledge-bases' || $route.path.startsWith('/device/knowledge-bases/') }"
+                @click="handleNavItemClick({route: '/device/knowledge-bases'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Collection /></el-icon>
@@ -68,8 +68,8 @@
 
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/plugins' }"
-                @click="handleNavItemClick({route: '/plugins'}, $event)"
+                :class="{ active: $route.path === '/device/plugins' }"
+                @click="handleNavItemClick({route: '/device/plugins'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Connection /></el-icon>
@@ -84,8 +84,8 @@
               <div 
                 v-if="canAccessLLMModels"
                 class="nav-item"
-                :class="{ active: $route.path === '/llm-models' }"
-                @click="handleNavItemClick({route: '/llm-models'}, $event)"
+                :class="{ active: $route.path === '/device/llm-models' }"
+                @click="handleNavItemClick({route: '/device/llm-models'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><TrendCharts /></el-icon>
@@ -99,8 +99,8 @@
 
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/workflows' || $route.path.startsWith('/workflows/') }"
-                @click="handleNavItemClick({route: '/workflows'}, $event)"
+                :class="{ active: $route.path === '/device/workflows' || $route.path.startsWith('/device/workflows/') }"
+                @click="handleNavItemClick({route: '/device/workflows'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Share /></el-icon>
@@ -120,8 +120,8 @@
             <div class="nav-items">
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/device-register' }"
-                @click="handleNavItemClick({route: '/device-register'}, $event)"
+                :class="{ active: $route.path === '/device/device-register' }"
+                @click="handleNavItemClick({route: '/device/device-register'}, $event)"
               >
                 <div class="item-icon register-icon">
                   <el-icon size="20"><Plus /></el-icon>
@@ -135,8 +135,8 @@
 
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/devices' }"
-                @click="handleNavItemClick({route: '/devices'}, $event)"
+                :class="{ active: $route.path === '/device/devices' }"
+                @click="handleNavItemClick({route: '/device/devices'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><List /></el-icon>
@@ -150,8 +150,8 @@
 
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/device-pbl-authorization' }"
-                @click="handleNavItemClick({route: '/device-pbl-authorization'}, $event)"
+                :class="{ active: $route.path === '/device/device-pbl-authorization' }"
+                @click="handleNavItemClick({route: '/device/device-pbl-authorization'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Key /></el-icon>
@@ -172,8 +172,8 @@
             <div class="nav-items">
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/products' }"
-                @click="handleNavItemClick({route: '/products'}, $event)"
+                :class="{ active: $route.path === '/device/products' }"
+                @click="handleNavItemClick({route: '/device/products'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Box /></el-icon>
@@ -218,8 +218,8 @@
             <div class="nav-items">
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/schools' }"
-                @click="handleNavItemClick({route: '/schools'}, $event)"
+                :class="{ active: $route.path === '/device/schools' }"
+                @click="handleNavItemClick({route: '/device/schools'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><OfficeBuilding /></el-icon>
@@ -240,8 +240,8 @@
               <!-- 1. 教师管理：批量导入教师 -->
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/teachers' }"
-                @click="handleNavItemClick({route: '/teachers'}, $event)"
+                :class="{ active: $route.path === '/device/teachers' }"
+                @click="handleNavItemClick({route: '/device/teachers'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><UserFilled /></el-icon>
@@ -255,8 +255,8 @@
               <!-- 2. 学生管理：批量导入学生 -->
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/students' }"
-                @click="handleNavItemClick({route: '/students'}, $event)"
+                :class="{ active: $route.path === '/device/students' }"
+                @click="handleNavItemClick({route: '/device/students'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><User /></el-icon>
@@ -270,8 +270,8 @@
               <!-- 3. 课程管理：教师创建课程、添加学生、分组 -->
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/courses' }"
-                @click="handleNavItemClick({route: '/courses'}, $event)"
+                :class="{ active: $route.path === '/device/courses' }"
+                @click="handleNavItemClick({route: '/device/courses'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Collection /></el-icon>
@@ -282,17 +282,18 @@
                 <div class="item-indicator"></div>
               </div>
 
-              <!-- 4. 设备管理：设备分组、授权给课程 -->
+              <!-- 4. 设备分组：按教室或机房对设备进行分组管理 -->
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/device-groups' }"
-                @click="handleNavItemClick({route: '/device-groups'}, $event)"
+                :class="{ active: $route.path === '/device/device-groups' }"
+                @click="handleNavItemClick({route: '/device/device-groups'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Box /></el-icon>
                 </div>
                 <div class="item-content" v-if="!sidebarCollapsed">
-                  <span class="item-title">设备管理</span>
+                  <span class="item-title">设备分组</span>
+                  <span class="item-desc">按教室机房管理</span>
                 </div>
                 <div class="item-indicator"></div>
               </div>
@@ -306,8 +307,8 @@
               <!-- 我的课程：教师创建和管理自己的课程 -->
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/courses' }"
-                @click="handleNavItemClick({route: '/courses'}, $event)"
+                :class="{ active: $route.path === '/device/courses' }"
+                @click="handleNavItemClick({route: '/device/courses'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Collection /></el-icon>
@@ -326,8 +327,8 @@
             <div class="nav-items">
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/students' }"
-                @click="handleNavItemClick({route: '/students'}, $event)"
+                :class="{ active: $route.path === '/device/students' }"
+                @click="handleNavItemClick({route: '/device/students'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><User /></el-icon>
@@ -348,8 +349,8 @@
               <div 
                 v-if="isPlatformAdmin"
                 class="nav-item"
-                :class="{ active: $route.path === '/users' }"
-                @click="handleNavItemClick({route: '/users'}, $event)"
+                :class="{ active: $route.path === '/device/users' }"
+                @click="handleNavItemClick({route: '/device/users'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><UserFilled /></el-icon>
@@ -363,8 +364,8 @@
 
               <div 
                 class="nav-item"
-                :class="{ active: $route.path === '/system-config' }"
-                @click="handleNavItemClick({route: '/system-config'}, $event)"
+                :class="{ active: $route.path === '/device/system-config' }"
+                @click="handleNavItemClick({route: '/device/system-config'}, $event)"
               >
                 <div class="item-icon">
                   <el-icon size="20"><Setting /></el-icon>
@@ -510,9 +511,10 @@ const pageConfig = {
   '/dashboard': { title: '仪表盘', icon: 'House', color: '#409EFF' },
   '/products': { title: '产品管理', icon: 'Box', color: '#409EFF' },
   '/device-batches': { title: '设备批次', icon: 'Collection', color: '#409EFF' },
-  '/device-register': { title: '设备注册', icon: 'Plus', color: '#67C23A' },
+  '/device/device-register': { title: '设备注册', icon: 'Plus', color: '#67C23A' },
   '/devices': { title: '设备列表', icon: 'List', color: '#409EFF' },
   '/device': { title: '设备详情', icon: 'Monitor', color: '#409EFF' },
+  '/device-pbl-authorization': { title: '设备授权', icon: 'Key', color: '#409EFF' },
 
   // AI 智能体
   '/agents': { title: '智能体管理', icon: 'ChatDotRound', color: '#409EFF' },
@@ -529,7 +531,7 @@ const pageConfig = {
   '/teachers': { title: '教师管理', icon: 'UserFilled', color: '#E6A23C' },
   '/students': { title: '学生管理', icon: 'User', color: '#E6A23C' },
   '/courses': { title: '课程管理', icon: 'Collection', color: '#E6A23C' },
-  '/device-groups': { title: '设备管理', icon: 'Box', color: '#E6A23C' },
+  '/device-groups': { title: '设备分组', icon: 'Box', color: '#E6A23C' },
   '/groups': { title: '分组管理', icon: 'Postcard', color: '#E6A23C' },
   
   // 旧的用户管理
@@ -570,7 +572,7 @@ const breadcrumbs = computed(() => {
   
   if (path.startsWith('/dashboard')) {
     crumbs.push('仪表盘')
-  } else if (path.startsWith('/device-register')) {
+  } else if (path.startsWith('/device/device-register')) {
     crumbs.push('设备管理', '设备注册')
   } else if (path.startsWith('/devices')) {
     crumbs.push('设备管理', '设备列表')

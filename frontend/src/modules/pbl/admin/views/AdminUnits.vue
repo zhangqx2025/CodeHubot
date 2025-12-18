@@ -81,8 +81,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCourses } from '@pbl/admin/api/admin'
-import { getUnits, createUnit, updateUnit, deleteUnit } from '@pbl/admin/api/admin'
+import { getCourses } from '@/api/admin'
+import { getUnits, createUnit, updateUnit, deleteUnit } from '@/api/admin'
 
 const loading = ref(false)
 const submitting = ref(false)

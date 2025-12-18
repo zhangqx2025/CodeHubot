@@ -67,8 +67,13 @@ router.beforeEach((to, from, next) => {
   
   // 公开页面直接放行
   if (to.meta.public) {
-    // 如果已登录访问登录页，跳转到门户
-    if (to.path === '/login' && authStore.isAuthenticated) {
+    // 检查实际的token，而不仅仅是store状态
+    const hasToken = localStorage.getItem('access_token') || 
+                     localStorage.getItem('admin_access_token') || 
+                     localStorage.getItem('student_access_token')
+    
+    // 如果有token且访问登录页，跳转到门户
+    if (to.path === '/login' && hasToken && authStore.isAuthenticated) {
       next('/')
       return
     }
@@ -91,6 +96,26 @@ router.beforeEach((to, from, next) => {
     const userRole = authStore.userRole
     if (!to.meta.roles.includes(userRole)) {
       ElMessage.error('没有权限访问该页面')
+      next('/')
+      return
+    }
+  }
+  
+  // 检查平台管理员权限
+  if (to.meta.requiresPlatformAdmin) {
+    const userRole = authStore.userInfo?.role
+    if (userRole !== 'platform_admin') {
+      ElMessage.error('只有平台管理员可以访问该页面')
+      next('/')
+      return
+    }
+  }
+  
+  // 检查教师或管理员权限
+  if (to.meta.requiresTeacherOrAdmin) {
+    const userRole = authStore.userInfo?.role
+    if (!['platform_admin', 'school_admin', 'teacher'].includes(userRole)) {
+      ElMessage.error('只有教师或管理员可以访问该页面')
       next('/')
       return
     }

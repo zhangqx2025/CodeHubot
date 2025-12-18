@@ -375,17 +375,17 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Plus, Delete, Search, QuestionFilled } from '@element-plus/icons-vue'
-import { getAgent, updateAgent } from '@device/api/agent'
-import { getPlugins } from '@device/api/plugin'
-import { getActiveLLMModels } from '@device/api/llm-model'
-import { getPromptTemplates } from '@device/api/prompt-template'
+import { getAgent, updateAgent } from '@/api/agent'
+import { getPlugins } from '@/api/plugin'
+import { getActiveLLMModels } from '@/api/llm-model'
+import { getPromptTemplates } from '@/api/prompt-template'
 import { 
   getAvailableKnowledgeBases,
   getAgentKnowledgeBases, 
   batchAddAgentKnowledgeBases,
   updateAgentKnowledgeBase,
   removeAgentKnowledgeBase
-} from '@device/api/knowledgeBases'
+} from '@/api/knowledgeBases'
 
 const route = useRoute()
 const router = useRouter()
@@ -452,7 +452,7 @@ const filteredPlugins = computed(() => {
 
 // 返回上一页
 const goBack = () => {
-  router.push('/agents')
+  router.push('/device/agents')
 }
 
 // 加载智能体详情

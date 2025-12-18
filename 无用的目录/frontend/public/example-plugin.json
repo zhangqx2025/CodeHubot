@@ -1,0 +1,73 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "天气查询插件",
+    "description": "查询指定城市的天气信息",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "示例服务器"
+    }
+  ],
+  "paths": {
+    "/weather": {
+      "get": {
+        "summary": "获取天气信息",
+        "description": "根据城市名称获取当前天气信息",
+        "operationId": "getWeather",
+        "tags": ["天气"],
+        "parameters": [
+          {
+            "name": "city",
+            "in": "query",
+            "description": "城市名称，如：北京、上海、广州",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "北京"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取天气信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string",
+                      "description": "城市名称"
+                    },
+                    "temperature": {
+                      "type": "number",
+                      "description": "温度（摄氏度）"
+                    },
+                    "weather": {
+                      "type": "string",
+                      "description": "天气状况"
+                    },
+                    "humidity": {
+                      "type": "number",
+                      "description": "湿度（百分比）"
+                    }
+                  }
+                },
+                "example": {
+                  "city": "北京",
+                  "temperature": 18.5,
+                  "weather": "晴",
+                  "humidity": 45
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

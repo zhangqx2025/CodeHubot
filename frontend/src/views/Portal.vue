@@ -1,5 +1,19 @@
 <template>
   <div class="portal-container">
+    <!-- 用户信息栏 -->
+    <div class="portal-user-bar">
+      <div class="user-info">
+        <el-avatar :size="36">{{ authStore.userName.charAt(0) }}</el-avatar>
+        <div class="user-details">
+          <span class="user-name">{{ authStore.userName }}</span>
+          <span class="user-role">{{ getRoleText(authStore.userRole) }}</span>
+        </div>
+        <el-button type="text" @click="handleLogout" class="logout-btn">
+          <el-icon><SwitchButton /></el-icon> 退出登录
+        </el-button>
+      </div>
+    </div>
+    
     <div class="portal-header">
       <h1>CodeHubot 统一管理平台</h1>
       <p>欢迎，{{ authStore.userName }}！请选择您要进入的系统</p>
@@ -9,7 +23,7 @@
       <!-- Device管理系统 -->
       <div v-if="canAccessDevice" class="portal-card device-card" @click="enterDevice">
         <div class="card-icon">
-          <el-icon :size="50"><Setting /></el-icon>
+          <el-icon :size="40"><Setting /></el-icon>
         </div>
         <h2>设备管理系统</h2>
         <p class="card-description">管理物联网设备、查看实时数据、远程控制</p>
@@ -27,7 +41,7 @@
       <!-- AI智能系统 -->
       <div v-if="authStore.isAuthenticated" class="portal-card ai-card" @click="enterAI">
         <div class="card-icon">
-          <el-icon :size="50"><MagicStick /></el-icon>
+          <el-icon :size="40"><MagicStick /></el-icon>
         </div>
         <h2>AI智能系统</h2>
         <p class="card-description">智能对话、工作流编排、知识库管理、插件开发</p>
@@ -45,7 +59,7 @@
       <!-- PBL学习平台 - 学生端 -->
       <div v-if="authStore.isStudent" class="portal-card student-card" @click="enterPBLStudent">
         <div class="card-icon">
-          <el-icon :size="50"><Reading /></el-icon>
+          <el-icon :size="40"><Reading /></el-icon>
         </div>
         <h2>PBL学习平台</h2>
         <p class="card-description">项目式学习、课程作业、学习进度跟踪</p>
@@ -63,7 +77,7 @@
       <!-- PBL教学平台 - 教师端 -->
       <div v-if="authStore.isTeacher" class="portal-card teacher-card" @click="enterPBLTeacher">
         <div class="card-icon">
-          <el-icon :size="50"><Notebook /></el-icon>
+          <el-icon :size="40"><Notebook /></el-icon>
         </div>
         <h2>PBL教学平台</h2>
         <p class="card-description">课程管理、作业批改、学生进度监控</p>
@@ -81,7 +95,7 @@
       <!-- PBL管理平台 - 管理员端 -->
       <div v-if="isAdmin" class="portal-card admin-card" @click="enterPBLAdmin">
         <div class="card-icon">
-          <el-icon :size="50"><User /></el-icon>
+          <el-icon :size="40"><User /></el-icon>
         </div>
         <h2>PBL管理平台</h2>
         <p class="card-description">系统管理、用户管理、课程模板配置</p>
@@ -99,7 +113,7 @@
       <!-- 渠道商平台 -->
       <div v-if="authStore.isChannelPartner" class="portal-card channel-card" @click="enterChannel">
         <div class="card-icon">
-          <el-icon :size="50"><Connection /></el-icon>
+          <el-icon :size="40"><Connection /></el-icon>
         </div>
         <h2>渠道商平台</h2>
         <p class="card-description">合作学校管理、课程监控、数据查看</p>
@@ -117,7 +131,7 @@
       <!-- 渠道管理平台 -->
       <div v-if="isChannelManagerOrAdmin" class="portal-card channel-mgmt-card" @click="enterChannelManagement">
         <div class="card-icon">
-          <el-icon :size="50"><Histogram /></el-icon>
+          <el-icon :size="40"><Histogram /></el-icon>
         </div>
         <h2>渠道管理平台</h2>
         <p class="card-description">渠道商管理、学校分配、业务统计</p>
@@ -129,19 +143,6 @@
         </ul>
         <el-button type="success" size="large" class="enter-btn" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); border: none;">
           管理入口 <el-icon class="el-icon--right"><ArrowRight /></el-icon>
-        </el-button>
-      </div>
-    </div>
-    
-    <div class="portal-footer">
-      <div class="user-info">
-        <el-avatar :size="40">{{ authStore.userName.charAt(0) }}</el-avatar>
-        <div class="user-details">
-          <span class="user-name">{{ authStore.userName }}</span>
-          <span class="user-role">{{ getRoleText(authStore.userRole) }}</span>
-        </div>
-        <el-button type="text" @click="handleLogout" class="logout-btn">
-          <el-icon><SwitchButton /></el-icon> 退出登录
         </el-button>
       </div>
     </div>
@@ -177,7 +178,9 @@ const isAdmin = computed(() => {
 
 const isChannelManagerOrAdmin = computed(() => {
   forceUpdate.value // 依赖forceUpdate触发重新计算
-  return authStore.isChannelManager || authStore.isAdmin
+  const role = authStore.userInfo?.role
+  // 只有渠道管理员和平台管理员可以访问渠道管理平台
+  return role === 'channel_manager' || role === 'platform_admin'
 })
 
 // 监听userInfo变化，强制刷新
@@ -254,13 +257,63 @@ function getRoleText(role) {
 .portal-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 60px 20px 40px;
+  padding: 0 20px 40px;
+  position: relative;
+}
+
+.portal-user-bar {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      
+      .user-name {
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      
+      .user-role {
+        color: #999;
+        font-size: 12px;
+        margin-top: 2px;
+      }
+    }
+    
+    .logout-btn {
+      margin-left: 10px;
+      color: #f56c6c;
+      padding: 8px 12px;
+      font-size: 13px;
+      
+      &:hover {
+        color: #f56c6c;
+        background: rgba(245, 108, 108, 0.1);
+      }
+    }
+  }
 }
 
 .portal-header {
   text-align: center;
   color: white;
   margin-bottom: 60px;
+  padding-top: 80px;
   
   h1 {
     font-size: 48px;
@@ -287,7 +340,7 @@ function getRoleText(role) {
 .portal-card {
   background: white;
   border-radius: 20px;
-  padding: 40px 30px;
+  padding: 30px 25px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -299,10 +352,10 @@ function getRoleText(role) {
   }
   
   .card-icon {
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    margin: 0 auto 25px;
+    margin: 0 auto 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -310,45 +363,45 @@ function getRoleText(role) {
   }
   
   h2 {
-    font-size: 26px;
-    margin-bottom: 12px;
+    font-size: 24px;
+    margin-bottom: 10px;
     color: #2c3e50;
     font-weight: 600;
   }
   
   .card-description {
     color: #666;
-    margin-bottom: 25px;
-    line-height: 1.6;
-    font-size: 15px;
+    margin-bottom: 18px;
+    line-height: 1.5;
+    font-size: 14px;
   }
   
   .card-features {
     list-style: none;
     padding: 0;
-    margin: 25px 0;
+    margin: 18px 0;
     text-align: left;
     
     li {
-      padding: 10px 0;
+      padding: 7px 0;
       color: #555;
       font-size: 14px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       
       .el-icon {
         color: #67c23a;
-        font-size: 16px;
+        font-size: 15px;
       }
     }
   }
   
   .enter-btn {
-    margin-top: 20px;
+    margin-top: 15px;
     width: 100%;
-    font-size: 16px;
-    height: 48px;
+    font-size: 15px;
+    height: 44px;
   }
 }
 
@@ -381,52 +434,47 @@ function getRoleText(role) {
   background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
 }
 
-.portal-footer {
-  text-align: center;
-  margin-top: 60px;
-  
-  .user-info {
-    display: inline-flex;
-    align-items: center;
-    gap: 15px;
-    background: white;
-    padding: 15px 30px;
-    border-radius: 50px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+@media (max-width: 768px) {
+  .portal-user-bar {
+    position: static;
+    margin: 20px -20px 0;
+    padding: 0 20px;
     
-    .user-details {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
+    .user-info {
+      width: 100%;
+      justify-content: space-between;
+      padding: 12px 20px;
+      gap: 10px;
       
-      .user-name {
-        color: #2c3e50;
-        font-weight: 600;
-        font-size: 16px;
+      .user-details {
+        .user-name {
+          font-size: 13px;
+        }
+        
+        .user-role {
+          font-size: 11px;
+        }
       }
       
-      .user-role {
-        color: #999;
-        font-size: 13px;
-        margin-top: 2px;
-      }
-    }
-    
-    .logout-btn {
-      margin-left: 15px;
-      color: #f56c6c;
-      
-      &:hover {
-        color: #f56c6c;
-        background: rgba(245, 108, 108, 0.1);
+      .logout-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+        margin-left: 5px;
       }
     }
   }
-}
-
-@media (max-width: 768px) {
-  .portal-header h1 {
-    font-size: 32px;
+  
+  .portal-header {
+    padding-top: 30px;
+    margin-bottom: 40px;
+    
+    h1 {
+      font-size: 32px;
+    }
+    
+    p {
+      font-size: 16px;
+    }
   }
   
   .portal-cards {

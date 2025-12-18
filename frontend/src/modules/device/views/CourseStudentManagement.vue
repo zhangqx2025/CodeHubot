@@ -179,9 +179,9 @@ import {
   ArrowLeft, Plus, Upload, Grid, Search, Delete,
   UserFilled, Warning
 } from '@element-plus/icons-vue'
-import { getCourseStudents, addStudentToCourse, removeStudentFromCourse } from '@device/api/courses'
-import { getUsers } from '@device/api/userManagement'
-import BatchImport from '@device/components/BatchImport.vue'
+import { getCourseStudents, addStudentToCourse, removeStudentFromCourse } from '@/api/courses'
+import { getUsers } from '@/api/userManagement'
+import BatchImport from '../components/BatchImport.vue'
 import { useUserStore } from '@/store/user'
 
 const route = useRoute()
@@ -347,7 +347,7 @@ const showBatchImportDialog = () => {
 // 显示分组管理
 const showGroupManagement = () => {
   router.push({
-    path: `/courses/${courseUuid}/groups`,
+    path: `/device/courses/${courseUuid}/groups`,
     query: { name: courseName.value }
   })
 }

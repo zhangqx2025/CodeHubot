@@ -21,6 +21,12 @@ from app.api.auth import get_current_user
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
+def is_platform_admin(user: User) -> bool:
+    """判断用户是否为平台管理员"""
+    return user.role == 'platform_admin'
+
+
 def compare_versions(version1: str, version2: str) -> int:
     """
     比较两个版本号
@@ -133,7 +139,15 @@ async def upload_firmware(
 ):
     """
     上传固件文件并创建固件记录
+    权限：仅平台管理员
     """
+    # 权限检查：只有平台管理员可以上传固件
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以上传固件"
+        )
+    
     try:
         # 验证文件类型
         if not file.filename.endswith('.bin'):
@@ -207,6 +221,17 @@ def create_firmware(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    """
+    创建固件版本
+    权限：仅平台管理员
+    """
+    # 权限检查：只有平台管理员可以创建固件
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以创建固件版本"
+        )
+    
     try:
         # 检查是否已存在相同产品和版本的固件
         existing_firmware = db.query(Firmware).filter(
@@ -301,7 +326,17 @@ def update_firmware(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """更新固件版本信息"""
+    """
+    更新固件版本信息
+    权限：仅平台管理员
+    """
+    # 权限检查：只有平台管理员可以更新固件
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以更新固件版本"
+        )
+    
     try:
         firmware = db.query(Firmware).filter(Firmware.id == firmware_id).first()
         
@@ -349,7 +384,17 @@ def delete_firmware(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """删除固件版本"""
+    """
+    删除固件版本
+    权限：仅平台管理员
+    """
+    # 权限检查：只有平台管理员可以删除固件
+    if not is_platform_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有平台管理员可以删除固件版本"
+        )
+    
     try:
         firmware = db.query(Firmware).filter(Firmware.id == firmware_id).first()
         

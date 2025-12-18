@@ -291,14 +291,14 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getDevices, getDevicesWithProductInfo, getDevicesStatistics, setDeviceSchool } from '@device/api/device'
-import { getProductsSummary } from '@device/api/product'
+import { getDevices, getDevicesWithProductInfo, getDevicesStatistics, setDeviceSchool } from '@/api/device'
+import { getProductsSummary } from '@/api/product'
 import {
   Monitor, Plus, Refresh, Search,
   TrendCharts, Operation, View, Edit, Setting, Document, Delete, DocumentCopy,
   CircleCheck, CircleClose, School
 } from '@element-plus/icons-vue'
-import logger from '@device/utils/logger'
+import logger from '@/utils/logger'
 
 
 const router = useRouter()

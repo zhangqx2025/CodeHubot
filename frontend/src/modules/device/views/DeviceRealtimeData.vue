@@ -17,19 +17,12 @@
           </div>
         </div>
       </div>
-      <div class="header-controls">
-        <el-button type="primary" @click="loadRealtimeData" :loading="loading">
-          <el-icon><Refresh /></el-icon>
-          手动刷新
-        </el-button>
-      </div>
     </div>
 
     <!-- 主要内容区域 -->
     <div class="page-content" v-if="device">
-      <!-- 实时传感器数据卡片 - 根据产品配置显示 -->
-      <div class="sensor-data-section" v-if="productConfig && productConfig.sensor_types">
-        <h3>最新传感器数据 - {{ productConfig.product_name }}</h3>
+      <!-- 实时传感器数据卡片 -->
+      <div class="sensor-data-section" v-if="productConfig && productConfig.sensor_types && Object.keys(productConfig.sensor_types).length > 0">
         <div class="sensor-cards">
           <el-card 
             v-for="(sensorConfig, sensorKey) in productConfig.sensor_types" 
@@ -38,71 +31,22 @@
             shadow="hover"
             v-show="sensorConfig.enabled !== false"
           >
-            <div class="sensor-header">
-              <span class="sensor-name">
-                {{ getSensorDisplayName(sensorKey, sensorConfig) }}
-              </span>
-              <el-tag size="small" type="info">{{ sensorConfig.type }}</el-tag>
+            <div class="sensor-name">
+              {{ getSensorDisplayName(sensorKey, sensorConfig) }}
             </div>
             <div class="sensor-value">
               {{ getSensorValue(sensorKey, sensorConfig) }}
             </div>
-            <div class="sensor-info" v-if="sensorConfig.range">
-              <span class="sensor-range">
-                范围: {{ sensorConfig.range.min }}~{{ sensorConfig.range.max }}{{ sensorConfig.unit }}
-              </span>
-            </div>
-            <div class="sensor-timestamp" v-if="latestTimestamp">
+            <div class="sensor-time" v-if="latestTimestamp">
               {{ formatTime(latestTimestamp) }}
             </div>
           </el-card>
         </div>
-        
-        <!-- 无产品配置时显示原始数据 -->
-        <el-alert
-          v-if="Object.keys(productConfig.sensor_types).length === 0 && latestData"
-          title="未配置传感器"
-          type="warning"
-          description="该产品未配置传感器，显示原始数据"
-          show-icon
-          style="margin-bottom: 16px;"
-        />
-      </div>
-
-      <!-- 数据历史记录 -->
-      <div class="data-history-section">
-        <h3>数据历史记录</h3>
-        <el-table 
-          :data="historyData" 
-          v-loading="loading"
-          style="width: 100%"
-          max-height="400"
-        >
-          <el-table-column prop="timestamp" label="时间" width="180">
-            <template #default="scope">
-              {{ formatTime(scope.row.timestamp) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="传感器数据" min-width="300">
-            <template #default="scope">
-              <div class="data-content">
-                <el-tag 
-                  v-for="(value, key) in scope.row.data" 
-                  :key="key"
-                  size="small"
-                  style="margin-right: 8px; margin-bottom: 4px;"
-                >
-                  {{ formatSensorName(key) }}: {{ formatSensorValue(key, value) }}
-                </el-tag>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
       </div>
 
       <!-- 无数据提示 -->
       <el-empty 
-        v-if="!loading && historyData.length === 0" 
+        v-if="!loading && (!latestData || Object.keys(latestData).length === 0)" 
         description="暂无传感器数据"
       />
     </div>
@@ -113,9 +57,9 @@
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
-import { getDeviceRealtimeData, getDeviceProductConfig } from '@device/api/device'
-import { getDevicesWithProductInfo } from '@device/api/device'
+import { ArrowLeft } from '@element-plus/icons-vue'
+import { getDeviceRealtimeData, getDeviceProductConfig } from '@/api/device'
+import { getDevicesWithProductInfo } from '@/api/device'
 import logger from '../utils/logger'
 
 const route = useRoute()
@@ -124,7 +68,6 @@ const router = useRouter()
 const device = ref(null)
 const productConfig = ref(null)
 const loading = ref(false)
-const historyData = ref([])
 const latestData = ref(null)
 const latestTimestamp = ref(null)
 
@@ -178,18 +121,16 @@ const loadRealtimeData = async () => {
   
   loading.value = true
   try {
-    const response = await getDeviceRealtimeData(deviceUuid.value, 20)
+    const response = await getDeviceRealtimeData(deviceUuid.value, 1)
     if (response.data) {
-      historyData.value = response.data.data || []
-      
       // 优先使用latest字段（最新数据）
       if (response.data.latest) {
         latestData.value = response.data.latest.data
         latestTimestamp.value = response.data.latest.timestamp
-      } else if (historyData.value.length > 0) {
+      } else if (response.data.data && response.data.data.length > 0) {
         // 向后兼容：如果没有latest字段，使用第一条数据
-        latestData.value = historyData.value[0].data
-        latestTimestamp.value = historyData.value[0].timestamp
+        latestData.value = response.data.data[0].data
+        latestTimestamp.value = response.data.data[0].timestamp
       } else {
         latestData.value = null
         latestTimestamp.value = null
@@ -202,8 +143,6 @@ const loadRealtimeData = async () => {
     loading.value = false
   }
 }
-
-// 自动刷新功能已移除，只保留手动刷新
 
 // 获取传感器显示名称（优先使用用户自定义的功能描述）
 const getSensorDisplayName = (sensorKey, sensorConfig) => {
@@ -262,64 +201,7 @@ const getSensorValue = (sensorKey, sensorConfig) => {
   return `${value}${sensorConfig.unit || ''}`
 }
 
-// 格式化传感器名称（用于历史记录表格）
-const formatSensorName = (key) => {
-  // 如果有产品配置，使用配置的名称
-  if (productConfig.value && productConfig.value.sensor_types) {
-    for (const sensorKey in productConfig.value.sensor_types) {
-      const config = productConfig.value.sensor_types[sensorKey]
-      if (sensorKey === key || key.toLowerCase().includes(sensorKey.toLowerCase())) {
-        return config.name || key
-      }
-    }
-  }
-  
-  // 否则使用默认映射
-  const nameMap = {
-    'temperature': '温度',
-    'humidity': '湿度',
-    'pressure': '压力',
-    'light': '光照',
-    'dht11_temperature': 'DHT11温度',
-    'dht11_humidity': 'DHT11湿度',
-    'ds18b20_temperature': 'DS18B20温度'
-  }
-  return nameMap[key] || key
-}
-
-// 格式化传感器值（用于历史记录表格）
-const formatSensorValue = (key, value) => {
-  // 如果有产品配置，使用配置的单位
-  if (productConfig.value && productConfig.value.sensor_types) {
-    for (const sensorKey in productConfig.value.sensor_types) {
-      const config = productConfig.value.sensor_types[sensorKey]
-      if (sensorKey === key || key.toLowerCase().includes(sensorKey.toLowerCase())) {
-        if (typeof value === 'number') {
-          const precision = config.accuracy ? Math.max(0, -Math.floor(Math.log10(config.accuracy))) : 1
-          return `${value.toFixed(precision)}${config.unit || ''}`
-        }
-        return `${value}${config.unit || ''}`
-      }
-    }
-  }
-  
-  // 否则使用默认格式化
-  if (typeof value === 'number') {
-    if (key.includes('temperature') || key.includes('temp')) {
-      return `${value.toFixed(1)}°C`
-    } else if (key.includes('humidity') || key.includes('humi')) {
-      return `${value.toFixed(1)}%`
-    } else if (key.includes('pressure')) {
-      return `${value.toFixed(2)}hPa`
-    } else if (key.includes('light')) {
-      return `${value.toFixed(0)}lux`
-    }
-    return value.toFixed(2)
-  }
-  return value
-}
-
-// 格式化时间
+// 格式化时间（简化版）
 const formatTime = (timestamp) => {
   if (!timestamp) return '-'
   return new Date(timestamp).toLocaleString('zh-CN')
@@ -327,7 +209,7 @@ const formatTime = (timestamp) => {
 
 // 返回设备列表
 const goBack = () => {
-  router.push('/devices')
+  router.push('/device/devices')
 }
 
 // 生命周期
@@ -337,7 +219,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  // 清理资源（如果有的话）
+  // 清理资源
 })
 </script>
 
@@ -383,55 +265,37 @@ onUnmounted(() => {
 }
 
 .page-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.sensor-data-section h3,
-.data-history-section h3 {
-  margin: 0 0 16px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
+  padding-top: 8px;
 }
 
 .sensor-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
-  margin-bottom: 24px;
 }
 
 .sensor-card {
   text-align: center;
-}
-
-.sensor-header {
-  margin-bottom: 12px;
+  padding: 24px 16px;
 }
 
 .sensor-name {
   font-size: 14px;
-  color: #606266;
+  color: #909399;
+  margin-bottom: 12px;
 }
 
 .sensor-value {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 600;
   color: #409eff;
-  margin: 16px 0;
+  margin: 12px 0;
 }
 
-.sensor-timestamp {
+.sensor-time {
   font-size: 12px;
-  color: #909399;
-}
-
-.data-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  color: #c0c4cc;
+  margin-top: 8px;
 }
 </style>
 

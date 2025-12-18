@@ -168,7 +168,7 @@ import {
   createKnowledgeBase,
   updateKnowledgeBase,
   deleteKnowledgeBase
-} from '@device/api/knowledgeBases'
+} from '@/api/knowledgeBases'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
@@ -320,7 +320,7 @@ const getScopeHint = () => {
 }
 
 const viewKnowledgeBase = (kb) => {
-  router.push(`/knowledge-bases/${kb.uuid}`)
+  router.push(`/device/knowledge-bases/${kb.uuid}`)
 }
 
 const editKnowledgeBase = (kb) => {

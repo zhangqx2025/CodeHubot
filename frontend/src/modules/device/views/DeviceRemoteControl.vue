@@ -45,9 +45,14 @@
             :class="{ 'disabled': !device.is_online }"
           >
             <div class="control-header">
-              <div class="control-name">
-                {{ getControlDisplayName(portKey, portConfig) }}
-            </div>
+              <div class="control-name-section">
+                <div class="control-name">
+                  {{ portConfig.name || portKey }}
+                </div>
+                <div class="control-custom-name" v-if="getControlCustomName(portKey)">
+                  {{ getControlCustomName(portKey) }}
+                </div>
+              </div>
               <el-tag :type="getControlTypeTag(portConfig.type)" size="small">
                 {{ portConfig.type }}
               </el-tag>
@@ -91,6 +96,24 @@
               </el-tag>
         </div>
             <div class="preset-description">{{ preset.description }}</div>
+            
+            <!-- 预设标识显示区域 -->
+            <div class="preset-identifier" v-if="getPresetIdentifier(preset)">
+              <div class="identifier-label">预设标识：</div>
+              <div class="identifier-value">
+                <el-tag type="info" size="small">{{ getPresetIdentifier(preset) }}</el-tag>
+                <el-button 
+                  size="small" 
+                  type="primary" 
+                  text
+                  @click="copyPresetIdentifier(preset)"
+                  style="margin-left: 8px;"
+                >
+                  <el-icon><DocumentCopy /></el-icon>
+                  复制
+                </el-button>
+              </div>
+            </div>
             
             <!-- 根据预设类型显示不同的控制界面 -->
             <div class="preset-controls" v-if="device.is_online">
@@ -405,9 +428,9 @@
 import { ref, reactive, onMounted, computed, defineComponent, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElSwitch, ElSlider, ElButton, ElInputNumber } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
-import { getDevicePresets, sendDeviceControl, getDeviceProductConfig } from '@device/api/device'
-import { getDevicesWithProductInfo } from '@device/api/device'
+import { ArrowLeft, DocumentCopy } from '@element-plus/icons-vue'
+import { getDevicePresets, sendDeviceControl, getDeviceProductConfig } from '@/api/device'
+import { getDevicesWithProductInfo } from '@/api/device'
 import logger from '../utils/logger'
 
 const route = useRoute()
@@ -930,13 +953,13 @@ const isPortEnabled = (portKey, portConfig) => {
   return true // 默认启用
 }
 
-// 获取控制端口显示名称（优先使用用户自定义的功能描述）
-const getControlDisplayName = (portKey, portConfig) => {
+// 获取控制端口的自定义功能描述
+const getControlCustomName = (portKey) => {
   // 优先从设备配置中获取 custom_name
   if (deviceConfig.value && deviceConfig.value.device_control_config) {
     const deviceControlConfig = deviceConfig.value.device_control_config[portKey]
     if (deviceControlConfig && deviceControlConfig.custom_name) {
-      return deviceControlConfig.custom_name // 用户自定义的功能描述，如"客厅灯"、"摇尾巴"
+      return deviceControlConfig.custom_name // 用户自定义的功能描述，如"客厅台灯"、"摇尾巴"
     }
   }
   
@@ -946,6 +969,17 @@ const getControlDisplayName = (portKey, portConfig) => {
     if (deviceControlConfig && deviceControlConfig.custom_name) {
       return deviceControlConfig.custom_name
     }
+  }
+  
+  return null
+}
+
+// 获取控制端口显示名称（优先使用用户自定义的功能描述）
+const getControlDisplayName = (portKey, portConfig) => {
+  // 优先从设备配置中获取 custom_name
+  const customName = getControlCustomName(portKey)
+  if (customName) {
+    return customName // 用户自定义的功能描述，如"客厅灯"、"摇尾巴"
   }
   
   // 否则使用产品配置中的名称
@@ -1183,9 +1217,57 @@ const getPresetTypeTag = (type) => {
   return 'info'
 }
 
+// 获取预设标识（用于学生引用）
+const getPresetIdentifier = (preset) => {
+  // 优先返回 preset_type（用户自定义预设的类型标识）
+  if (preset.preset_type) {
+    return preset.preset_type
+  }
+  // 或者返回 ID（系统预设）
+  if (preset.id && !preset.id.toString().startsWith('custom_preset_')) {
+    return preset.id
+  }
+  // 对于序列类型
+  if (preset.type === 'sequence' || preset.cmd === 'sequence') {
+    return 'sequence'
+  }
+  return null
+}
+
+// 复制预设标识到剪贴板
+const copyPresetIdentifier = async (preset) => {
+  const identifier = getPresetIdentifier(preset)
+  if (!identifier) {
+    ElMessage.warning('该预设没有可复制的标识')
+    return
+  }
+  
+  try {
+    // 使用 Clipboard API 复制到剪贴板
+    await navigator.clipboard.writeText(identifier)
+    ElMessage.success(`已复制预设标识：${identifier}`)
+  } catch (error) {
+    // 降级方案：使用传统方法
+    try {
+      const textArea = document.createElement('textarea')
+      textArea.value = identifier
+      textArea.style.position = 'fixed'
+      textArea.style.opacity = '0'
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      ElMessage.success(`已复制预设标识：${identifier}`)
+    } catch (err) {
+      logger.error('复制失败:', err)
+      ElMessage.error('复制失败，请手动复制')
+    }
+  }
+}
+
 // 返回设备列表
 const goBack = () => {
-  router.push('/devices')
+  router.push('/device/devices')
 }
 
 // 生命周期
@@ -1275,7 +1357,30 @@ onMounted(async () => {
 .preset-description {
   font-size: 14px;
   color: #606266;
+  margin-bottom: 12px;
+}
+
+.preset-identifier {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
   margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.preset-identifier .identifier-label {
+  color: #606266;
+  font-weight: 500;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.preset-identifier .identifier-value {
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 
 .preset-controls {
@@ -1329,10 +1434,22 @@ onMounted(async () => {
   margin-bottom: 12px;
 }
 
+.control-name-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .control-name {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
+}
+
+.control-custom-name {
+  font-size: 13px;
+  color: #409eff;
+  font-weight: 500;
 }
 
 .control-description {

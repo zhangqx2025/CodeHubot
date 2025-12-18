@@ -161,7 +161,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getCourses, getUnits } from '@pbl/admin/api/admin'
+import { getCourses, getUnits } from '@/api/admin'
 import {
   getTasks,
   createTask,
@@ -169,7 +169,7 @@ import {
   deleteTask as deleteTaskApi,
   getTaskProgressList,
   gradeTask
-} from '@pbl/admin/api/admin'
+} from '@/api/admin'
 
 const loading = ref(false)
 const selectedCourseId = ref(null)

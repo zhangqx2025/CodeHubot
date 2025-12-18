@@ -28,12 +28,21 @@ from app.api.auth import get_current_user
 from app.core.constants import ErrorMessages, SuccessMessages
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/devices", tags=["设备PBL授权"])
+router = APIRouter(tags=["设备PBL授权"])
 
 
 def is_admin_user(user: User) -> bool:
-    """判断用户是否为管理员"""
-    return user.email == "admin@aiot.com" or user.username == "admin"
+    """判断用户是否为管理员
+    
+    管理员权限判断规则：
+    1. platform_admin 角色（平台管理员）
+    2. 传统的 admin 用户名或邮箱（兼容旧版本）
+    """
+    return (
+        user.role == 'platform_admin' or 
+        user.email == "admin@aiot.com" or 
+        user.username == "admin"
+    )
 
 
 @router.post("/{device_uuid}/pbl-authorizations", response_model=PBLGroupDeviceAuthorizationBatchResponse)
@@ -381,21 +390,24 @@ async def get_authorizable_groups(
     db: Session = Depends(get_db)
 ):
     """查询教师可授权的小组列表（用于前端选择）"""
-    # 权限检查：只有管理员和教师可以查询
-    if current_user.role not in ['platform_admin', 'school_admin', 'teacher']:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="只有管理员和教师可以查询可授权的小组"
-        )
-    
-    # 查询教师所在的班级（从PBL表直接查询）
-    teacher_classes = db.execute(text("""
-        SELECT ct.class_id, c.name as class_name
-        FROM pbl_class_teachers ct
-        JOIN pbl_classes c ON ct.class_id = c.id
-        WHERE ct.teacher_id = :teacher_id
-          AND c.is_active = 1
-    """), {"teacher_id": current_user.id}).fetchall()
+    # 管理员可以查看所有班级的小组
+    if is_admin_user(current_user) or current_user.role in ['platform_admin', 'school_admin']:
+        # 查询所有活跃的班级
+        teacher_classes = db.execute(text("""
+            SELECT c.id as class_id, c.name as class_name
+            FROM pbl_classes c
+            WHERE c.is_active = 1
+        """)).fetchall()
+    # 教师或其他用户查询自己可授权的班级
+    else:
+        # 查询教师所在的班级（从PBL表直接查询）
+        teacher_classes = db.execute(text("""
+            SELECT ct.class_id, c.name as class_name
+            FROM pbl_class_teachers ct
+            JOIN pbl_classes c ON ct.class_id = c.id
+            WHERE ct.teacher_id = :teacher_id
+              AND c.is_active = 1
+        """), {"teacher_id": current_user.id}).fetchall()
     
     if not teacher_classes:
         return PBLAuthorizableGroupsResponse(classes=[])

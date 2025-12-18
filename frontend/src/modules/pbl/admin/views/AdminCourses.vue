@@ -79,7 +79,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCourses, createCourse, updateCourse, deleteCourse } from '@pbl/admin/api/admin'
+import { getCourses, createCourse, updateCourse, deleteCourse } from '@/api/admin'
 
 const router = useRouter()
 

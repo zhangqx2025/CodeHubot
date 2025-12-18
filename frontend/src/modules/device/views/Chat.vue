@@ -223,8 +223,8 @@ import {
   DataAnalysis,
   Reading
 } from '@element-plus/icons-vue'
-import { getAgent } from '@device/api/agent'
-import { chatWithAgent, getMyDevices } from '@device/api/chat'
+import { getAgent } from '@/api/agent'
+import { chatWithAgent, getMyDevices } from '@/api/chat'
 import { marked } from 'marked'
 
 const route = useRoute()
@@ -373,7 +373,7 @@ const clearHistory = () => {
 
 // 返回
 const goBack = () => {
-  router.push('/agents')
+  router.push('/device/agents')
 }
 
 // 滚动到底部

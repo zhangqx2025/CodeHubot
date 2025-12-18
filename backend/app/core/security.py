@@ -4,16 +4,32 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
 import logging
+import hashlib
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# 密码加密上下文 - 支持bcrypt和pbkdf2_sha256算法
+# 密码加密上下文 - 支持bcrypt和pbkdf2_sha256算法（与CodeHubot-PBL系统保持一致）
 # bcrypt 用于新密码（更安全），pbkdf2_sha256 用于兼容旧密码
 pwd_context = CryptContext(
     schemes=["bcrypt", "pbkdf2_sha256"],
     deprecated="auto"
 )
+
+def _preprocess_password(password: str) -> str:
+    """预处理密码以适应 bcrypt 的 72 字节限制
+    
+    使用 SHA256 对密码进行预哈希，然后转换为十六进制字符串。
+    这样可以接受任意长度的密码，同时保持在 bcrypt 的限制范围内。
+    
+    Args:
+        password: 原始密码
+        
+    Returns:
+        str: 预处理后的密码（64个十六进制字符）
+    """
+    # 使用 SHA256 哈希密码，输出为十六进制字符串（64字符，远小于72字节）
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码
@@ -26,6 +42,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         bool: 密码是否匹配
     """
     try:
+        # 先预处理密码，然后验证
+        preprocessed = _preprocess_password(plain_password)
+        # 同时尝试预处理后的密码和原始密码（兼容旧密码）
+        if pwd_context.verify(preprocessed, hashed_password):
+            return True
+        # 如果预处理后的密码不匹配，尝试原始密码（兼容旧数据）
         return pwd_context.verify(plain_password, hashed_password)
     except Exception as e:
         logger.error(f"密码验证失败: {e}", exc_info=True)
@@ -38,35 +60,20 @@ def get_password_hash(password: str) -> str:
         password: 明文密码
         
     Returns:
-        str: 哈希后的密码
+        str: �ashed后的密码
         
     Note:
-        - bcrypt 有 72 字节的密码长度限制
-        - 对于超过 72 字节的密码，自动使用 pbkdf2_sha256
-        - 对于 72 字节以内的密码，优先使用 bcrypt（更安全）
+        使用 SHA256 预处理密码以支持任意长度的密码。
+        bcrypt 4.0+ 版本会自动处理超过 72 字节的密码。
     """
     try:
-        # 检查密码长度（以字节计算）
-        password_bytes = password.encode('utf-8')
-        
-        if len(password_bytes) > 72:
-            # 密码太长，使用 pbkdf2_sha256（无长度限制）
-            logger.info(f"密码长度超过72字节({len(password_bytes)}字节)，使用pbkdf2_sha256算法")
-            return pwd_context.hash(password, scheme="pbkdf2_sha256")
-        else:
-            # 密码长度合适，使用 bcrypt（更安全）
-            return pwd_context.hash(password, scheme="bcrypt")
-            
+        # 先用 SHA256 预处理密码，支持任意长度的密码输入
+        preprocessed = _preprocess_password(password)
+        # SHA256 hex 输出固定为 64 字符（64 字节），安全地在 bcrypt 限制范围内
+        return pwd_context.hash(preprocessed)
     except Exception as e:
         logger.error(f"密码哈希失败: {e}", exc_info=True)
-        logger.error(f"密码长度: {len(password.encode('utf-8'))} 字节")
-        # 如果 bcrypt 失败，尝试使用 pbkdf2_sha256 作为后备方案
-        try:
-            logger.warning("尝试使用 pbkdf2_sha256 作为后备方案")
-            return pwd_context.hash(password, scheme="pbkdf2_sha256")
-        except Exception as fallback_e:
-            logger.error(f"后备方案也失败: {fallback_e}", exc_info=True)
-            raise ValueError("密码哈希失败")
+        raise ValueError(f"密码哈希失败: {str(e)}")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """创建access token

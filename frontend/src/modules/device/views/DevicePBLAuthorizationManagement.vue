@@ -135,11 +135,11 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { List, Search, Delete, View } from '@element-plus/icons-vue'
-import { getDevices } from '@device/api/device'
+import { getDevices } from '@/api/device'
 import {
   getPBLDeviceAuthorizations,
   revokePBLDeviceAuthorization
-} from '@device/api/devicePBLAuthorizations'
+} from '@/api/devicePBLAuthorizations'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
@@ -260,7 +260,7 @@ const handleRevoke = async (row) => {
 
 // 查看设备
 const viewDevice = (row) => {
-  router.push(`/device/${row.device_uuid}`)
+  router.push(`/device/devices/${row.device_uuid}`)
 }
 
 // 格式化日期

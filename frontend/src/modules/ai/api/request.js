@@ -63,8 +63,8 @@ request.interceptors.request.use(
         clearAuth()
         ElMessage.error('登录信息无效，请重新登录')
         
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-          window.location.href = '/device/login'
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
         }
         return Promise.reject(new Error('Token format invalid'))
       }
@@ -77,8 +77,8 @@ request.interceptors.request.use(
           logger.error('Access token 和 Refresh token 都已过期，执行登出')
           clearAuth()
           ElMessage.error('登录已过期，请重新登录')
-          if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-            window.location.href = '/device/login'
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
           }
           return Promise.reject(new Error('Token expired'))
         }
@@ -159,8 +159,8 @@ request.interceptors.response.use(
         clearAuth()
         ElMessage.error('登录已过期，请重新登录')
         
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-          window.location.href = '/device/login'
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
         }
         return Promise.reject(error)
       }
@@ -175,8 +175,8 @@ request.interceptors.response.use(
         clearAuth()
         ElMessage.error('登录已过期，请重新登录')
         
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-          window.location.href = '/device/login'
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
         }
         return Promise.reject(error)
       }
@@ -236,8 +236,8 @@ request.interceptors.response.use(
         clearAuth()
         ElMessage.error('登录已过期，请重新登录')
         
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/device/login')) {
-          window.location.href = '/device/login'
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
         }
         return Promise.reject(err)
       } finally {

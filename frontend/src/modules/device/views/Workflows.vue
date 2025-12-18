@@ -180,7 +180,7 @@ import {
   executeWorkflow as executeWorkflowAPI,
   getExecutions,
   getExecution
-} from '@device/api/workflow'
+} from '@/api/workflow'
 
 const router = useRouter()
 
@@ -249,12 +249,12 @@ const resetFilters = () => {
 
 // 创建工作流
 const createWorkflow = () => {
-  router.push('/workflows/editor')
+  router.push('/device/workflows/editor')
 }
 
 // 编辑工作流
 const editWorkflow = (workflow) => {
-  router.push(`/workflows/editor/${workflow.uuid}`)
+  router.push(`/device/workflows/editor/${workflow.uuid}`)
 }
 
 // 执行工作流

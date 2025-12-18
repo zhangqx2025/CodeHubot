@@ -8,7 +8,7 @@
           <p>今天是 {{ currentDate }}，系统运行正常</p>
         </div>
         <div class="banner-actions">
-          <el-button type="primary" @click="$router.push('/device-register')">
+          <el-button type="primary" @click="$router.push('/device/device-register')">
             <el-icon><Plus /></el-icon>
             注册设备
           </el-button>
@@ -83,7 +83,7 @@
           <template #header>
             <div class="card-header">
               <span>今日交互统计</span>
-              <el-button type="text" @click="$router.push('/device-interactions')">查看详情</el-button>
+              <el-button type="text" @click="$router.push('/device/device-interactions')">查看详情</el-button>
             </div>
           </template>
           <div class="interaction-stats">
@@ -158,7 +158,7 @@
           <template #header>
             <div class="card-header">
               <span>最近交互记录</span>
-              <el-button type="text" @click="$router.push('/device-interactions')">查看全部</el-button>
+              <el-button type="text" @click="$router.push('/device/device-interactions')">查看全部</el-button>
             </div>
           </template>
           <div class="recent-interactions">
@@ -196,7 +196,7 @@
       <template #header>
         <div class="card-header">
           <span>最近设备</span>
-          <el-button type="text" @click="$router.push('/devices')">查看全部</el-button>
+          <el-button type="text" @click="$router.push('/device/devices')">查看全部</el-button>
         </div>
       </template>
       <el-table :data="recentDevices" style="width: 100%">
@@ -214,7 +214,7 @@
         <el-table-column prop="lastSeen" label="最后上报" />
         <el-table-column label="操作">
           <template #default="scope">
-            <el-button type="text" @click="$router.push(`/device/${scope.row.uuid}/detail`)">
+            <el-button type="text" @click="$router.push(`/device/devices/${scope.row.uuid}`)">
               查看详情
             </el-button>
           </template>
@@ -228,7 +228,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { getDashboardStats, getRecentDevices, getRecentInteractions } from '@device/api/dashboard'
+import { getDashboardStats, getRecentDevices, getRecentInteractions } from '../api/dashboard'
 import { ElMessage } from 'element-plus'
 import logger from '../utils/logger'
 import {
