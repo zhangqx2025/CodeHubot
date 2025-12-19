@@ -209,10 +209,12 @@ class MQTTService:
                 
                 # 更新设备最后上报数据（已优化：改为直接更新设备表）
                 try:
-                    device.last_report_data = data
+                    # 转换数据格式以兼容查询接口
+                    formatted_data = self._format_sensor_data(data)
+                    device.last_report_data = formatted_data
                     device.last_seen = get_beijing_now()
                     device.is_online = True
-                    logger.debug(f"传感器数据已更新到设备表")
+                    logger.debug(f"传感器数据已更新到设备表: {formatted_data}")
                 except Exception as log_error:
                     logger.error(f"更新传感器数据失败: {log_error}")
                 
@@ -295,6 +297,78 @@ class MQTTService:
             self.client.loop_stop()
             self.client.disconnect()
             logger.info("🛑 MQTT客户端服务已停止")
+    
+    def _format_sensor_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """格式化传感器数据为标准格式
+        
+        支持两种输入格式：
+        1. 新格式（多传感器）: {"sensors": [{...}]}
+        2. 旧格式（单传感器）: {"sensor": "...", "temperature": 25, ...}
+        
+        统一输出格式: {"sensors": {"temperature": {"value": 25, "unit": "°C"}}}
+        """
+        now = get_beijing_now()
+        
+        # 如果已经是新格式，直接返回
+        if "sensors" in data and isinstance(data["sensors"], dict):
+            return data
+        
+        # 转换旧格式
+        formatted = {"sensors": {}, "upload_timestamp": now.isoformat()}
+        
+        # 识别传感器类型
+        sensor_type = data.get("sensor", "").upper()
+        
+        if sensor_type == "RAIN_SENSOR":
+            # 雨水传感器
+            formatted["sensors"]["rain"] = {
+                "value": data.get("is_raining", False),
+                "unit": "",
+                "level": data.get("level", 0),
+                "timestamp": now.isoformat()
+            }
+        elif "DHT" in sensor_type or "TEMPERATURE" in sensor_type:
+            # DHT 温湿度传感器
+            if "temperature" in data:
+                formatted["sensors"]["temperature"] = {
+                    "value": data.get("temperature"),
+                    "unit": "°C",
+                    "timestamp": now.isoformat()
+                }
+            if "humidity" in data:
+                formatted["sensors"]["humidity"] = {
+                    "value": data.get("humidity"),
+                    "unit": "%",
+                    "timestamp": now.isoformat()
+                }
+        elif "DS18B20" in sensor_type:
+            # DS18B20 温度传感器
+            formatted["sensors"]["ds18b20"] = {
+                "value": data.get("temperature"),
+                "unit": "°C",
+                "timestamp": now.isoformat()
+            }
+        else:
+            # 通用处理：提取所有数值类型的字段
+            for key, value in data.items():
+                if key in ["sensor", "device_id", "timestamp", "status", "location"]:
+                    continue
+                if isinstance(value, (int, float)):
+                    formatted["sensors"][key] = {
+                        "value": value,
+                        "unit": "",
+                        "timestamp": now.isoformat()
+                    }
+        
+        # 保留原始数据的其他字段
+        if "status" in data:
+            formatted["status"] = data["status"]
+        if "location" in data:
+            formatted["location"] = data["location"]
+        
+        logger.info(f"📦 数据格式转换: {sensor_type} → {list(formatted['sensors'].keys())}")
+        
+        return formatted
 
 # 全局MQTT服务实例
 mqtt_service = MQTTService()
