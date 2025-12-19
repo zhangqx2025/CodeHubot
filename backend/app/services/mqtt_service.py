@@ -209,50 +209,50 @@ class MQTTService:
                 except Exception as parse_error:
                     logger.error(f"解析传感器数据失败: {parse_error}")
                 
-                # 更新设备最后上报数据（已优化：改为直接更新设备表）
+                # 保存传感器数据到 device_sensors 表
                 try:
-                    # 转换数据格式以兼容查询接口
+                    # 转换数据格式
                     formatted_data = self._format_sensor_data(data)
-                    device.last_report_data = formatted_data
+                    
+                    # 保存到独立表
+                    self._save_sensor_data_to_table(db, device, formatted_data)
+                    
+                    # 更新设备在线状态
                     device.last_seen = get_beijing_now()
                     device.is_online = True
                     
-                    # 保存传感器数据到独立表
-                    self._save_sensor_data_to_table(db, device, formatted_data)
-                    
-                    logger.debug(f"传感器数据已更新到设备表: {formatted_data}")
+                    logger.info(f"✅ 传感器数据已保存到 device_sensors 表")
                 except Exception as log_error:
-                    logger.error(f"更新传感器数据失败: {log_error}")
+                    logger.error(f"保存传感器数据失败: {log_error}")
                 
             elif message_type == "status":
                 # 处理设备状态
                 logger.info(f"📊 设备 {device_uuid} 状态更新: {data}")
                 
-                # 更新设备状态数据（已优化：改为直接更新设备表）
+                # 更新设备状态
                 try:
-                    device.last_report_data = data
                     device.last_seen = get_beijing_now()
                     device.is_online = True
-                    logger.debug(f"设备状态已更新到设备表")
+                    
+                    # 更新设备状态信息
+                    if 'wifi_status' in data:
+                        device.is_online = data['wifi_status'] == 'Connected'
+                    elif 'mqtt_connected' in data:
+                        device.is_online = data.get('mqtt_connected', False)
+                    
+                    logger.debug(f"设备状态已更新")
                 except Exception as log_error:
                     logger.error(f"更新设备状态失败: {log_error}")
-                
-                # 更新设备状态信息
-                if 'wifi_status' in data:
-                    device.is_online = data['wifi_status'] == 'Connected'
-                elif 'mqtt_connected' in data:
-                    device.is_online = data.get('mqtt_connected', False)
                 
             elif message_type == "heartbeat":
                 # 处理心跳数据
                 logger.info(f"💓 设备 {device_uuid} 心跳: {data}")
                 
-                # 更新设备心跳数据（已优化：改为直接更新设备表）
+                # 更新设备心跳
                 try:
-                    # 心跳不需要保存完整数据，只更新时间和在线状态
                     device.last_seen = get_beijing_now()
                     device.is_online = True
-                    logger.debug(f"设备心跳已更新到设备表")
+                    logger.debug(f"设备心跳已更新")
                 except Exception as log_error:
                     logger.error(f"更新设备心跳失败: {log_error}")
                 
