@@ -312,7 +312,46 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # 插件服务
+  # 插件后端服务（直接访问数据库和MQTT）
+  plugin-backend-service:
+    build:
+      context: ../service/plugin-backend-service
+      dockerfile: Dockerfile
+    container_name: codehubot-plugin-backend-service
+    environment:
+      # 服务配置
+      SERVICE_PORT: 9002
+      SERVICE_HOST: 0.0.0.0
+      # 数据库配置 - 使用内置MySQL
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-aiot_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-aiot_admin}
+      # MQTT配置
+      MQTT_BROKER: mqtt
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+    # 不暴露端口到外部,仅在Docker网络内部访问
+    # ports:
+    #   - "9002:9002"
+    networks:
+      - aiot-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mqtt:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # 插件服务（接收外部请求）
   plugin-service:
     build:
       context: ../service/plugin-service
@@ -329,6 +368,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       RELOAD: "false"
       # 后端服务配置
+      PLUGIN_BACKEND_URL: http://plugin-backend-service:9002
       BACKEND_URL: ${BACKEND_URL:-http://backend:8000}
       BACKEND_API_KEY: ${INTERNAL_API_KEY}
       # 安全配置
@@ -343,6 +383,8 @@ services:
       - aiot-network
     depends_on:
       backend:
+        condition: service_healthy
+      plugin-backend-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/')"]
