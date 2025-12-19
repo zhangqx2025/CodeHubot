@@ -170,10 +170,10 @@ class MQTTService:
                 
                 if "sensors" in data:
                     # HTTP API 格式 - 转换为标准存储格式
-                    self._process_http_format_data(device, data)
+                    self._process_http_format_data(db, device_uuid, data)
                 else:
                     # MQTT 简单格式 - 直接存储
-                    self._process_mqtt_format_data(device, data)
+                    self._process_mqtt_format_data(db, device_uuid, data)
                 
                 device.last_seen = get_beijing_now()
                 device.is_online = True
@@ -221,17 +221,9 @@ class MQTTService:
         finally:
             db.close()
     
-    def _process_http_format_data(self, device: Device, data: Dict[str, Any]):
-        """处理 HTTP API 格式的传感器数据"""
+    def _process_http_format_data(self, db: Session, device_uuid: str, data: Dict[str, Any]):
+        """处理 HTTP API 格式的传感器数据，直接写入 device_sensors 表"""
         now = get_beijing_now()
-        
-        # 初始化或获取现有数据
-        if not device.last_report_data:
-            device.last_report_data = {}
-        
-        # 确保 sensors 字典存在
-        if "sensors" not in device.last_report_data:
-            device.last_report_data["sensors"] = {}
         
         # 处理传感器数据列表
         sensors_list = data.get("sensors", [])
@@ -255,44 +247,17 @@ class MQTTService:
             if not isinstance(sensor_value, (int, float)):
                 logger.warning(f"⚠️ 传感器值必须是数字，跳过: {sensor_name}={sensor_value}")
                 continue
-            
-            device.last_report_data["sensors"][sensor_name] = {
-                "value": sensor_value,
-                "unit": sensor.get("unit", ""),
-                "timestamp": sensor.get("timestamp", now.isoformat())
-            }
+            sensor_unit = sensor.get("unit", "")
+            timestamp_str = sensor.get("timestamp", now.isoformat())
+            self._upsert_sensor(db, device_uuid, sensor_name, sensor_value, sensor_unit, sensor.get("sensor_type", ""), timestamp_str)
             valid_count += 1
-            logger.debug(f"  - {sensor_name}: {sensor_value} {sensor.get('unit', '')}")
-        
-        # 更新状态信息
-        if "status" in data and isinstance(data["status"], dict):
-            device.last_report_data["status"] = data["status"]
-        
-        # 更新位置信息
-        if "location" in data and isinstance(data["location"], dict):
-            location = data["location"]
-            # 验证经纬度
-            if self._validate_location(location):
-                device.last_report_data["location"] = location
-            else:
-                logger.warning(f"⚠️ 位置信息格式不正确: {location}")
-        
-        # 更新时间戳
-        device.last_report_data["upload_timestamp"] = data.get("timestamp", now.isoformat())
+            logger.debug(f"  - {sensor_name}: {sensor_value} {sensor_unit}")
         
         logger.info(f"✅ 成功处理 {valid_count} 个传感器数据")
     
-    def _process_mqtt_format_data(self, device: Device, data: Dict[str, Any]):
-        """处理 MQTT 简单格式的传感器数据"""
+    def _process_mqtt_format_data(self, db: Session, device_uuid: str, data: Dict[str, Any]):
+        """处理 MQTT 简单格式的传感器数据，直接写入 device_sensors 表"""
         now = get_beijing_now()
-        
-        # 初始化或获取现有数据
-        if not device.last_report_data:
-            device.last_report_data = {}
-        
-        # 确保 sensors 字典存在
-        if "sensors" not in device.last_report_data:
-            device.last_report_data["sensors"] = {}
         
         # 将简单键值对转换为标准格式
         valid_count = 0
@@ -309,16 +274,10 @@ class MQTTService:
             
             # 只处理数值类型的传感器数据
             if isinstance(value, (int, float)):
-                device.last_report_data["sensors"][key] = {
-                    "value": value,
-                    "unit": "",
-                    "timestamp": now.isoformat()
-                }
+                timestamp_str = data.get("timestamp", now.isoformat())
+                self._upsert_sensor(db, device_uuid, key, value, "", data.get("sensor", ""), timestamp_str)
                 valid_count += 1
                 logger.debug(f"  - {key}: {value}")
-        
-        # 更新时间戳
-        device.last_report_data["upload_timestamp"] = data.get("timestamp", now.isoformat())
         
         logger.info(f"✅ 成功处理 {valid_count} 个传感器数据")
     
@@ -356,6 +315,40 @@ class MQTTService:
             return -90 <= lat <= 90 and -180 <= lon <= 180
         except (ValueError, TypeError):
             return False
+    
+    def _upsert_sensor(self, db: Session, device_uuid: str, sensor_name: str, sensor_value: Any, sensor_unit: str, sensor_type: str, timestamp_str: str):
+        """将单个传感器数据写入 device_sensors 表（使用 device_uuid，UPSERT）"""
+        try:
+            # 解析时间戳
+            try:
+                if isinstance(timestamp_str, str):
+                    timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                else:
+                    timestamp = get_beijing_now()
+            except Exception:
+                timestamp = get_beijing_now()
+            
+            sql = text("""
+                INSERT INTO device_sensors 
+                (device_uuid, sensor_name, sensor_value, sensor_unit, sensor_type, timestamp)
+                VALUES (:device_uuid, :sensor_name, :sensor_value, :sensor_unit, :sensor_type, :timestamp)
+                ON DUPLICATE KEY UPDATE
+                    sensor_value = VALUES(sensor_value),
+                    sensor_unit = VALUES(sensor_unit),
+                    sensor_type = VALUES(sensor_type),
+                    timestamp = VALUES(timestamp)
+            """)
+            
+            db.execute(sql, {
+                "device_uuid": device_uuid,
+                "sensor_name": sensor_name,
+                "sensor_value": str(sensor_value),
+                "sensor_unit": sensor_unit or "",
+                "sensor_type": sensor_type or "",
+                "timestamp": timestamp
+            })
+        except Exception as e:
+            logger.error(f"❌ 写入 device_sensors 失败: {e}", exc_info=True)
     
     def start(self):
         """启动MQTT服务"""
