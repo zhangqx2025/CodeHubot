@@ -1,13 +1,13 @@
 #!/bin/bash
 # ============================================================================
 # 执行数据库更新脚本 32
-# 创建 aiot_access_logs 表
+# 创建 device_access_logs 表
 # ============================================================================
 
 set -e  # 遇到错误立即退出
 
 echo "=========================================="
-echo "  执行数据库更新: 32_add_aiot_access_logs_table.sql"
+echo "  执行数据库更新: 32_add_device_access_logs_table.sql"
 echo "=========================================="
 echo ""
 
@@ -27,15 +27,15 @@ echo ""
 # 执行SQL脚本
 echo ""
 echo "正在执行SQL脚本..."
-mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < 32_add_aiot_access_logs_table.sql
+mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < 32_add_device_access_logs_table.sql
 
 if [ $? -eq 0 ]; then
     echo ""
     echo "✅ 数据库更新成功！"
     echo ""
     echo "验证表是否创建成功..."
-    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SHOW TABLES LIKE 'aiot_access_logs';"
-    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "DESC aiot_access_logs;"
+    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SHOW TABLES LIKE 'device_access_logs';"
+    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "DESC device_access_logs;"
 else
     echo ""
     echo "❌ 数据库更新失败！"

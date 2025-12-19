@@ -99,8 +99,8 @@ class FirmwareVersion(Base):
 
 
 class AccessLog(Base):
-    """访问日志（简单的速率限制）"""
-    __tablename__ = "aiot_access_logs"
+    """设备访问日志（简单的速率限制）"""
+    __tablename__ = "device_access_logs"
     
     id = Column(Integer, primary_key=True, index=True)
     ip_address = Column(String(45), index=True)

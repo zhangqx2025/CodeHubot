@@ -227,11 +227,11 @@ INSERT INTO `core_system_config` (`config_key`, `config_value`, `config_type`, `
 -- --------------------------------------------------------
 
 --
--- 表的结构 `aiot_access_logs`
--- 访问日志表：记录设备配置服务的访问日志，用于速率限制和安全审计
+-- 表的结构 `device_access_logs`
+-- 设备访问日志表：记录设备配置服务的访问日志，用于速率限制和安全审计
 --
 
-CREATE TABLE IF NOT EXISTS `aiot_access_logs` (
+CREATE TABLE IF NOT EXISTS `device_access_logs` (
   `id` INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `ip_address` VARCHAR(45) NOT NULL COMMENT '访问IP地址（支持IPv4和IPv6）',
   `endpoint` VARCHAR(128) NOT NULL COMMENT '访问的端点路径',
@@ -244,7 +244,7 @@ CREATE TABLE IF NOT EXISTS `aiot_access_logs` (
   KEY `idx_ip_address` (`ip_address`),
   KEY `idx_timestamp` (`timestamp`),
   KEY `idx_mac_address` (`mac_address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='访问日志表（用于速率限制和安全审计）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='设备访问日志表（用于速率限制和安全审计）';
 
 
 -- ========================================== 
