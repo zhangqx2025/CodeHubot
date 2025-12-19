@@ -387,9 +387,9 @@ class MQTTService:
                 return
             
             sensor_type = ""
-            # 从原始数据中提取传感器类型
-            if device.last_report_data and "sensor" in device.last_report_data:
-                sensor_type = device.last_report_data.get("sensor", "")
+            # 从格式化数据中提取传感器类型
+            if "sensor_type" in formatted_data:
+                sensor_type = formatted_data.get("sensor_type", "")
             
             # 批量插入或更新传感器数据
             for sensor_name, sensor_info in sensors.items():
@@ -406,11 +406,11 @@ class MQTTService:
                 except:
                     timestamp = get_beijing_now()
                 
-                # 使用原生SQL执行 UPSERT
+                # 使用原生SQL执行 UPSERT (使用 device_uuid)
                 sql = text("""
                     INSERT INTO device_sensors 
-                    (device_id, sensor_name, sensor_value, sensor_unit, sensor_type, timestamp)
-                    VALUES (:device_id, :sensor_name, :sensor_value, :sensor_unit, :sensor_type, :timestamp)
+                    (device_uuid, sensor_name, sensor_value, sensor_unit, sensor_type, timestamp)
+                    VALUES (:device_uuid, :sensor_name, :sensor_value, :sensor_unit, :sensor_type, :timestamp)
                     ON DUPLICATE KEY UPDATE 
                         sensor_value = VALUES(sensor_value),
                         sensor_unit = VALUES(sensor_unit),
@@ -419,7 +419,7 @@ class MQTTService:
                 """)
                 
                 db.execute(sql, {
-                    "device_id": device.id,
+                    "device_uuid": device.uuid,
                     "sensor_name": sensor_name,
                     "sensor_value": sensor_value,
                     "sensor_unit": sensor_unit,
@@ -427,7 +427,7 @@ class MQTTService:
                     "timestamp": timestamp
                 })
             
-            logger.info(f"✅ 已保存 {len(sensors)} 个传感器数据到 device_sensors 表")
+            logger.info(f"✅ 已保存 {len(sensors)} 个传感器数据到 device_sensors 表 (device_uuid={device.uuid})")
             
         except Exception as e:
             logger.error(f"❌ 保存传感器数据到表失败: {e}", exc_info=True)

@@ -11,7 +11,7 @@ class DeviceSensor(Base):
     __tablename__ = "device_sensors"
     
     id = Column(BigInteger, primary_key=True, autoincrement=True, comment="主键ID")
-    device_id = Column(BigInteger, nullable=False, index=True, comment="设备ID")
+    device_uuid = Column(String(36), nullable=False, index=True, comment="设备UUID")
     sensor_name = Column(String(50), nullable=False, index=True, comment="传感器名称")
     sensor_value = Column(String(255), nullable=False, comment="传感器值")
     sensor_unit = Column(String(20), default="", comment="单位")
@@ -20,9 +20,9 @@ class DeviceSensor(Base):
     created_at = Column(DateTime, server_default=func.now(), comment="记录创建时间")
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="记录更新时间")
     
-    # 唯一约束：device_id + sensor_name
+    # 唯一约束：device_uuid + sensor_name
     __table_args__ = (
-        Index('uk_device_sensor', 'device_id', 'sensor_name', unique=True),
+        Index('uk_device_sensor', 'device_uuid', 'sensor_name', unique=True),
         {'comment': '设备传感器数据表'}
     )
     
@@ -30,7 +30,7 @@ class DeviceSensor(Base):
         """转换为字典"""
         return {
             "id": self.id,
-            "device_id": self.device_id,
+            "device_uuid": self.device_uuid,
             "sensor_name": self.sensor_name,
             "sensor_value": self.sensor_value,
             "sensor_unit": self.sensor_unit,

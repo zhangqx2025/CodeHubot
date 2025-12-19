@@ -146,7 +146,7 @@ class DeviceSensor(Base):
     __tablename__ = "device_sensors"
     
     id = Column(Integer, primary_key=True)
-    device_id = Column(Integer, nullable=False)  # 关联 device_main.id
+    device_uuid = Column(String(36), nullable=False)  # 使用 device_uuid
     sensor_name = Column(String(50), nullable=False)
     sensor_value = Column(String(255), nullable=False)
     sensor_unit = Column(String(20))
@@ -360,13 +360,6 @@ async def get_sensor_data(device_uuid: str, sensor: str):
     
     db = SessionLocal()
     try:
-        # 查询设备
-        device = db.query(Device).filter(Device.uuid == device_uuid).first()
-        if not device:
-            raise HTTPException(status_code=404, detail="设备不存在")
-        
-        logger.info(f"📱 设备: {device.name} (ID: {device.device_id}, device_id={device.id})")
-        
         # 映射传感器名称（支持中文和英文）
         sensor_map = {
             "温度": "temperature",
@@ -380,16 +373,16 @@ async def get_sensor_data(device_uuid: str, sensor: str):
         actual_sensor_name = sensor_map.get(sensor, sensor.lower())
         logger.info(f"🔍 传感器名称映射: {sensor} → {actual_sensor_name}")
         
-        # 从 device_sensors 表查询传感器数据
+        # 直接从 device_sensors 表查询（使用 device_uuid，无需JOIN）
         sensor_data = db.query(DeviceSensor).filter(
-            DeviceSensor.device_id == device.id,
+            DeviceSensor.device_uuid == device_uuid,
             DeviceSensor.sensor_name == actual_sensor_name
         ).first()
         
         if not sensor_data:
             # 查询该设备的所有传感器
             all_sensors = db.query(DeviceSensor).filter(
-                DeviceSensor.device_id == device.id
+                DeviceSensor.device_uuid == device_uuid
             ).all()
             
             available_sensors = [s.sensor_name for s in all_sensors]
@@ -402,6 +395,11 @@ async def get_sensor_data(device_uuid: str, sensor: str):
             else:
                 raise HTTPException(status_code=404, detail="设备尚未上报任何传感器数据")
         
+        # 查询设备信息（用于返回设备名称）
+        device = db.query(Device).filter(Device.uuid == device_uuid).first()
+        device_name = device.name if device else "未知设备"
+        last_seen = device.last_seen if device else None
+        
         logger.info(f"✅ 传感器数据: {sensor_data.sensor_name} = {sensor_data.sensor_value}{sensor_data.sensor_unit}")
         
         return StandardResponse(
@@ -413,8 +411,8 @@ async def get_sensor_data(device_uuid: str, sensor: str):
                 "sensor_name": sensor_data.sensor_name,
                 "sensor_type": sensor_data.sensor_type or "",
                 "timestamp": sensor_data.timestamp.isoformat() if sensor_data.timestamp else None,
-                "device_name": device.name,
-                "last_seen": device.last_seen.isoformat() if device.last_seen else None
+                "device_name": device_name,
+                "last_seen": last_seen.isoformat() if last_seen else None
             }
         )
         
