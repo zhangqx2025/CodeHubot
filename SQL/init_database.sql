@@ -817,19 +817,20 @@ CREATE TABLE `workflow_executions` (
 
 --
 -- 表的索引 `core_users`
+-- 注意：对于 VARCHAR 长度较大的字段，使用前缀索引以避免超过 767 字节限制（utf8mb4 每字符最多4字节）
 --
 ALTER TABLE `core_users`
   ADD UNIQUE KEY `username` (`username`),
-  ADD UNIQUE KEY `email` (`email`),
+  ADD UNIQUE KEY `email` (`email`(191)),
   ADD UNIQUE KEY `uk_school_teacher_number` (`school_id`,`teacher_number`),
   ADD UNIQUE KEY `uk_school_student_number` (`school_id`,`student_number`),
-  ADD KEY `idx_email` (`email`),
+  ADD KEY `idx_email` (`email`(191)),
   ADD KEY `idx_username` (`username`),
   ADD KEY `idx_role` (`role`),
   ADD KEY `idx_school_id` (`school_id`),
   ADD KEY `idx_teacher_number` (`teacher_number`),
   ADD KEY `idx_student_number` (`student_number`),
-  ADD KEY `idx_real_name` (`real_name`),
+  ADD KEY `idx_real_name` (`real_name`(100)),
   ADD KEY `idx_deleted_at` (`deleted_at`),
   ADD KEY `idx_class_id` (`class_id`),
   ADD KEY `idx_group_id` (`group_id`);

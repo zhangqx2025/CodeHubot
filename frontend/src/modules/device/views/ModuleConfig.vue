@@ -170,7 +170,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Setting, Check, UserFilled, Monitor, MagicStick, Reading 
 } from '@element-plus/icons-vue'
-import request from '../api/request'
+import request from '@/utils/request'
 
 const loading = ref(false)
 const saving = ref(false)
