@@ -261,6 +261,22 @@ class MQTTService:
         
         # 将简单键值对转换为标准格式
         valid_count = 0
+        sensor_type = data.get("sensor", "").upper()
+        
+        # 特殊处理：雨水传感器旧格式 {"sensor":"RAIN_SENSOR","is_raining":false,"level":1}
+        if sensor_type == "RAIN_SENSOR":
+            rain_value = data.get("is_raining")
+            rain_level = data.get("level")
+            if rain_value is not None:
+                self._upsert_sensor(db, device_uuid, "rain", rain_value, "", sensor_type, data.get("timestamp", now.isoformat()))
+                valid_count += 1
+                logger.debug(f"  - rain: {rain_value}")
+            if isinstance(rain_level, (int, float)):
+                self._upsert_sensor(db, device_uuid, "rain_level", rain_level, "", sensor_type, data.get("timestamp", now.isoformat()))
+                valid_count += 1
+                logger.debug(f"  - rain_level: {rain_level}")
+            logger.info(f"✅ 成功处理 {valid_count} 个传感器数据")
+            return
         
         for key, value in data.items():
             # 跳过特殊字段
