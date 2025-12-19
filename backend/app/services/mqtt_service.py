@@ -7,9 +7,11 @@ import logging
 from typing import Optional, Dict, Any
 import paho.mqtt.client as mqtt
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from app.core.database import SessionLocal
 from app.models.device import Device
 from app.models.product import Product
+from app.models.device_sensor import DeviceSensor
 # from app.models.interaction_log import InteractionLog  # 已删除，改为更新设备表
 from app.core.config import settings
 from datetime import datetime, timezone, timedelta
@@ -214,6 +216,10 @@ class MQTTService:
                     device.last_report_data = formatted_data
                     device.last_seen = get_beijing_now()
                     device.is_online = True
+                    
+                    # 保存传感器数据到独立表
+                    self._save_sensor_data_to_table(db, device, formatted_data)
+                    
                     logger.debug(f"传感器数据已更新到设备表: {formatted_data}")
                 except Exception as log_error:
                     logger.error(f"更新传感器数据失败: {log_error}")
@@ -369,6 +375,62 @@ class MQTTService:
         logger.info(f"📦 数据格式转换: {sensor_type} → {list(formatted['sensors'].keys())}")
         
         return formatted
+    
+    def _save_sensor_data_to_table(self, db: Session, device: Device, formatted_data: Dict[str, Any]):
+        """保存传感器数据到独立表
+        
+        使用 INSERT ... ON DUPLICATE KEY UPDATE 确保每个传感器只有一条最新记录
+        """
+        try:
+            sensors = formatted_data.get("sensors", {})
+            if not sensors:
+                return
+            
+            sensor_type = ""
+            # 从原始数据中提取传感器类型
+            if device.last_report_data and "sensor" in device.last_report_data:
+                sensor_type = device.last_report_data.get("sensor", "")
+            
+            # 批量插入或更新传感器数据
+            for sensor_name, sensor_info in sensors.items():
+                sensor_value = str(sensor_info.get("value", ""))
+                sensor_unit = sensor_info.get("unit", "")
+                timestamp_str = sensor_info.get("timestamp", datetime.now().isoformat())
+                
+                # 解析时间戳
+                try:
+                    if isinstance(timestamp_str, str):
+                        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                    else:
+                        timestamp = get_beijing_now()
+                except:
+                    timestamp = get_beijing_now()
+                
+                # 使用原生SQL执行 UPSERT
+                sql = text("""
+                    INSERT INTO device_sensors 
+                    (device_id, sensor_name, sensor_value, sensor_unit, sensor_type, timestamp)
+                    VALUES (:device_id, :sensor_name, :sensor_value, :sensor_unit, :sensor_type, :timestamp)
+                    ON DUPLICATE KEY UPDATE 
+                        sensor_value = VALUES(sensor_value),
+                        sensor_unit = VALUES(sensor_unit),
+                        sensor_type = VALUES(sensor_type),
+                        timestamp = VALUES(timestamp)
+                """)
+                
+                db.execute(sql, {
+                    "device_id": device.id,
+                    "sensor_name": sensor_name,
+                    "sensor_value": sensor_value,
+                    "sensor_unit": sensor_unit,
+                    "sensor_type": sensor_type,
+                    "timestamp": timestamp
+                })
+            
+            logger.info(f"✅ 已保存 {len(sensors)} 个传感器数据到 device_sensors 表")
+            
+        except Exception as e:
+            logger.error(f"❌ 保存传感器数据到表失败: {e}", exc_info=True)
 
 # 全局MQTT服务实例
 mqtt_service = MQTTService()

@@ -141,6 +141,20 @@ class Device(Base):
     last_report_data = Column(JSON)  # 最后上报数据，包含所有传感器数据
     last_seen = Column(DateTime)  # 最后在线时间
 
+class DeviceSensor(Base):
+    """设备传感器数据表（新）"""
+    __tablename__ = "device_sensors"
+    
+    id = Column(Integer, primary_key=True)
+    device_id = Column(Integer, nullable=False)  # 关联 device_main.id
+    sensor_name = Column(String(50), nullable=False)
+    sensor_value = Column(String(255), nullable=False)
+    sensor_unit = Column(String(20))
+    sensor_type = Column(String(50))
+    timestamp = Column(DateTime)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
 # ============================================================
 # 数据库连接
 # ============================================================
@@ -333,9 +347,11 @@ async def health_check():
 
 @app.get("/api/sensor-data")
 async def get_sensor_data(device_uuid: str, sensor: str):
-    """获取传感器数据
+    """获取传感器数据（从 device_sensors 表查询，简单高效）
     
-    从 device_main 表的 last_report_data 字段读取最新传感器数据
+    Args:
+        device_uuid: 设备UUID
+        sensor: 传感器名称（中文或英文，如 "温度" 或 "temperature"）
     """
     logger.info(f"📊 查询传感器数据: device_uuid={device_uuid}, sensor={sensor}")
     
@@ -349,103 +365,54 @@ async def get_sensor_data(device_uuid: str, sensor: str):
         if not device:
             raise HTTPException(status_code=404, detail="设备不存在")
         
-        logger.info(f"📱 设备: {device.name} (ID: {device.device_id})")
-        
-        # 检查是否有上报数据
-        if not device.last_report_data:
-            logger.warning(f"⚠️ 设备 {device.name} 的 last_report_data 为空")
-            raise HTTPException(status_code=404, detail="设备尚未上报数据")
-        
-        # 从 last_report_data 获取传感器数据
-        last_data = device.last_report_data
-        logger.info(f"📦 last_report_data 内容: {last_data}")
-        
-        # 兼容两种数据格式
-        sensors = {}
-        
-        # 格式1：新格式 - 包含 sensors 字段（多传感器）
-        if "sensors" in last_data:
-            sensors = last_data["sensors"]
-            logger.info(f"🔍 检测到新格式数据，可用传感器: {list(sensors.keys())}")
-        
-        # 格式2：旧格式 - 直接包含 sensor 字段（单传感器）
-        elif "sensor" in last_data:
-            sensor_type = last_data.get("sensor", "").upper()
-            logger.info(f"🔍 检测到旧格式数据，传感器类型: {sensor_type}")
-            
-            # 转换旧格式到新格式
-            if sensor_type == "RAIN_SENSOR":
-                sensors["rain"] = {
-                    "value": last_data.get("is_raining", False),
-                    "unit": "",
-                    "level": last_data.get("level", 0)
-                }
-            elif "TEMPERATURE" in sensor_type or "DHT" in sensor_type:
-                if "temperature" in last_data:
-                    sensors["temperature"] = {
-                        "value": last_data.get("temperature"),
-                        "unit": "°C"
-                    }
-                if "humidity" in last_data:
-                    sensors["humidity"] = {
-                        "value": last_data.get("humidity"),
-                        "unit": "%"
-                    }
-            elif "DS18B20" in sensor_type:
-                sensors["ds18b20"] = {
-                    "value": last_data.get("temperature"),
-                    "unit": "°C"
-                }
-            
-            logger.info(f"✅ 已转换为新格式，传感器: {list(sensors.keys())}")
-        
-        if not sensors:
-            raise HTTPException(status_code=404, detail="设备暂无传感器数据")
+        logger.info(f"📱 设备: {device.name} (ID: {device.device_id}, device_id={device.id})")
         
         # 映射传感器名称（支持中文和英文）
         sensor_map = {
             "温度": "temperature",
             "湿度": "humidity",
             "DS18B20": "ds18b20",
-            "雨水": "rain"
+            "雨水": "rain",
+            "雨滴": "rain"
         }
         
         # 获取实际的传感器键名
-        actual_key = sensor_map.get(sensor, sensor.lower())
+        actual_sensor_name = sensor_map.get(sensor, sensor.lower())
+        logger.info(f"🔍 传感器名称映射: {sensor} → {actual_sensor_name}")
         
-        # 查找传感器数据（支持多种命名格式）
-        sensor_value = None
-        sensor_unit = ""
+        # 从 device_sensors 表查询传感器数据
+        sensor_data = db.query(DeviceSensor).filter(
+            DeviceSensor.device_id == device.id,
+            DeviceSensor.sensor_name == actual_sensor_name
+        ).first()
         
-        # 尝试直接匹配
-        if actual_key in sensors:
-            sensor_info = sensors[actual_key]
-            sensor_value = sensor_info.get("value")
-            sensor_unit = sensor_info.get("unit", "")
-        else:
-            # 尝试模糊匹配（例如 temperature 匹配 DHT11_temperature）
-            for key, info in sensors.items():
-                if actual_key in key.lower():
-                    sensor_value = info.get("value")
-                    sensor_unit = info.get("unit", "")
-                    logger.info(f"🎯 模糊匹配到传感器: {key}")
-                    break
+        if not sensor_data:
+            # 查询该设备的所有传感器
+            all_sensors = db.query(DeviceSensor).filter(
+                DeviceSensor.device_id == device.id
+            ).all()
+            
+            available_sensors = [s.sensor_name for s in all_sensors]
+            if available_sensors:
+                available = ", ".join(available_sensors)
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"未找到传感器 '{sensor}' 的数据。可用传感器: {available}"
+                )
+            else:
+                raise HTTPException(status_code=404, detail="设备尚未上报任何传感器数据")
         
-        if sensor_value is None:
-            available = ", ".join(sensors.keys())
-            raise HTTPException(
-                status_code=404,
-                detail=f"未找到传感器 '{sensor}' 的数据。可用传感器: {available}"
-            )
-        
-        logger.info(f"✅ 传感器数据: {sensor} = {sensor_value}{sensor_unit}")
+        logger.info(f"✅ 传感器数据: {sensor_data.sensor_name} = {sensor_data.sensor_value}{sensor_data.sensor_unit}")
         
         return StandardResponse(
             code=200,
             msg="成功",
             data={
-                "value": sensor_value,
-                "unit": sensor_unit,
+                "value": sensor_data.sensor_value,
+                "unit": sensor_data.sensor_unit or "",
+                "sensor_name": sensor_data.sensor_name,
+                "sensor_type": sensor_data.sensor_type or "",
+                "timestamp": sensor_data.timestamp.isoformat() if sensor_data.timestamp else None,
                 "device_name": device.name,
                 "last_seen": device.last_seen.isoformat() if device.last_seen else None
             }
