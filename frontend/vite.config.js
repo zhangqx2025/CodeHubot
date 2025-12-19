@@ -56,30 +56,12 @@ export default defineConfig({
               id.includes('node_modules/pinia/')) {
             return 'vue-vendor'
           }
-          // Device模块
-          if (id.includes('/src/modules/device/')) {
-            return 'module-device'
-          }
-          // AI模块
-          if (id.includes('/src/modules/ai/')) {
-            return 'module-ai'
-          }
-          // PBL学生模块
-          if (id.includes('/src/modules/pbl/student/')) {
-            return 'module-pbl-student'
-          }
-          // PBL教师模块
-          if (id.includes('/src/modules/pbl/teacher/')) {
-            return 'module-pbl-teacher'
-          }
-          // PBL管理模块
-          if (id.includes('/src/modules/pbl/admin/')) {
-            return 'module-pbl-admin'
-          }
-          // 其他第三方库
+          // 其他第三方库统一打包（避免过度分割导致循环依赖）
           if (id.includes('node_modules')) {
             return 'vendor'
           }
+          // 业务模块不再强制分割，由 Vite 自动处理
+          // 这样可以避免模块间循环依赖导致的初始化错误
         }
       }
     }
