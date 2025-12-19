@@ -1664,6 +1664,7 @@ async def get_device_realtime_data(
     - 保留此接口以支持前端和兼容性
     """
     from sqlalchemy.orm import joinedload
+    from datetime import timezone, timedelta
     
     # 查找设备（预加载产品信息）
     device = db.query(Device).options(joinedload(Device.product)).filter(Device.uuid == device_uuid).first()
@@ -1680,36 +1681,25 @@ async def get_device_realtime_data(
         # 内部API调用：跳过权限检查
         logger.info(f"🔓 内部API调用，跳过权限检查: device_uuid={device_uuid}")
     
-    # 从设备表获取最后上报的传感器数据（已优化：不再使用日志表）
-    from datetime import timezone, timedelta
-    import json
-    
-    # 由于已删除日志表，改为从设备的 last_report_data 获取最后数据
-    logs = []  # 保持兼容性，返回空列表
-    
-    # 如果设备有最后上报数据，构造一个假的日志记录
-    if device.last_report_data and device.last_seen:
-        class FakeLog:
-            def __init__(self, device_id, timestamp, data):
-                self.device_id = device_id
-                self.timestamp = timestamp
-                self.interaction_type = "data_upload"
-                self.request_data = data
-        
-        logs = [FakeLog(device.device_id, device.last_seen, device.last_report_data)]
-    
-    # 北京时区 (UTC+8)
+    # 统一时区（数据库存北京时间）
     beijing_tz = timezone(timedelta(hours=8))
     
-    # 提取传感器数据并进行映射
-    sensor_data_list = []
-    latest_sensor_data = {}  # 存储每个传感器类型的最新数据
-    latest_sensor_timestamps = {}  # 存储每个传感器类型的最新时间戳
+    def _parse_sensor_value(value: str):
+        """尝试将字符串转成数字/布尔，便于前端展示"""
+        if value is None:
+            return None
+        v = str(value).strip()
+        if v.lower() in ["true", "false"]:
+            return v.lower() == "true"
+        try:
+            if "." in v:
+                return float(v)
+            return int(v)
+        except ValueError:
+            return value
     
-    logger.info(f"🔍 开始处理 {len(logs)} 条日志数据")
-    logger.info(f"🔍 设备产品信息: product={device.product.name if device.product else 'None'}")
-    
-    # 提前解析并缓存产品传感器配置
+    # 解析产品传感器配置（用于按配置键映射）
+    import json
     product_sensor_types = None
     if device.product and device.product.sensor_types:
         sensor_types_raw = device.product.sensor_types
@@ -1723,120 +1713,79 @@ async def get_device_realtime_data(
             product_sensor_types = sensor_types_raw
         logger.info(f"🔍 产品传感器配置键: {list(product_sensor_types.keys()) if product_sensor_types else []}")
     else:
-        logger.warning(f"⚠️ 设备没有关联产品或产品没有传感器配置")
+        logger.warning("⚠️ 设备没有关联产品或产品没有传感器配置")
     
-    for idx, log in enumerate(logs):
-        if log.request_data:
-            # 解析原始传感器数据
-            raw_data = log.request_data
-            logger.info(f"📊 日志#{idx}: sensor={raw_data.get('sensor')}, timestamp={log.timestamp}, data={raw_data}")
-            
-            # 根据产品配置映射数据
-            mapped_data = {}
-            if product_sensor_types and isinstance(product_sensor_types, dict):
-                # 获取传感器类型
-                sensor_type = raw_data.get("sensor")
-                if sensor_type:
-                    logger.info(f"🔍 正在处理传感器类型: {sensor_type}")
-                    # 数据库中的时间戳已经是北京时间（无时区信息），直接添加时区标识
-                    log_beijing_time = None
-                    if log.timestamp:
-                        # log.timestamp 已经是北京时间，只需添加时区信息
-                        log_beijing_time = log.timestamp.replace(tzinfo=beijing_tz)
-                    
-                    # 遍历产品配置，找到匹配的传感器并映射数据
-                    # 注意：同一个sensor_type可能有多个配置项（如DHT11有temperature和humidity）
-                    matched_count = 0
-                    for key, config in product_sensor_types.items():
-                        config_type = config.get("type")
-                        logger.info(f"🔍 检查配置项: key={key}, type={config_type}, data_field={config.get('data_field')}")
-                        if config_type == sensor_type:
-                            matched_count += 1
-                            data_field = config.get("data_field")
-                            logger.info(f"✅ 匹配成功! key={key}, data_field={data_field}, 检查字段是否存在: {data_field in raw_data if data_field else False}")
-                            if data_field and data_field in raw_data:
-                                value = raw_data[data_field]
-                                mapped_data[key] = value
-                                # 记录每个传感器类型的最新数据（日志是倒序的，所以第一次遇到就是最新的）
-                                if key not in latest_sensor_data:
-                                    latest_sensor_data[key] = value
-                                    if log_beijing_time:
-                                        latest_sensor_timestamps[key] = log_beijing_time
-                                    logger.info(f"✅ 记录 {key} 的最新数据: {value}, 时间: {log_beijing_time}")
-                                else:
-                                    logger.info(f"⏭️ 跳过 {key}（已有更新的数据）")
-                            else:
-                                logger.warning(f"⚠️ 数据字段 {data_field} 不在原始数据中: {list(raw_data.keys())}")
-                            
-                            # 对于雨水传感器，同时保存level字段（如果存在）
-                            if sensor_type == "RAIN_SENSOR" and "level" in raw_data:
-                                level_key = f"{key}_level"
-                                mapped_data[level_key] = raw_data["level"]
-                                if level_key not in latest_sensor_data:
-                                    latest_sensor_data[level_key] = raw_data["level"]
-                                    if log_beijing_time:
-                                        latest_sensor_timestamps[level_key] = log_beijing_time
-                                    logger.info(f"✅ 记录 {level_key} 的最新数据: {raw_data['level']}")
-                    
-                    if matched_count == 0:
-                        logger.warning(f"⚠️ 传感器类型 {sensor_type} 在产品配置中没有找到匹配项")
-            
-            # 如果映射失败，使用原始数据
-            if not mapped_data:
-                mapped_data = raw_data
-            
-            # 数据库中的时间戳已经是北京时间（无时区信息），直接添加时区标识
-            beijing_time = None
-            if log.timestamp:
-                # log.timestamp 已经是北京时间，只需添加时区信息
-                beijing_time = log.timestamp.replace(tzinfo=beijing_tz)
-            
-            sensor_data_list.append({
-                "timestamp": beijing_time.isoformat() if beijing_time else None,
-                "data": mapped_data
-            })
+    # 从 device_sensors 表获取最新的传感器数据（倒序 + limit）
+    sensor_rows = db.query(DeviceSensor).filter(
+        DeviceSensor.device_uuid == device_uuid
+    ).order_by(DeviceSensor.timestamp.desc()).limit(limit).all()
     
-    # 构建最新数据（合并所有传感器的最新值）
-    # 确保包含所有产品配置的传感器字段，即使没有数据也显示为null
-    latest_data = None
+    logger.info(f"🔍 从 device_sensors 取到 {len(sensor_rows)} 条数据 (limit={limit})")
     
-    # 初始化所有传感器字段为 null
-    all_sensor_fields = {}
-    if product_sensor_types and isinstance(product_sensor_types, dict):
-        for key, config in product_sensor_types.items():
-            all_sensor_fields[key] = None
-            # 如果是雨水传感器，也添加 level 字段
-            if config.get("type") == "RAIN_SENSOR":
-                all_sensor_fields[f"{key}_level"] = None
-        logger.info(f"📋 初始化所有传感器字段: {list(all_sensor_fields.keys())}")
+    if not sensor_rows:
+        return success_response(data={
+            "device_uuid": device_uuid,
+            "device_name": device.name,
+            "latest": None,
+            "data": [],
+            "count": 0,
+            "message": "device_sensors 表暂无数据"
+        })
     
-    # 填充实际有数据的传感器值
-    if latest_sensor_data:
-        all_sensor_fields.update(latest_sensor_data)
-        logger.info(f"📦 填充实际数据: {latest_sensor_data}")
+    # 构造返回数据
+    sensor_data_list = []
+    raw_latest_map = {}
+    latest_timestamp = None
     
-    # 构建最终的 latest 数据
-    if all_sensor_fields:
-        latest_timestamp = None
-        if latest_sensor_timestamps:
-            latest_timestamp = max(latest_sensor_timestamps.values())
+    for row in sensor_rows:
+        value = _parse_sensor_value(row.sensor_value)
+        row_time = row.timestamp
+        if row_time and row_time.tzinfo is None:
+            row_time = row_time.replace(tzinfo=beijing_tz)
         
-        latest_data = {
-            "timestamp": latest_timestamp.isoformat() if latest_timestamp else None,
-            "data": all_sensor_fields
-        }
-        logger.info(f"✅ 最终latest数据: {all_sensor_fields}, 时间: {latest_timestamp}")
-    else:
-        logger.warning("⚠️ 没有找到任何传感器配置")
-        # 如果没有产品配置，使用第一条原始数据作为latest
-        if sensor_data_list:
-            logger.info(f"🔄 使用第一条原始数据作为latest")
-            latest_data = sensor_data_list[0]  # sensor_data_list已经按时间倒序排列
+        # 用于列表展示（保持旧格式兼容）
+        sensor_data_list.append({
+            "timestamp": row_time.isoformat() if row_time else None,
+            "data": {row.sensor_name: value},
+            "unit": row.sensor_unit or "",
+            "sensor_type": row.sensor_type or ""
+        })
+        
+        # 汇总 latest
+        if row.sensor_name not in raw_latest_map:
+            raw_latest_map[row.sensor_name] = value
+            if not latest_timestamp or (row_time and row_time > latest_timestamp):
+                latest_timestamp = row_time
+    
+    # 如果有产品配置，则按配置键映射值，确保前端卡片能直接匹配
+    mapped_latest = None
+    if product_sensor_types:
+        mapped_latest = {key: None for key in product_sensor_types.keys()}
+        for key, config in product_sensor_types.items():
+            data_field = config.get("data_field")
+            cfg_type = (config.get("type") or "").upper()
+            # 规则1：sensor_name 与配置key完全一致
+            if key in raw_latest_map:
+                mapped_latest[key] = raw_latest_map[key]
+                continue
+            # 规则2：sensor_type一致且 data_field 与 sensor_name 对应
+            for row in sensor_rows:
+                if (row.sensor_type or "").upper() == cfg_type and data_field and row.sensor_name == data_field:
+                    mapped_latest[key] = raw_latest_map.get(row.sensor_name)
+                    break
+        logger.info(f"✅ 按产品配置映射后的字段: {mapped_latest}")
+    
+    latest_payload = {
+        "timestamp": latest_timestamp.isoformat() if latest_timestamp else None,
+        "data": mapped_latest if mapped_latest is not None else raw_latest_map
+    }
+    
+    logger.info(f"✅ 最新数据字段: {list(latest_payload['data'].keys())}, 时间: {latest_timestamp}")
     
     return success_response(data={
         "device_uuid": device_uuid,
         "device_name": device.name,
-        "latest": latest_data,
+        "latest": latest_payload,
         "data": sensor_data_list,
         "count": len(sensor_data_list)
     })
