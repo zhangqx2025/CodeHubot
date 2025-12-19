@@ -72,12 +72,23 @@ FLOWER_PID=$!
 echo -e "${GREEN}✅ Flower 已启动 (PID: $FLOWER_PID)${NC}"
 sleep 2
 
-# 5. Plugin Backend（可选）
-# echo ""
-# echo -e "${YELLOW}5️⃣  启动Plugin Backend (9001)...${NC}"
-# cd "$PROJECT_ROOT/service/plugin-backend-service"
-# nohup python main.py > logs/plugin_nohup.log 2>&1 &
-# echo -e "${GREEN}✅ Plugin Backend 已启动${NC}"
+# 5. Plugin Backend
+echo ""
+echo -e "${YELLOW}5️⃣  启动Plugin Backend (9002)...${NC}"
+cd "$PROJECT_ROOT/service/plugin-backend-service"
+nohup python main.py > logs/plugin_backend_nohup.log 2>&1 &
+PLUGIN_BACKEND_PID=$!
+echo -e "${GREEN}✅ Plugin Backend 已启动 (PID: $PLUGIN_BACKEND_PID)${NC}"
+sleep 2
+
+# 6. Plugin Service
+echo ""
+echo -e "${YELLOW}6️⃣  启动Plugin Service (9000)...${NC}"
+cd "$PROJECT_ROOT/service/plugin-service"
+nohup python main.py > logs/plugin_service_nohup.log 2>&1 &
+PLUGIN_SERVICE_PID=$!
+echo -e "${GREEN}✅ Plugin Service 已启动 (PID: $PLUGIN_SERVICE_PID)${NC}"
+sleep 2
 
 echo ""
 echo "=========================================="
@@ -85,21 +96,26 @@ echo "✅ 所有服务启动完成！"
 echo "=========================================="
 echo ""
 echo "📍 服务地址："
-echo "  - Backend API:    http://localhost:8000"
-echo "  - Flower监控:     http://localhost:5555/flower"
-echo "  - Plugin API:     http://localhost:9001 (可选)"
+echo "  - Backend API:        http://localhost:8000"
+echo "  - Flower监控:         http://localhost:5555/flower"
+echo "  - Plugin Backend:     http://localhost:9002 (内部服务)"
+echo "  - Plugin Service:     http://localhost:9000"
 echo ""
 echo "📊 进程ID："
-echo "  - Backend:        $BACKEND_PID"
-echo "  - MQTT服务:       $MQTT_PID"
-echo "  - Celery Worker:  $WORKER_PID"
-echo "  - Flower:         $FLOWER_PID"
+echo "  - Backend:            $BACKEND_PID"
+echo "  - MQTT服务:           $MQTT_PID"
+echo "  - Celery Worker:      $WORKER_PID"
+echo "  - Flower:             $FLOWER_PID"
+echo "  - Plugin Backend:     $PLUGIN_BACKEND_PID"
+echo "  - Plugin Service:     $PLUGIN_SERVICE_PID"
 echo ""
 echo "📝 查看日志："
-echo "  - Backend:        tail -f backend/logs/backend_nohup.log"
-echo "  - MQTT:           tail -f service/mqtt-service/logs/mqtt_nohup.log"
-echo "  - Celery:         tail -f service/celery-service/logs/worker_nohup.log"
-echo "  - Flower:         tail -f service/celery-service/logs/flower_nohup.log"
+echo "  - Backend:            tail -f backend/logs/backend_nohup.log"
+echo "  - MQTT:               tail -f service/mqtt-service/logs/mqtt_nohup.log"
+echo "  - Celery:             tail -f service/celery-service/logs/worker_nohup.log"
+echo "  - Flower:             tail -f service/celery-service/logs/flower_nohup.log"
+echo "  - Plugin Backend:     tail -f service/plugin-backend-service/logs/plugin_backend_nohup.log"
+echo "  - Plugin Service:     tail -f service/plugin-service/logs/plugin_service_nohup.log"
 echo ""
 echo "🛑 停止所有服务："
 echo "  bash 停止所有服务.sh"
