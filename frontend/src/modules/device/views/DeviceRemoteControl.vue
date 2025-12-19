@@ -510,22 +510,17 @@ const loadDeviceInfo = async () => {
   }
 }
 
-// 加载预设指令（包含系统默认和用户自定义）
+// 加载预设指令（仅显示用户自定义）
 const loadPresets = async () => {
   if (!deviceUuid.value) return
   
   loadingPresets.value = true
   try {
-    // 加载系统默认预设指令
-    const response = await getDevicePresets(deviceUuid.value)
-    const systemPresets = (response.data && response.data.presets) ? response.data.presets : []
-    
-    // 加载用户自定义预设指令
+    // 仅加载用户自定义预设指令
     let customPresets = []
     if (deviceConfig.value && deviceConfig.value.device_preset_commands) {
       customPresets = deviceConfig.value.device_preset_commands.map((preset, index) => {
         // 转换用户自定义预设为控制界面格式
-        // 检查是否是序列类型
         if (preset.type === 'sequence' || preset.steps) {
           return {
             id: `custom_preset_${index}`,
@@ -535,28 +530,27 @@ const loadPresets = async () => {
             description: preset.description || `自定义序列预设：${preset.name}`,
             steps: preset.steps || []
           }
-        } else {
-          return {
-            id: `custom_preset_${index}`,
-            name: preset.name,
-            type: 'preset',
-            cmd: 'preset',
-            device_type: preset.device_type, // 保持小写，固件需要小写格式
-            device_type_display: preset.device_type?.toUpperCase() || 'UNKNOWN', // 用于显示的大写版本
-            device_id: preset.device_id || 0,
-            preset_type: preset.preset_type,
-            description: `自定义预设：${preset.name}`,
-            control_type: preset.preset_type, // 用于界面渲染
-            parameters: preset.parameters || {}
-          }
+        }
+        return {
+          id: `custom_preset_${index}`,
+          name: preset.name,
+          type: 'preset',
+          cmd: 'preset',
+          device_type: preset.device_type, // 保持小写，固件需要小写格式
+          device_type_display: preset.device_type?.toUpperCase() || 'UNKNOWN', // 用于显示的大写版本
+          device_id: preset.device_id || 0,
+          preset_type: preset.preset_type,
+          description: `自定义预设：${preset.name}`,
+          control_type: preset.preset_type, // 用于界面渲染
+          parameters: preset.parameters || {}
         }
       })
       logger.info('加载用户自定义预设指令:', customPresets)
     }
     
-    // 合并系统预设和用户自定义预设
-    presets.value = [...systemPresets, ...customPresets]
-    logger.info('总预设指令数:', presets.value.length, '(系统:', systemPresets.length, ', 自定义:', customPresets.length, ')')
+    // 只显示自定义预设
+    presets.value = customPresets
+    logger.info('总预设指令数:', presets.value.length, '(仅自定义)')
       
       // 初始化控制值
       presets.value.forEach(preset => {
