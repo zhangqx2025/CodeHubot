@@ -217,6 +217,7 @@
                 设备详情
               </el-button>
               <el-button 
+                v-if="canConfigDevice(device)"
                 type="info" 
                 size="small" 
                 @click.stop="navigateToDeviceConfig(device)"
@@ -640,11 +641,34 @@ const navigateToDeviceDetail = (device) => {
   router.push(`/device/${device.uuid}/detail`)
 }
 
+// 判断用户是否有权限配置设备
+const canConfigDevice = (device) => {
+  // 管理员可以配置所有设备
+  if (userStore.isPlatformAdmin || userStore.isSchoolAdmin) {
+    return true
+  }
+  
+  // 学生只能配置自己注册的设备，不能配置授权获得的设备
+  if (userStore.userInfo?.role === 'student') {
+    return device.user_id === userStore.user?.id
+  }
+  
+  // 其他用户（教师等）可以配置自己的设备
+  return device.user_id === userStore.user?.id
+}
+
 const navigateToDeviceConfig = (device) => {
   if (!device.uuid) {
     ElMessage.warning('设备UUID未生成，无法访问设备配置页面')
     return
   }
+  
+  // 再次检查权限
+  if (!canConfigDevice(device)) {
+    ElMessage.warning('您没有权限配置此设备')
+    return
+  }
+  
   router.push(`/device/${device.uuid}/config`)
 }
 
