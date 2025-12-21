@@ -52,7 +52,7 @@
     <!-- 操作工具栏 -->
     <div class="toolbar">
       <div class="toolbar-left">
-        <el-button type="primary" @click="$router.push('/device-register')" class="action-btn">
+        <el-button type="primary" @click="$router.push('/device/device-register')" class="action-btn">
           <el-icon><Plus /></el-icon>
           添加设备
         </el-button>
