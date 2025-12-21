@@ -180,7 +180,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Key, Check, List, Delete, School, UserFilled } from '@element-plus/icons-vue'
 import { getDevices } from '@/api/device'
@@ -289,6 +289,12 @@ const handleDeviceChange = async (deviceUuid) => {
     await loadDeviceAuthorizations(deviceUuid)
   } else {
     deviceAuthorizations.value = []
+    // 清空选中的小组
+    if (groupTreeRef.value) {
+      groupTreeRef.value.setCheckedKeys([])
+    }
+    selectedGroups.value = []
+    authorizationForm.group_ids = []
   }
 }
 
@@ -301,6 +307,38 @@ const loadDeviceAuthorizations = async (deviceUuid) => {
       page_size: 100
     })
     deviceAuthorizations.value = response.data?.authorizations || response.authorizations || []
+    
+    // 自动选中已授权的小组
+    if (deviceAuthorizations.value.length > 0 && groupTreeRef.value) {
+      // 提取已授权的小组ID
+      const authorizedGroupIds = deviceAuthorizations.value.map(auth => auth.group_id)
+      
+      // 使用 nextTick 确保树形控件已经渲染完成
+      await nextTick()
+      
+      // 设置选中状态
+      groupTreeRef.value.setCheckedKeys(authorizedGroupIds)
+      
+      // 更新选中的小组列表
+      selectedGroups.value = authorizedGroupIds.map(id => {
+        const node = findNodeById(groupTreeData.value, id)
+        return node ? {
+          id: node.id,
+          name: node.name,
+          member_count: node.member_count
+        } : null
+      }).filter(item => item !== null)
+      
+      // 更新表单数据
+      authorizationForm.group_ids = authorizedGroupIds
+      
+      ElMessage.success(`已自动选中 ${authorizedGroupIds.length} 个已授权的小组`)
+    } else if (groupTreeRef.value) {
+      // 如果没有授权记录，清空选中状态
+      groupTreeRef.value.setCheckedKeys([])
+      selectedGroups.value = []
+      authorizationForm.group_ids = []
+    }
   } catch (error) {
     console.error('加载授权记录失败:', error)
     ElMessage.error('加载授权记录失败')
