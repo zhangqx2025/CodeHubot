@@ -8,7 +8,7 @@ from .llm_provider import LLMProvider
 from .school import School
 from .firmware import Firmware
 from .course_model import Course, CourseTeacher, CourseStudent, CourseGroup, GroupMember
-from .knowledge_base import KnowledgeBase
+from .knowledge_base import KnowledgeBase, AgentKnowledgeBase, KBPermission, KBSharing, UnitKnowledgeBase, KnowledgeUsageLog
 from .document import Document, DocumentChunk
 from .kb_analytics import KBRetrievalLog, KBAnalytics
 from .device_group import DeviceGroup, DeviceGroupMember
@@ -25,7 +25,8 @@ __all__ = [
     "User", "Product", "Device", "Agent", "Plugin", 
     "LLMModel", "LLMProvider", "School", "Firmware",
     "Course", "CourseTeacher", "CourseStudent", "CourseGroup", "GroupMember",
-    "KnowledgeBase", "Document", "DocumentChunk",
+    "KnowledgeBase", "AgentKnowledgeBase", "KBPermission", "KBSharing", "UnitKnowledgeBase", "KnowledgeUsageLog",
+    "Document", "DocumentChunk",
     "KBRetrievalLog", "KBAnalytics",
     "DeviceGroup", "DeviceGroupMember", "DeviceBindingHistory",
     "PBLGroupDeviceAuthorization",

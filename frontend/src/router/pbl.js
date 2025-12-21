@@ -22,6 +22,15 @@ const studentRoutes = {
       meta: { title: '课程详情' }
     },
     {
+      path: 'units/:uuid',
+      name: 'StudentUnitLearning',
+      component: () => import('@pbl/student/views/UnitLearning.vue'),
+      meta: { 
+        title: '单元学习',
+        hideSidebar: true  // 隐藏侧边栏，全屏显示
+      }
+    },
+    {
       path: 'tasks',
       name: 'StudentTasks',
       component: () => import('@pbl/student/views/MyTasks.vue'),
@@ -88,45 +97,37 @@ const schoolRoutes = {
       name: 'SchoolDashboard',
       component: () => import('@pbl/school/views/SchoolDashboard.vue'),
       meta: { 
-        title: '管理概览',
+        title: '概览',
         roles: ['school_admin', 'teacher']
       }
     },
-    // 学校管理员专用功能
+    // 学校管理员专用功能 - 用户管理
     {
-      path: 'teachers',
-      name: 'SchoolTeacherManagement',
-      component: () => import('@pbl/admin/views/TeacherManagement.vue'),
+      path: 'users',
+      name: 'SchoolUserManagement',
+      component: () => import('@pbl/school/views/SchoolUserManagement.vue'),
       meta: { 
-        title: '教师管理',
+        title: '用户管理',
         roles: ['school_admin']
       }
     },
-    {
-      path: 'students',
-      name: 'SchoolStudentManagement',
-      component: () => import('@pbl/admin/views/StudentManagement.vue'),
-      meta: { 
-        title: '学生管理',
-        roles: ['school_admin']
-      }
-    },
+    // 项目式课程管理（班级管理）
     {
       path: 'classes',
       name: 'SchoolClasses',
-      component: () => import('@pbl/admin/views/ClassManagement.vue'),
+      component: () => import('@pbl/school/views/ClubClasses.vue'),
       meta: { 
-        title: '班级管理',
-        roles: ['school_admin']
+        title: '项目式课程管理',
+        roles: ['school_admin', 'teacher']
       }
     },
     {
       path: 'classes/:uuid',
       name: 'SchoolClassDetail',
-      component: () => import('@pbl/admin/views/AdminClassDetail.vue'),
+      component: () => import('@pbl/school/views/ClassDetail.vue'),
       meta: {
         title: '班级详情',
-        roles: ['school_admin']
+        roles: ['school_admin', 'teacher']
       }
     },
     {
@@ -135,7 +136,7 @@ const schoolRoutes = {
       component: () => import('@pbl/admin/views/AdminClassEdit.vue'),
       meta: {
         title: '编辑班级',
-        roles: ['school_admin']
+        roles: ['school_admin', 'teacher']
       }
     },
     {
@@ -144,16 +145,7 @@ const schoolRoutes = {
       component: () => import('@pbl/admin/views/AdminClassMembers.vue'),
       meta: {
         title: '成员管理',
-        roles: ['school_admin']
-      }
-    },
-    {
-      path: 'classes/:uuid/courses',
-      name: 'SchoolClassCourses',
-      component: () => import('@pbl/admin/views/AdminClassCourses.vue'),
-      meta: {
-        title: '课程管理',
-        roles: ['school_admin']
+        roles: ['school_admin', 'teacher']
       }
     },
     {
@@ -161,8 +153,8 @@ const schoolRoutes = {
       name: 'SchoolClassGroups',
       component: () => import('@pbl/admin/views/AdminClassGroups.vue'),
       meta: {
-        title: '小组管理',
-        roles: ['school_admin']
+        title: '分组管理',
+        roles: ['school_admin', 'teacher']
       }
     },
     {
@@ -175,21 +167,21 @@ const schoolRoutes = {
       }
     },
     {
+      path: 'classes/:uuid/courses',
+      name: 'SchoolClassCourses',
+      component: () => import('@pbl/admin/views/AdminClassCourses.vue'),
+      meta: {
+        title: '课程管理',
+        roles: ['school_admin', 'teacher']
+      }
+    },
+    {
       path: 'classes/:uuid/progress',
       name: 'SchoolClassProgress',
       component: () => import('@pbl/admin/views/AdminClassProgress.vue'),
       meta: {
         title: '学习进度',
-        roles: ['school_admin']
-      }
-    },
-    {
-      path: 'classes/:classUuid/progress/units/:unitId',
-      name: 'SchoolClassUnitDetail',
-      component: () => import('@pbl/admin/views/AdminClassUnitDetail.vue'),
-      meta: {
-        title: '单元详情',
-        roles: ['school_admin']
+        roles: ['school_admin', 'teacher']
       }
     },
     {
@@ -198,32 +190,14 @@ const schoolRoutes = {
       component: () => import('@pbl/admin/views/AdminClassHomework.vue'),
       meta: {
         title: '作业管理',
-        roles: ['school_admin']
+        roles: ['school_admin', 'teacher']
       }
     },
-    {
-      path: 'classes/:uuid/homework/units/:unitId',
-      name: 'SchoolClassUnitHomework',
-      component: () => import('@pbl/admin/views/AdminClassUnitHomework.vue'),
-      meta: {
-        title: '单元作业',
-        roles: ['school_admin']
-      }
-    },
-    {
-      path: 'classes/:uuid/create-course',
-      name: 'SchoolClassCreateCourse',
-      component: () => import('@pbl/admin/views/AdminClassCreateCourse.vue'),
-      meta: {
-        title: '创建课程',
-        roles: ['school_admin']
-      }
-    },
-    // 学校管理员和教师共享功能
+    // 课程模板库
     {
       path: 'available-templates',
       name: 'SchoolAvailableTemplates',
-      component: () => import('@pbl/admin/views/AvailableTemplates.vue'),
+      component: () => import('@pbl/school/views/AvailableTemplates.vue'),
       meta: { 
         title: '课程模板库',
         roles: ['school_admin', 'teacher']
@@ -232,7 +206,7 @@ const schoolRoutes = {
     {
       path: 'template-detail/:uuid',
       name: 'SchoolTemplateDetail',
-      component: () => import('@pbl/admin/views/AdminTemplateDetail.vue'),
+      component: () => import('@pbl/school/views/TemplateDetail.vue'),
       meta: {
         title: '模板详情',
         roles: ['school_admin', 'teacher']

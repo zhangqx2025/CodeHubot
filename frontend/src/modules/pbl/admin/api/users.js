@@ -13,7 +13,7 @@ import request from '@/utils/request'
  */
 export function getUserList(params) {
   return request({
-    url: '/admin/users/list',
+    url: '/pbl/admin/users/list',
     method: 'get',
     params
   })
@@ -25,7 +25,7 @@ export function getUserList(params) {
  */
 export function getUserDetail(userId) {
   return request({
-    url: `/admin/users/${userId}`,
+    url: `/pbl/admin/users/${userId}`,
     method: 'get'
   })
 }
@@ -36,7 +36,7 @@ export function getUserDetail(userId) {
  */
 export function createUser(data) {
   return request({
-    url: '/admin/users',
+    url: '/pbl/admin/users',
     method: 'post',
     data
   })
@@ -49,7 +49,7 @@ export function createUser(data) {
  */
 export function updateUser(userId, data) {
   return request({
-    url: `/admin/users/${userId}`,
+    url: `/pbl/admin/users/${userId}`,
     method: 'put',
     data
   })
@@ -61,7 +61,7 @@ export function updateUser(userId, data) {
  */
 export function deleteUser(userId) {
   return request({
-    url: `/admin/users/${userId}`,
+    url: `/pbl/admin/users/${userId}`,
     method: 'delete'
   })
 }
@@ -72,7 +72,7 @@ export function deleteUser(userId) {
  */
 export function toggleUserActive(userId) {
   return request({
-    url: `/admin/users/${userId}/toggle-active`,
+    url: `/pbl/admin/users/${userId}/toggle-active`,
     method: 'patch'
   })
 }
@@ -84,7 +84,7 @@ export function toggleUserActive(userId) {
  */
 export function resetUserPassword(userId, newPassword) {
   return request({
-    url: `/admin/users/${userId}/reset-password`,
+    url: `/pbl/admin/users/${userId}/reset-password`,
     method: 'post',
     data: { new_password: newPassword }
   })
@@ -99,7 +99,7 @@ export function batchImportStudents(file) {
   formData.append('file', file)
   
   return request({
-    url: '/admin/users/batch-import/students',
+    url: '/pbl/admin/users/batch-import/students',
     method: 'post',
     data: formData,
     headers: {
@@ -117,7 +117,7 @@ export function batchImportTeachers(file) {
   formData.append('file', file)
   
   return request({
-    url: '/admin/users/batch-import/teachers',
+    url: '/pbl/admin/users/batch-import/teachers',
     method: 'post',
     data: formData,
     headers: {

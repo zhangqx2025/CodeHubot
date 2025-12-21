@@ -804,6 +804,90 @@ def delete_school(
     return success_response(message="学校删除成功")
 
 
+@router.get("/{school_uuid}/users")
+def get_school_users(
+    school_uuid: str,
+    skip: int = 0,
+    limit: int = 20,
+    role: Optional[str] = None,
+    keyword: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    获取学校用户列表（教师和学生）
+    权限：学校管理员只能查看自己学校的用户
+    """
+    # 检查学校是否存在
+    school = db.query(School).filter(School.uuid == school_uuid).first()
+    if not school:
+        return error_response(
+            message="学校不存在",
+            code=404,
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+    
+    # 权限检查
+    if current_admin.role == 'school_admin' and current_admin.school_id != school.id:
+        return error_response(
+            message="无权限查看其他学校用户",
+            code=403,
+            status_code=status.HTTP_403_FORBIDDEN
+        )
+    
+    # 构建查询
+    query = db.query(User).filter(
+        User.school_id == school.id,
+        User.deleted_at == None
+    )
+    
+    # 角色筛选
+    if role:
+        query = query.filter(User.role == role)
+    else:
+        # 默认只查询教师和学生
+        query = query.filter(User.role.in_(['teacher', 'student']))
+    
+    # 关键词搜索
+    if keyword:
+        query = query.filter(
+            (User.name.like(f'%{keyword}%')) |
+            (User.real_name.like(f'%{keyword}%')) |
+            (User.username.like(f'%{keyword}%')) |
+            (User.teacher_number.like(f'%{keyword}%')) |
+            (User.student_number.like(f'%{keyword}%'))
+        )
+    
+    # 总数
+    total = query.count()
+    
+    # 分页
+    users = query.offset(skip).limit(limit).all()
+    
+    # 序列化结果
+    result = []
+    for user in users:
+        result.append({
+            'id': user.id,
+            'username': user.username,
+            'name': user.name or user.real_name,
+            'role': user.role,
+            'teacher_number': user.teacher_number,
+            'student_number': user.student_number,
+            'gender': user.gender,
+            'phone': user.phone,
+            'email': user.email,
+            'is_active': user.is_active,
+            'created_at': user.created_at.isoformat() if user.created_at else None
+        })
+    
+    return success_response(data={
+        'items': result,
+        'total': total,
+        'skip': skip,
+        'limit': limit
+    })
+
 @router.get("/{school_uuid}/statistics")
 def get_school_statistics(
     school_uuid: str,

@@ -125,7 +125,7 @@ const loadClassDetail = async () => {
   try {
     const uuid = route.params.uuid
     const res = await getClubClassDetail(uuid)
-    const data = res.data.data
+    const data = res.data
     
     Object.assign(classForm, {
       name: data.name,

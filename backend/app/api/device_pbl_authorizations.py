@@ -69,67 +69,83 @@ async def create_pbl_device_authorizations(
             detail="设备不存在"
         )
     
-    # 检查设备所有权（教师只能授权自己注册的设备）
+    # 检查设备所有权和权限
     if current_user.role == 'teacher':
+        # 教师只能授权自己注册的设备
         if device.user_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="只能授权自己注册的设备"
             )
+        # 教师只能授权本校设备
+        if device.school_id != current_user.school_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只能授权本校设备"
+            )
+    elif current_user.role == 'school_admin':
+        # 学校管理员只能授权本校设备
+        if device.school_id != current_user.school_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只能授权本校设备"
+            )
+    # platform_admin 可以授权任何设备
     
-    # 验证小组（从PBL表直接查询）
-    # 1. 查询教师所在的班级
-    teacher_classes = db.execute(text("""
-        SELECT class_id FROM pbl_class_teachers 
-        WHERE teacher_id = :teacher_id
-    """), {"teacher_id": current_user.id}).fetchall()
-    
-    if not teacher_classes:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="不是任何班级的教师，无法授权设备"
-        )
-    
-    class_ids = [c[0] for c in teacher_classes]
-    
-    # 2. 查询这些班级的课程
-    courses = db.execute(text("""
-        SELECT id FROM pbl_courses 
-        WHERE class_id IN :class_ids
-    """), {"class_ids": tuple(class_ids)}).fetchall()
-    
-    course_ids = [c[0] for c in courses] if courses else []
-    
-    if not course_ids:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="您所在的班级没有课程，无法授权设备"
-        )
-    
-    # 3. 验证小组是否属于这些课程
-    valid_groups = db.execute(text("""
-        SELECT id, name FROM pbl_groups 
-        WHERE id IN :group_ids 
-          AND course_id IN :course_ids
-          AND is_active = 1
-    """), {
-        "group_ids": tuple(auth_data.group_ids),
-        "course_ids": tuple(course_ids)
-    }).fetchall()
+    # 验证小组
+    if current_user.role == 'platform_admin' or is_admin_user(current_user):
+        # 平台管理员可以授权给任何小组
+        valid_groups = db.execute(text("""
+            SELECT id, name FROM pbl_groups 
+            WHERE id IN :group_ids 
+              AND is_active = 1
+        """), {
+            "group_ids": tuple(auth_data.group_ids)
+        }).fetchall()
+    elif current_user.role == 'school_admin':
+        # 学校管理员只能授权给本校的小组
+        valid_groups = db.execute(text("""
+            SELECT g.id, g.name 
+            FROM pbl_groups g
+            JOIN pbl_classes c ON g.class_id = c.id
+            WHERE g.id IN :group_ids 
+              AND c.school_id = :school_id
+              AND g.is_active = 1
+        """), {
+            "group_ids": tuple(auth_data.group_ids),
+            "school_id": current_user.school_id
+        }).fetchall()
+    else:  # teacher
+        # 教师只能授权给自己教的班级的小组
+        teacher_classes = db.execute(text("""
+            SELECT class_id FROM pbl_class_teachers 
+            WHERE teacher_id = :teacher_id
+        """), {"teacher_id": current_user.id}).fetchall()
+        
+        if not teacher_classes:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="不是任何班级的教师，无法授权设备"
+            )
+        
+        class_ids = [c[0] for c in teacher_classes]
+        
+        valid_groups = db.execute(text("""
+            SELECT id, name FROM pbl_groups 
+            WHERE id IN :group_ids 
+              AND class_id IN :class_ids
+              AND is_active = 1
+        """), {
+            "group_ids": tuple(auth_data.group_ids),
+            "class_ids": tuple(class_ids)
+        }).fetchall()
     
     valid_group_ids = [g[0] for g in valid_groups]
     
     if len(valid_group_ids) != len(auth_data.group_ids):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="部分小组不属于您授课的课程或不存在"
-        )
-    
-    # 4. 检查设备是否属于本校
-    if device.school_id != current_user.school_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="只能授权本校设备"
+            detail="部分小组不属于您的权限范围或不存在"
         )
     
     # 5. 批量创建授权记录
@@ -174,13 +190,11 @@ async def create_pbl_device_authorizations(
     # 构造响应数据
     auth_responses = []
     for auth in created_authorizations:
-        # 查询小组信息
+        # 查询小组信息（直接从班级关联）
         group_info = db.execute(text("""
-            SELECT g.name, g.course_id, c.title as course_name, 
-                   c.class_id, cl.name as class_name
+            SELECT g.name, g.class_id, cl.name as class_name
             FROM pbl_groups g
-            JOIN pbl_courses c ON g.course_id = c.id
-            JOIN pbl_classes cl ON c.class_id = cl.id
+            LEFT JOIN pbl_classes cl ON g.class_id = cl.id
             WHERE g.id = :group_id
         """), {"group_id": auth.group_id}).fetchone()
         
@@ -234,11 +248,20 @@ async def get_pbl_device_authorizations(
         )
     
     # 权限检查：只有设备所有者或管理员可以查看授权列表
-    if current_user.role == 'teacher' and device.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="只能查看自己设备的授权列表"
-        )
+    if current_user.role == 'teacher':
+        if device.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只能查看自己设备的授权列表"
+            )
+    elif current_user.role == 'school_admin':
+        # 学校管理员只能查看本校设备的授权列表
+        if device.school_id != current_user.school_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只能查看本校设备的授权列表"
+            )
+    # platform_admin 可以查看任何设备的授权列表
     
     # 查询授权记录
     query = db.query(PBLGroupDeviceAuthorization).filter(
@@ -255,13 +278,11 @@ async def get_pbl_device_authorizations(
     # 构造响应数据
     auth_responses = []
     for auth in authorizations:
-        # 查询小组信息
+        # 查询小组信息（直接从班级关联）
         group_info = db.execute(text("""
-            SELECT g.name, g.course_id, c.title as course_name, 
-                   c.class_id, cl.name as class_name
+            SELECT g.name, g.class_id, cl.name as class_name
             FROM pbl_groups g
-            JOIN pbl_courses c ON g.course_id = c.id
-            JOIN pbl_classes cl ON c.class_id = cl.id
+            LEFT JOIN pbl_classes cl ON g.class_id = cl.id
             WHERE g.id = :group_id
         """), {"group_id": auth.group_id}).fetchone()
         
@@ -328,11 +349,20 @@ async def revoke_pbl_device_authorization(
         )
     
     # 权限检查：只有设备所有者或管理员可以撤销授权
-    if current_user.role == 'teacher' and device.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="只能撤销自己设备的授权"
-        )
+    if current_user.role == 'teacher':
+        if device.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只能撤销自己设备的授权"
+            )
+    elif current_user.role == 'school_admin':
+        # 学校管理员只能撤销本校设备的授权
+        if device.school_id != current_user.school_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只能撤销本校设备的授权"
+            )
+    # platform_admin 可以撤销任何设备的授权
     
     # 删除授权记录
     db.delete(authorization)
@@ -358,11 +388,20 @@ async def revoke_pbl_device_authorizations_batch(
         )
     
     # 权限检查：只有设备所有者或管理员可以撤销授权
-    if current_user.role == 'teacher' and device.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="只能撤销自己设备的授权"
-        )
+    if current_user.role == 'teacher':
+        if device.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只能撤销自己设备的授权"
+            )
+    elif current_user.role == 'school_admin':
+        # 学校管理员只能撤销本校设备的授权
+        if device.school_id != current_user.school_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只能撤销本校设备的授权"
+            )
+    # platform_admin 可以撤销任何设备的授权
     
     # 查询授权记录
     query = db.query(PBLGroupDeviceAuthorization).filter(
@@ -390,15 +429,25 @@ async def get_authorizable_groups(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """查询教师可授权的小组列表（用于前端选择）"""
-    # 管理员可以查看所有班级的小组
-    if is_admin_user(current_user) or current_user.role in ['platform_admin', 'school_admin']:
+    """查询教师可授权的小组列表（用于前端选择）- 两级结构：班级 -> 小组"""
+    # 平台管理员可以查看所有学校的班级
+    if is_admin_user(current_user) or current_user.role == 'platform_admin':
         # 查询所有活跃的班级
         teacher_classes = db.execute(text("""
             SELECT c.id as class_id, c.name as class_name
             FROM pbl_classes c
             WHERE c.is_active = 1
         """)).fetchall()
+    # 学校管理员只能查看本学校的班级
+    elif current_user.role == 'school_admin':
+        if not current_user.school_id:
+            return PBLAuthorizableGroupsResponse(classes=[])
+        teacher_classes = db.execute(text("""
+            SELECT c.id as class_id, c.name as class_name
+            FROM pbl_classes c
+            WHERE c.is_active = 1
+              AND c.school_id = :school_id
+        """), {"school_id": current_user.school_id}).fetchall()
     # 教师或其他用户查询自己可授权的班级
     else:
         # 查询教师所在的班级（从PBL表直接查询）
@@ -415,66 +464,44 @@ async def get_authorizable_groups(
     
     class_ids = [c[0] for c in teacher_classes]
     
-    # 查询这些班级的课程
-    courses = db.execute(text("""
-        SELECT id, title, class_id FROM pbl_courses 
-        WHERE class_id IN :class_ids
-    """), {"class_ids": tuple(class_ids)}).fetchall()
-    
-    course_ids = [c[0] for c in courses] if courses else []
-    
-    if not course_ids:
-        return PBLAuthorizableGroupsResponse(classes=[])
-    
-    # 查询这些课程的小组
+    # 直接查询这些班级下的所有小组（直接通过class_id关联）
     groups = db.execute(text("""
-        SELECT g.id, g.name, g.course_id, 
+        SELECT g.id, g.name, g.class_id, 
                COUNT(gm.id) as member_count
         FROM pbl_groups g
         LEFT JOIN pbl_group_members gm ON g.id = gm.group_id AND gm.is_active = 1
-        WHERE g.course_id IN :course_ids
+        WHERE g.class_id IN :class_ids
           AND g.is_active = 1
-        GROUP BY g.id, g.name, g.course_id
-        ORDER BY g.course_id, g.id
-    """), {"course_ids": tuple(course_ids)}).fetchall()
+        GROUP BY g.id, g.name, g.class_id
+        ORDER BY g.class_id, g.id
+    """), {"class_ids": tuple(class_ids)}).fetchall()
     
-    # 组装数据：班级 -> 课程 -> 小组
+    # 组装数据：班级 -> 小组（两级结构）
     classes_dict = {}
     for class_id, class_name in teacher_classes:
         if class_id not in classes_dict:
             classes_dict[class_id] = {
                 "class_id": class_id,
                 "class_name": class_name,
-                "courses": {}
-            }
-    
-    for course_id, course_title, course_class_id in courses:
-        if course_class_id in classes_dict:
-            classes_dict[course_class_id]["courses"][course_id] = {
-                "course_id": course_id,
-                "course_name": course_title,
                 "groups": []
             }
     
-    for group_id, group_name, group_course_id, member_count in groups:
-        for class_data in classes_dict.values():
-            if group_course_id in class_data["courses"]:
-                class_data["courses"][group_course_id]["groups"].append({
-                    "group_id": group_id,
-                    "group_name": group_name,
-                    "member_count": member_count
-                })
+    # 将小组直接添加到班级下
+    for group_id, group_name, group_class_id, member_count in groups:
+        if group_class_id in classes_dict:
+            classes_dict[group_class_id]["groups"].append({
+                "group_id": group_id,
+                "group_name": group_name,
+                "member_count": member_count
+            })
     
     # 转换为列表格式
     classes_list = []
     for class_data in classes_dict.values():
-        courses_list = []
-        for course_data in class_data["courses"].values():
-            courses_list.append(course_data)
         classes_list.append({
             "class_id": class_data["class_id"],
             "class_name": class_data["class_name"],
-            "courses": courses_list
+            "groups": class_data["groups"]
         })
     
     return PBLAuthorizableGroupsResponse(classes=classes_list)

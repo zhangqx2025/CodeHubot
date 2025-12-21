@@ -147,8 +147,9 @@ const submissionContent = ref(null)
 const loadTasks = async () => {
   loading.value = true
   try {
-    const response = await request.get('student/my-tasks')
-    tasks.value = response.data.data || []
+    const response = await request.get('/pbl/student/my-tasks')
+    // response.data 已经是后端返回的 data 字段（拦截器已处理）
+    tasks.value = response.data || []
   } catch (error) {
     console.error('加载任务列表失败:', error)
     ElMessage.error('加载任务列表失败')
@@ -161,8 +162,9 @@ const loadTasks = async () => {
 const viewSubmission = async (task) => {
   try {
     // 获取任务详情（包含提交内容）
-    const response = await request.get(`/student/tasks/${task.task_uuid}`)
-    const taskDetail = response.data.data
+    const response = await request.get(`/pbl/student/tasks/${task.task_uuid}`)
+    // response.data 已经是后端返回的 data 字段（拦截器已处理）
+    const taskDetail = response.data
     
     currentTask.value = {
       ...task,

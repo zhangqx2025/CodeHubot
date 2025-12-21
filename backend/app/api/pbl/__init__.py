@@ -144,4 +144,10 @@ try:
 except ImportError as e:
     print(f"警告: 无法导入channel_management: {e}")
 
+try:
+    from app.api.pbl.learning_progress import router as learning_progress_router
+    pbl_router.include_router(learning_progress_router, prefix="/student/learning-progress", tags=["PBL-学习进度"])
+except ImportError as e:
+    print(f"警告: 无法导入learning_progress: {e}")
+
 print(f"✓ PBL路由注册完成，已注册 {len(pbl_router.routes)} 个路由")

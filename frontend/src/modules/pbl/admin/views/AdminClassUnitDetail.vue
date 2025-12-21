@@ -202,7 +202,7 @@ const filteredStudents = computed(() => {
 const loadClassName = async () => {
   try {
     const res = await getClubClassDetail(route.params.classUuid)
-    className.value = res.data.data.name
+    className.value = res.data?.name
   } catch (error) {
     console.error('加载班级名称失败:', error)
   }
@@ -213,13 +213,13 @@ const loadUnitDetail = async () => {
   loadingDetail.value = true
   try {
     const res = await request({
-      url: `/admin/club/classes/${route.params.classUuid}/progress/units/${route.params.unitId}`,
+      url: `/pbl/admin/club/classes/${route.params.classUuid}/progress/units/${route.params.unitId}`,
       method: 'get',
       params: {
         search: searchKeyword.value || undefined
       }
     })
-    unitDetail.value = res.data.data
+    unitDetail.value = res.data
   } catch (error) {
     ElMessage.error(error.message || '加载单元详情失败')
   } finally {

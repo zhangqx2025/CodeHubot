@@ -33,6 +33,12 @@ export default [
         component: () => import('@device/views/Devices.vue'),
         meta: { title: '设备列表' }
       },
+      {
+        path: 'firmware-flasher',
+        name: 'FirmwareFlasher',
+        component: () => import('@device/views/FirmwareFlasher.vue'),
+        meta: { title: '固件烧录' }
+      },
       // 注意：更具体的路由必须放在更通用的路由之前
       {
         path: ':uuid/realtime',

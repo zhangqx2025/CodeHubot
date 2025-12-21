@@ -7,7 +7,7 @@ import request from '@/utils/request'
  */
 export const assignCourseToSchool = (data) => {
   return request({
-    url: '/admin/school-courses/assign',
+    url: '/pbl/admin/school-courses/assign',
     method: 'post',
     data
   })
@@ -20,7 +20,7 @@ export const assignCourseToSchool = (data) => {
  */
 export const batchAssignCourses = (data) => {
   return request({
-    url: '/admin/school-courses/batch-assign',
+    url: '/pbl/admin/school-courses/batch-assign',
     method: 'post',
     data
   })
@@ -34,7 +34,7 @@ export const batchAssignCourses = (data) => {
  */
 export const getSchoolCourses = (schoolId, params = {}) => {
   return request({
-    url: `/admin/school-courses/school/${schoolId}/courses`,
+    url: `/pbl/admin/school-courses/school/${schoolId}/courses`,
     method: 'get',
     params
   })
@@ -47,7 +47,7 @@ export const getSchoolCourses = (schoolId, params = {}) => {
  */
 export const getAllSchoolCourses = (params = {}) => {
   return request({
-    url: '/admin/school-courses/all',
+    url: '/pbl/admin/school-courses/all',
     method: 'get',
     params
   })
@@ -60,7 +60,7 @@ export const getAllSchoolCourses = (params = {}) => {
  */
 export const getCourseSchools = (courseId) => {
   return request({
-    url: `/admin/school-courses/course/${courseId}/schools`,
+    url: `/pbl/admin/school-courses/course/${courseId}/schools`,
     method: 'get'
   })
 }
@@ -73,7 +73,7 @@ export const getCourseSchools = (courseId) => {
  */
 export const updateSchoolCourse = (uuid, data) => {
   return request({
-    url: `/admin/school-courses/${uuid}`,
+    url: `/pbl/admin/school-courses/${uuid}`,
     method: 'put',
     data
   })
@@ -86,7 +86,7 @@ export const updateSchoolCourse = (uuid, data) => {
  */
 export const removeSchoolCourse = (uuid) => {
   return request({
-    url: `/admin/school-courses/${uuid}`,
+    url: `/pbl/admin/school-courses/${uuid}`,
     method: 'delete'
   })
 }
@@ -97,7 +97,7 @@ export const removeSchoolCourse = (uuid) => {
  */
 export const getAvailableCourses = () => {
   return request({
-    url: '/admin/school-courses/available',
+    url: '/pbl/admin/school-courses/available',
     method: 'get'
   })
 }
@@ -108,7 +108,7 @@ export const getAvailableCourses = () => {
  */
 export const getSchools = () => {
   return request({
-    url: '/admin/schools/list',
+    url: '/pbl/admin/schools/list',
     method: 'get'
   })
 }

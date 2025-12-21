@@ -378,7 +378,7 @@ const loadClasses = async () => {
     const response = await getClubClasses()
     
     if (response.data) {
-      classes.value = response.data.data || []
+      classes.value = response.data || []
     }
   } catch (error) {
     console.error('加载班级列表失败:', error)

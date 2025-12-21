@@ -200,7 +200,7 @@ const filteredTeachers = computed(() => {
 const loadClassName = async () => {
   try {
     const res = await getClubClassDetail(route.params.uuid)
-    className.value = res.data.data.name
+    className.value = res.data?.name
   } catch (error) {
     console.error('加载班级名称失败:', error)
   }
@@ -211,10 +211,10 @@ const loadTeachers = async () => {
   loading.value = true
   try {
     const res = await request({
-      url: `/admin/club/classes/${route.params.uuid}/teachers`,
+      url: `/pbl/admin/club/classes/${route.params.uuid}/teachers`,
       method: 'get'
     })
-    teachers.value = res.data.data || []
+    teachers.value = res.data || []
   } catch (error) {
     ElMessage.error(error.message || '加载教师列表失败')
   } finally {
@@ -227,7 +227,7 @@ const loadAvailableTeachers = async () => {
   loadingTeachers.value = true
   try {
     const res = await request({
-      url: '/admin/users/list',
+      url: '/pbl/admin/users/list',
       method: 'get',
       params: {
         role: 'teacher',
@@ -235,7 +235,7 @@ const loadAvailableTeachers = async () => {
       }
     })
     
-    let teacherList = res.data.data.items || []
+    let teacherList = res.data.items || []
     
     // 过滤掉已经添加的教师
     const existingTeacherIds = teachers.value.map(t => t.teacher_id)
@@ -267,7 +267,7 @@ const submitAddTeachers = async () => {
   addingTeachers.value = true
   try {
     await request({
-      url: `/admin/club/classes/${route.params.uuid}/teachers`,
+      url: `/pbl/admin/club/classes/${route.params.uuid}/teachers`,
       method: 'post',
       data: {
         teacher_ids: teacherForm.value.teacher_ids,
@@ -299,7 +299,7 @@ const handleTeacherAction = async (command, teacher) => {
       )
       
       await request({
-        url: `/admin/club/classes/${route.params.uuid}/teachers/${teacher.teacher_id}`,
+        url: `/pbl/admin/club/classes/${route.params.uuid}/teachers/${teacher.teacher_id}`,
         method: 'delete'
       })
       ElMessage.success('教师已移除')
@@ -313,7 +313,7 @@ const handleTeacherAction = async (command, teacher) => {
     // 更新角色
     try {
       await request({
-        url: `/admin/club/classes/${route.params.uuid}/teachers/${teacher.teacher_id}/role`,
+        url: `/pbl/admin/club/classes/${route.params.uuid}/teachers/${teacher.teacher_id}/role`,
         method: 'put',
         data: { role: command }
       })

@@ -31,6 +31,10 @@ class CreateClassRequest(BaseModel):
     description: Optional[str] = None
     template_id: Optional[int] = None
 
+class GroupMemberAddRequest(BaseModel):
+    """添加小组成员请求模型"""
+    student_ids: List[int]
+
 # ===== 班级管理 =====
 
 @router.get("/classes")
@@ -53,11 +57,10 @@ def get_classes(
     
     result = []
     for cls in classes:
-        # 统计班级学生数
-        student_count = db.query(User).filter(
-            User.class_id == cls.id,
-            User.role == 'student',
-            User.deleted_at == None
+        # 统计班级学生数（通过班级成员表）
+        student_count = db.query(PBLClassMember).filter(
+            PBLClassMember.class_id == cls.id,
+            PBLClassMember.is_active == 1
         ).count()
         
         result.append({
@@ -253,10 +256,13 @@ def get_class_students(
                 status_code=status.HTTP_403_FORBIDDEN
             )
     
-    # 查询班级中的学生
-    students = db.query(User).filter(
-        User.class_id == pbl_class.id,
-        User.role == 'student',
+    # 查询班级中的学生（通过班级成员表）
+    students = db.query(User).join(
+        PBLClassMember,
+        User.id == PBLClassMember.student_id
+    ).filter(
+        PBLClassMember.class_id == pbl_class.id,
+        PBLClassMember.is_active == 1,
         User.deleted_at == None
     ).all()
     
@@ -328,8 +334,26 @@ def add_students_to_class(
                 if student.school_id != current_admin.school_id:
                     continue
             
-            student.class_id = pbl_class.id
-            success_count += 1
+            # 检查是否已经在班级中
+            existing = db.query(PBLClassMember).filter(
+                PBLClassMember.class_id == pbl_class.id,
+                PBLClassMember.student_id == student_id
+            ).first()
+            
+            if existing:
+                # 如果已存在但不活跃，则激活
+                if existing.is_active == 0:
+                    existing.is_active = 1
+                    success_count += 1
+            else:
+                # 创建新的班级成员记录
+                member = PBLClassMember(
+                    class_id=pbl_class.id,
+                    student_id=student_id,
+                    is_active=1
+                )
+                db.add(member)
+                success_count += 1
     
     db.commit()
     
@@ -509,10 +533,13 @@ def get_available_students_for_group(
     if not group.class_id:
         return success_response(data=[])
     
-    # 查询该班级的所有学生
-    query = db.query(User).filter(
-        User.class_id == group.class_id,
-        User.role == 'student',
+    # 查询该班级的所有学生（通过班级成员表）
+    query = db.query(User).join(
+        PBLClassMember,
+        User.id == PBLClassMember.student_id
+    ).filter(
+        PBLClassMember.class_id == group.class_id,
+        PBLClassMember.is_active == 1,
         User.deleted_at == None
     )
     
@@ -557,7 +584,7 @@ def get_available_students_for_group(
 @router.post("/groups/{group_id}/add-members")
 def add_members_to_group(
     group_id: str,
-    student_ids: List[int],
+    request_data: GroupMemberAddRequest,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
@@ -580,7 +607,7 @@ def add_members_to_group(
         )
     
     success_count = 0
-    for student_id in student_ids:
+    for student_id in request_data.student_ids:
         student = db.query(User).filter(
             User.id == student_id,
             User.role == 'student'
@@ -1141,10 +1168,13 @@ def get_class_learning_progress(
                 status_code=status.HTTP_403_FORBIDDEN
             )
     
-    # 查询班级所有学生
-    students = db.query(User).filter(
-        User.class_id == pbl_class.id,
-        User.role == 'student',
+    # 查询班级所有学生（通过班级成员表）
+    students = db.query(User).join(
+        PBLClassMember,
+        User.id == PBLClassMember.student_id
+    ).filter(
+        PBLClassMember.class_id == pbl_class.id,
+        PBLClassMember.is_active == 1,
         User.deleted_at == None
     ).all()
     

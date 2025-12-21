@@ -81,7 +81,7 @@ const className = ref('')
 const loadClassName = async () => {
   try {
     const res = await getClubClassDetail(route.params.uuid)
-    className.value = res.data.data.name
+    className.value = res.data?.name
   } catch (error) {
     console.error('加载班级名称失败:', error)
   }
@@ -92,10 +92,10 @@ const loadUnitList = async () => {
   loading.value = true
   try {
     const res = await request({
-      url: `/admin/club/classes/${route.params.uuid}/progress/units`,
+      url: `/pbl/admin/club/classes/${route.params.uuid}/progress/units`,
       method: 'get'
     })
-    unitList.value = res.data.data || []
+    unitList.value = res.data || []
   } catch (error) {
     ElMessage.error(error.message || '加载单元列表失败')
   } finally {

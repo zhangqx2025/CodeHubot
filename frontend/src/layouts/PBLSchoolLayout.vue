@@ -2,7 +2,7 @@
   <el-container class="pbl-layout pbl-school-layout">
     <el-aside width="240px" class="layout-aside">
       <div class="logo-container">
-        <el-icon :size="28" color="#fcb69f"><School /></el-icon>
+        <el-icon :size="28" color="white"><School /></el-icon>
         <span class="logo-text">学校管理平台</span>
       </div>
       
@@ -11,49 +11,34 @@
         :router="true"
         class="layout-menu"
       >
-        <el-menu-item index="/pbl/school/dashboard">
-          <el-icon><HomeFilled /></el-icon>
-          <span>管理概览</span>
-        </el-menu-item>
-        
         <!-- 学校管理员功能 -->
         <template v-if="authStore.isSchoolAdmin">
-          <el-menu-item index="/pbl/school/teachers">
-            <el-icon><User /></el-icon>
-            <span>教师管理</span>
+          <el-menu-item index="/pbl/school/dashboard">
+            <el-icon><HomeFilled /></el-icon>
+            <span>概览</span>
           </el-menu-item>
           
-          <el-menu-item index="/pbl/school/students">
+          <el-menu-item index="/pbl/school/users">
             <el-icon><UserFilled /></el-icon>
-            <span>学生管理</span>
+            <span>用户管理</span>
           </el-menu-item>
           
           <el-menu-item index="/pbl/school/classes">
-            <el-icon><Notebook /></el-icon>
-            <span>班级管理</span>
+            <el-icon><School /></el-icon>
+            <span>项目式课程管理</span>
           </el-menu-item>
           
           <el-menu-item index="/pbl/school/available-templates">
-            <el-icon><Document /></el-icon>
+            <el-icon><Files /></el-icon>
             <span>课程模板库</span>
-          </el-menu-item>
-          
-          <el-menu-item index="/pbl/school/statistics">
-            <el-icon><TrendCharts /></el-icon>
-            <span>数据统计</span>
           </el-menu-item>
         </template>
         
-        <!-- 教师功能（受限） -->
-        <template v-if="authStore.isTeacher && !authStore.isSchoolAdmin">
-          <el-menu-item index="/pbl/school/my-classes">
-            <el-icon><Notebook /></el-icon>
-            <span>我的班级</span>
-          </el-menu-item>
-          
-          <el-menu-item index="/pbl/school/available-templates">
-            <el-icon><Document /></el-icon>
-            <span>课程模板库</span>
+        <!-- 教师功能 -->
+        <template v-else-if="authStore.isTeacher">
+          <el-menu-item index="/pbl/school/classes">
+            <el-icon><School /></el-icon>
+            <span>我的班级课程</span>
           </el-menu-item>
         </template>
       </el-menu>
@@ -122,7 +107,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  School, HomeFilled, User, UserFilled, Notebook, Document, TrendCharts, Grid, Lock, SwitchButton
+  School, HomeFilled, User, UserFilled, Files, Grid, Lock, SwitchButton
 } from '@element-plus/icons-vue'
 import UserProfileDialog from '@/components/UserProfileDialog.vue'
 
@@ -190,10 +175,32 @@ function handlePasswordChanged() {
 <style scoped lang="scss">
 .pbl-school-layout {
   height: 100vh;
+  overflow: hidden;
   
   .layout-aside {
-    background: linear-gradient(180deg, #ffecd2 0%, #fcb69f 100%);
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+    color: white;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
     
     .logo-container {
       height: 60px;
@@ -202,59 +209,70 @@ function handlePasswordChanged() {
       justify-content: center;
       gap: 12px;
       padding: 0 20px;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
       
       .logo-text {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 600;
-        color: #d35400;
+        color: white;
+        letter-spacing: 1px;
       }
     }
     
     .layout-menu {
       border: none;
       background: transparent;
-      padding: 10px;
+      padding: 10px 0;
       
       :deep(.el-menu-item) {
+        color: rgba(255, 255, 255, 0.75);
+        margin: 4px 12px;
         border-radius: 8px;
-        margin-bottom: 6px;
-        color: #8b5a3c;
-        transition: all 0.3s;
+        transition: all 0.3s ease;
         
         &:hover {
-          background: rgba(255, 255, 255, 0.3);
-          color: #d35400;
+          background: rgba(64, 158, 255, 0.15);
+          color: #409eff;
         }
         
         &.is-active {
-          background: rgba(255, 255, 255, 0.5);
-          color: #d35400;
-          font-weight: 600;
+          background: linear-gradient(90deg, #409eff 0%, #66b1ff 100%);
+          color: white;
+          font-weight: 500;
+          box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
         }
       }
     }
   }
   
+  // 主内容容器（包含 header 和 main）
+  > .el-container {
+    margin-left: 240px;
+  }
+  
   .layout-header {
     height: 60px;
     background: white;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #e4e7ed;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 24px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     
     .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      
       :deep(.el-breadcrumb__item) {
         .el-breadcrumb__inner {
           color: #606266;
           font-weight: 500;
           
           &:hover {
-            color: #fcb69f;
+            color: #409eff;
           }
         }
         
@@ -267,19 +285,19 @@ function handlePasswordChanged() {
     .header-right {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
       
       .user-dropdown {
         display: flex;
         align-items: center;
         gap: 8px;
         cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 20px;
-        transition: background 0.3s;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
         
         &:hover {
-          background: #f5f5f5;
+          background: #f5f7fa;
         }
         
         .user-name {
@@ -293,14 +311,15 @@ function handlePasswordChanged() {
   
   .layout-main {
     background: #f5f7fa;
-    padding: 20px;
+    padding: 24px;
+    height: calc(100vh - 60px);
     overflow-y: auto;
   }
 }
 
 .fade-transform-leave-active,
 .fade-transform-enter-active {
-  transition: all 0.3s;
+  transition: all 0.3s ease;
 }
 
 .fade-transform-enter-from {

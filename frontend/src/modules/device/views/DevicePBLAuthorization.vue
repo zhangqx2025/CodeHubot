@@ -68,7 +68,6 @@
             <template #default="{ node, data }">
               <span class="tree-node">
                 <el-icon v-if="data.type === 'class'" style="margin-right: 4px;"><School /></el-icon>
-                <el-icon v-else-if="data.type === 'course'" style="margin-right: 4px;"><Document /></el-icon>
                 <el-icon v-else style="margin-right: 4px;"><UserFilled /></el-icon>
                 {{ node.label }}
                 <el-tag v-if="data.type === 'group'" size="small" style="margin-left: 8px;">
@@ -143,7 +142,6 @@
         style="width: 100%"
       >
         <el-table-column prop="group_name" label="小组名称" min-width="150" />
-        <el-table-column prop="course_name" label="所属课程" min-width="150" />
         <el-table-column prop="class_name" label="所属班级" min-width="150" />
         <el-table-column prop="authorized_at" label="授权时间" width="180">
           <template #default="{ row }">
@@ -184,7 +182,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Key, Check, List, Delete, School, Document, UserFilled } from '@element-plus/icons-vue'
+import { Key, Check, List, Delete, School, UserFilled } from '@element-plus/icons-vue'
 import { getDevices } from '@/api/device'
 import {
   createPBLDeviceAuthorizations,
@@ -237,23 +235,18 @@ const rules = {
   ]
 }
 
-// 计算属性：将小组数据转换为树形结构
+// 计算属性：将小组数据转换为树形结构（两级：班级 -> 小组）
 const groupTreeData = computed(() => {
   const classes = rawGroupData.value || []
   return classes.map(cls => ({
     id: `class_${cls.class_id}`,
     name: cls.class_name,
     type: 'class',
-    children: cls.courses?.map(course => ({
-      id: `course_${course.course_id}`,
-      name: course.course_name,
-      type: 'course',
-      children: course.groups?.map(group => ({
-        id: group.group_id,
-        name: group.group_name,
-        type: 'group',
-        member_count: group.member_count
-      })) || []
+    children: cls.groups?.map(group => ({
+      id: group.group_id,
+      name: group.group_name,
+      type: 'group',
+      member_count: group.member_count
     })) || []
   }))
 })

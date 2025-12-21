@@ -306,11 +306,11 @@ const loadGroups = async () => {
   loading.value = true
   try {
     const res = await getClubClassDetail(route.params.uuid)
-    className.value = res.data.data.name
-    classId.value = res.data.data.id
+    className.value = res.data?.name
+    classId.value = res.data.id
     
     const groupRes = await getGroups({ class_id: classId.value })
-    groups.value = groupRes.data.data || []
+    groups.value = groupRes.data || []
   } catch (error) {
     ElMessage.error(error.message || '加载小组列表失败')
   } finally {
@@ -384,7 +384,7 @@ const viewGroupMembers = async (group) => {
   
   try {
     const res = await getGroupMembers(group.uuid)
-    groupMembers.value = res.data.data || []
+    groupMembers.value = res.data || []
   } catch (error) {
     ElMessage.error(error.message || '加载小组成员失败')
   } finally {
@@ -447,7 +447,7 @@ const submitAddGroupMembers = async () => {
     const res = await addMembersToGroup(currentGroupUuid.value, {
       student_ids: selectedStudentIds.value
     })
-    ElMessage.success(`成功添加 ${res.data.data.added_count} 名成员`)
+    ElMessage.success(`成功添加 ${res.data.added_count} 名成员`)
     addGroupMemberDialogVisible.value = false
     // 如果小组成员对话框是打开的，刷新成员列表
     if (groupMembersDialogVisible.value) {

@@ -1,143 +1,249 @@
 <template>
-  <div class="course-detail">
-    <!-- 加载状态 -->
-    <el-skeleton v-if="loading" :rows="5" animated />
-    
-    <!-- 课程详情 -->
-    <template v-else-if="course">
-      <!-- 课程头部 -->
-      <el-card class="course-header" shadow="never">
-        <div class="header-content">
-          <div class="course-cover">
-            <img 
-              :src="course.cover_image || '/default-course-cover.jpg'" 
-              :alt="course.title"
-              @error="handleImageError"
-            />
-          </div>
-          <div class="course-info">
-            <div class="course-difficulty" :class="`difficulty-${course.difficulty}`">
-              {{ getDifficultyText(course.difficulty) }}
+  <div class="course-detail" v-if="course">
+    <!-- 课程头部 -->
+    <div class="course-header">
+      <el-button :icon="ArrowLeft" @click="goBack" class="back-btn">返回课程列表</el-button>
+      
+      <div class="header-content">
+        <div class="header-info">
+          <h1 class="course-title">{{ course.title }}</h1>
+          <p class="course-description">{{ course.description }}</p>
+          
+          <div class="course-stats">
+            <div class="stat-item">
+              <el-icon><Clock /></el-icon>
+              <span>{{ course.duration || '8周' }}</span>
             </div>
-            <h1 class="course-title">{{ course.title }}</h1>
-            <p class="course-description">{{ course.description }}</p>
-            
-            <div class="course-meta">
-              <div class="meta-item">
-                <el-icon><Clock /></el-icon>
-                <span>{{ course.duration || '8周' }}</span>
-              </div>
-              <div class="meta-item">
-                <el-icon><Reading /></el-icon>
-                <span>{{ course.total_units }}个单元</span>
-              </div>
-              <div class="meta-item">
-                <el-icon><TrophyBase /></el-icon>
-                <span>学习进度: {{ course.progress || 0 }}%</span>
-              </div>
+            <div class="stat-item">
+              <el-icon><TrendCharts /></el-icon>
+              <span>{{ getDifficultyText(course.difficulty) }}</span>
             </div>
-
-            <div class="action-buttons">
-              <el-button type="primary" size="large" @click="startLearning">
-                {{ course.progress > 0 ? '继续学习' : '开始学习' }}
-              </el-button>
-              <el-button size="large" @click="goBack">返回课程列表</el-button>
+            <div class="stat-item">
+              <el-icon><Reading /></el-icon>
+              <span>{{ course.units?.length || 0 }}个学习单元</span>
             </div>
           </div>
         </div>
-      </el-card>
+        
+        <div class="header-cover" v-if="course.cover_image">
+          <img :src="course.cover_image" :alt="course.title" @error="handleImageError" />
+        </div>
+      </div>
+    </div>
 
-      <!-- 课程内容 -->
-      <el-card class="course-content" shadow="never">
-        <el-tabs v-model="activeTab">
-          <el-tab-pane label="课程简介" name="intro">
-            <div class="content-section">
-              <h3>课程目标</h3>
-              <p>{{ course.learning_objectives || '通过本课程，你将掌握项目式学习的核心方法和实践技能。' }}</p>
-              
-              <h3>课程特点</h3>
-              <div class="course-features">
-                <el-tag type="info" effect="plain">项目式学习</el-tag>
-                <el-tag type="success" effect="plain">实战项目</el-tag>
-                <el-tag type="warning" effect="plain">边做边学</el-tag>
-                <el-tag type="danger" effect="plain">作品导向</el-tag>
-              </div>
-            </div>
-          </el-tab-pane>
+    <!-- 课程进度 -->
+    <div class="course-progress-section">
+      <h3>学习进度</h3>
+      <el-progress 
+        :percentage="overallProgress" 
+        :stroke-width="12"
+        :color="progressColor"
+      >
+        <template #default="{ percentage }">
+          <span class="progress-label">{{ percentage }}%</span>
+        </template>
+      </el-progress>
+      <div class="progress-text">
+        已完成 {{ completedUnits }} / {{ totalUnits }} 个单元，总体进度 {{ overallProgress }}%
+      </div>
+    </div>
 
-          <el-tab-pane label="课程章节" name="chapters">
-            <div class="chapters-list">
-              <el-empty 
-                v-if="!course.units || course.units.length === 0"
-                description="暂无课程章节"
-              />
-              <div v-else>
-                <div 
-                  v-for="(unit, index) in course.units" 
-                  :key="unit.id"
-                  class="chapter-item"
+    <!-- 学习单元列表 -->
+    <div class="units-section">
+      <h3 class="section-title">
+        <el-icon><Reading /></el-icon>
+        学习单元
+      </h3>
+      
+      <div class="units-timeline">
+        <div 
+          v-for="(unit, index) in course.units" 
+          :key="unit.id"
+          class="unit-item"
+          :class="{ 
+            'locked': unit.status === 'locked',
+            'completed': unit.status === 'completed',
+            'active': unit.status === 'available'
+          }"
+        >
+          <!-- 时间线连接线 -->
+          <div class="timeline-line" v-if="index < course.units.length - 1"></div>
+          
+          <!-- 单元图标 -->
+          <div class="unit-icon">
+            <el-icon v-if="unit.status === 'completed'"><CircleCheck /></el-icon>
+            <el-icon v-else-if="unit.status === 'locked'"><Lock /></el-icon>
+            <el-icon v-else><VideoPlay /></el-icon>
+          </div>
+          
+          <!-- 单元内容 -->
+          <div class="unit-content">
+            <div class="unit-header">
+              <h4 class="unit-title">
+                <span class="unit-number">{{ index + 1 }}.</span>
+                {{ unit.title }}
+              </h4>
+              <div class="unit-tags">
+                <el-tag 
+                  :type="getUnitStatusType(unit.status)" 
+                  size="small"
                 >
-                  <div class="chapter-header">
-                    <div class="chapter-number">{{ index + 1 }}</div>
-                    <div class="chapter-info">
-                      <h4>{{ unit.title }}</h4>
-                      <p>{{ unit.description }}</p>
-                    </div>
-                    <el-button type="primary" link>开始学习</el-button>
-                  </div>
-                </div>
+                  {{ getUnitStatusText(unit.status) }}
+                </el-tag>
+                <el-tag 
+                  v-if="unit.open_from && !unit.is_open" 
+                  type="warning" 
+                  size="small"
+                >
+                  {{ formatOpenTime(unit.open_from) }}
+                </el-tag>
               </div>
             </div>
-          </el-tab-pane>
-
-          <el-tab-pane label="我的进度" name="progress">
-            <div class="progress-section">
-              <el-progress 
-                :percentage="course.progress || 0" 
-                :stroke-width="20"
-                :text-inside="true"
-              />
-              <div class="progress-stats">
-                <div class="stat-item">
-                  <span class="stat-label">已完成</span>
-                  <span class="stat-value">{{ course.completed_units || 0 }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">总单元数</span>
-                  <span class="stat-value">{{ course.total_units || 0 }}</span>
-                </div>
+            
+            <p class="unit-description">{{ unit.description }}</p>
+            
+            <!-- 单元学习进度 - 分类统计 -->
+            <div class="unit-progress-detail">
+              <div class="progress-item" v-if="unit.video_count > 0">
+                <span class="progress-icon">
+                  <el-icon><VideoPlay /></el-icon>
+                </span>
+                <span class="progress-label">视频</span>
+                <span class="progress-stats">{{ unit.completed_videos || 0 }}/{{ unit.video_count }}</span>
+              </div>
+              <div class="progress-item" v-if="unit.document_count > 0">
+                <span class="progress-icon">
+                  <el-icon><Document /></el-icon>
+                </span>
+                <span class="progress-label">文档</span>
+                <span class="progress-stats">{{ unit.completed_documents || 0 }}/{{ unit.document_count }}</span>
+              </div>
+              <div class="progress-item" v-if="unit.tasks_count > 0">
+                <span class="progress-icon">
+                  <el-icon><Edit /></el-icon>
+                </span>
+                <span class="progress-label">作业</span>
+                <span class="progress-stats">{{ unit.completed_tasks || 0 }}/{{ unit.tasks_count }}</span>
               </div>
             </div>
-          </el-tab-pane>
-        </el-tabs>
-      </el-card>
-    </template>
+            
+            <!-- 单元操作 -->
+            <div class="unit-actions">
+              <el-button 
+                v-if="unit.status !== 'locked' && unit.is_open" 
+                type="primary" 
+                size="default"
+                @click="gotoUnitLearning(unit.id, unit.uuid)"
+              >
+                {{ unit.status === 'completed' ? '回顾单元' : '开始学习' }}
+              </el-button>
+              <el-button 
+                v-else-if="unit.status !== 'locked' && !unit.is_open" 
+                disabled
+                size="default"
+              >
+                <el-icon><Clock /></el-icon>
+                {{ formatOpenTime(unit.open_from) }}
+              </el-button>
+              <el-button 
+                v-else 
+                disabled
+                size="default"
+              >
+                <el-icon><Lock /></el-icon>
+                尚未解锁
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <!-- 错误状态 -->
-    <el-empty 
-      v-else
-      description="课程不存在或已被删除"
-      :image-size="200"
-    >
-      <el-button type="primary" @click="goBack">返回课程列表</el-button>
-    </el-empty>
+    <!-- 课程项目 -->
+    <div class="projects-section" v-if="course.projects && course.projects.length > 0">
+      <h3 class="section-title">
+        <el-icon><Notebook /></el-icon>
+        实践项目
+      </h3>
+      
+      <div class="projects-grid">
+        <div 
+          v-for="project in course.projects" 
+          :key="project.id"
+          class="project-card"
+          @click="gotoProjectDetail(project.id)"
+        >
+          <div class="project-header">
+            <h4>{{ project.title }}</h4>
+            <el-tag :type="getProjectStatusType(project.status)" size="small">
+              {{ getProjectStatusText(project.status) }}
+            </el-tag>
+          </div>
+          <p class="project-description">{{ project.description }}</p>
+          <div class="project-progress">
+            <el-progress :percentage="project.progress" :show-text="false" />
+            <span class="progress-text">{{ project.progress }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- 加载状态 -->
+  <el-skeleton v-else :loading="loading" :rows="5" animated />
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Clock, Reading, TrophyBase } from '@element-plus/icons-vue'
+import {
+  ArrowLeft,
+  Clock,
+  TrendCharts,
+  Reading,
+  CircleCheck,
+  Lock,
+  VideoPlay,
+  Document,
+  Edit,
+  Notebook
+} from '@element-plus/icons-vue'
 import { getCourseDetail } from '@pbl/student/api/student'
 
 const router = useRouter()
 const route = useRoute()
 
-// 状态管理
 const loading = ref(false)
 const course = ref(null)
-const activeTab = ref('intro')
+
+// 计算属性
+const totalUnits = computed(() => course.value?.units?.length || 0)
+
+// 计算已完成的单元数（单元进度达到100%才算完成）
+const completedUnits = computed(() => {
+  if (!course.value?.units) return 0
+  return course.value.units.filter(u => {
+    // 如果有status字段且为completed，则认为已完成
+    // 或者进度达到100%也认为已完成
+    return u.status === 'completed' || u.progress >= 100
+  }).length
+})
+
+// 计算总体学习进度（基于完成的单元数，而不是平均进度）
+const overallProgress = computed(() => {
+  if (!course.value?.units || course.value.units.length === 0) return 0
+  
+  // 进度 = 已完成单元数 / 总单元数 * 100
+  return Math.round((completedUnits.value / totalUnits.value) * 100)
+})
+
+const progressColor = computed(() => {
+  const percentage = overallProgress.value
+  if (percentage < 30) return '#f56c6c'
+  if (percentage < 70) return '#e6a23c'
+  return '#67c23a'
+})
 
 // 方法
 const loadCourseDetail = async () => {
@@ -156,24 +262,87 @@ const loadCourseDetail = async () => {
 
 const getDifficultyText = (difficulty) => {
   const map = {
-    'beginner': '入门',
+    'beginner': '入门级',
     'intermediate': '中级',
     'advanced': '高级'
   }
-  return map[difficulty] || '入门'
+  return map[difficulty] || '入门级'
+}
+
+const getUnitStatusType = (status) => {
+  const map = {
+    'locked': 'info',
+    'available': 'warning',
+    'completed': 'success'
+  }
+  return map[status] || 'info'
+}
+
+const getUnitStatusText = (status) => {
+  const map = {
+    'locked': '未解锁',
+    'available': '可学习',
+    'completed': '已完成'
+  }
+  return map[status] || '未知'
+}
+
+const getProjectStatusType = (status) => {
+  const map = {
+    'planning': 'info',
+    'in-progress': 'warning',
+    'review': 'primary',
+    'completed': 'success'
+  }
+  return map[status] || 'info'
+}
+
+const getProjectStatusText = (status) => {
+  const map = {
+    'planning': '计划中',
+    'in-progress': '进行中',
+    'review': '审核中',
+    'completed': '已完成'
+  }
+  return map[status] || '未知'
+}
+
+// 格式化开放时间
+const formatOpenTime = (timeStr) => {
+  if (!timeStr) return ''
+  const openTime = new Date(timeStr)
+  const now = new Date()
+  
+  if (openTime > now) {
+    // 未开放
+    return `${openTime.toLocaleString('zh-CN', { 
+      month: 'numeric', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    })} 开放`
+  } else {
+    // 已开放
+    return '已开放'
+  }
 }
 
 const handleImageError = (e) => {
   e.target.src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800'
 }
 
-const startLearning = () => {
-  // TODO: 跳转到第一个未完成的单元或章节
-  ElMessage.info('开始学习功能开发中...')
-}
-
 const goBack = () => {
   router.push('/pbl/student/courses')
+}
+
+const gotoUnitLearning = (unitId, unitUuid) => {
+  // 优先使用uuid，如果没有uuid则使用id（向后兼容）
+  const identifier = unitUuid || unitId
+  router.push(`/pbl/student/units/${identifier}`)
+}
+
+const gotoProjectDetail = (projectId) => {
+  router.push(`/pbl/student/projects/${projectId}`)
 }
 
 onMounted(() => {
@@ -183,237 +352,325 @@ onMounted(() => {
 
 <style scoped>
 .course-detail {
-  padding: 0;
+  width: 100%;
+  margin: 0;
+  padding: 24px;
 }
 
 .course-header {
-  margin-bottom: 20px;
-  border-radius: 12px;
-  border: none;
+  margin-bottom: 32px;
+}
+
+.back-btn {
+  margin-bottom: 16px;
 }
 
 .header-content {
-  display: flex;
-  gap: 30px;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px;
+  border-radius: 16px;
+  color: white;
 }
 
-.course-cover {
-  width: 400px;
-  height: 300px;
+.header-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.course-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: white;
+}
+
+.course-description {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+  opacity: 0.95;
+}
+
+.course-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.stat-item .el-icon {
+  font-size: 18px;
+}
+
+.header-cover {
   border-radius: 12px;
   overflow: hidden;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.course-cover img {
+.header-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.course-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.course-difficulty {
-  display: inline-block;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 16px;
-  align-self: flex-start;
-}
-
-.difficulty-beginner {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid #10b981;
-}
-
-.difficulty-intermediate {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-  border: 1px solid #f59e0b;
-}
-
-.difficulty-advanced {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid #ef4444;
-}
-
-.course-title {
-  font-size: 32px;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 16px 0;
-}
-
-.course-description {
-  font-size: 16px;
-  color: #64748b;
-  line-height: 1.6;
-  margin: 0 0 24px 0;
-}
-
-.course-meta {
-  display: flex;
-  gap: 24px;
+.course-progress-section {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
   margin-bottom: 32px;
-  flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.meta-item {
+.course-progress-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.progress-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.progress-text {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #64748b;
+  text-align: right;
+}
+
+.units-section {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
-  color: #64748b;
-}
-
-.meta-item .el-icon {
+  margin: 0 0 24px 0;
   font-size: 20px;
-  color: #667eea;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 16px;
-  margin-top: auto;
-}
-
-.course-content {
-  border-radius: 12px;
-  border: none;
-}
-
-.content-section h3 {
-  font-size: 20px;
-  font-weight: 600;
   color: #1e293b;
-  margin: 0 0 16px 0;
 }
 
-.content-section p {
-  font-size: 15px;
-  color: #64748b;
-  line-height: 1.6;
-  margin-bottom: 24px;
+.units-timeline {
+  position: relative;
 }
 
-.course-features {
+.unit-item {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.chapters-list {
-  padding: 8px 0;
-}
-
-.chapter-item {
-  margin-bottom: 16px;
-  padding: 20px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  transition: all 0.3s;
-}
-
-.chapter-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
-}
-
-.chapter-header {
-  display: flex;
-  align-items: center;
   gap: 20px;
+  margin-bottom: 24px;
+  position: relative;
+  padding: 20px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
-.chapter-number {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.unit-item:hover {
+  background: #f8fafc;
+}
+
+.unit-item.locked {
+  opacity: 0.6;
+}
+
+.unit-item.completed .unit-icon {
+  background: #10b981;
   color: white;
+}
+
+.unit-item.active .unit-icon {
+  background: #3b82f6;
+  color: white;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 31px;
+  top: 52px;
+  width: 2px;
+  height: calc(100% + 24px);
+  background: #e5e7eb;
+}
+
+.unit-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  font-weight: 600;
   flex-shrink: 0;
+  z-index: 2;
+  position: relative;
 }
 
-.chapter-info {
+.unit-content {
   flex: 1;
 }
 
-.chapter-info h4 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 8px 0;
-}
-
-.chapter-info p {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.5;
-}
-
-.progress-section {
-  padding: 20px 0;
-}
-
-.progress-stats {
+.unit-header {
   display: flex;
-  gap: 48px;
-  margin-top: 32px;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-label {
-  display: block;
-  font-size: 14px;
-  color: #64748b;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 8px;
 }
 
-.stat-value {
-  display: block;
-  font-size: 32px;
+.unit-tags {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.unit-title {
+  margin: 0;
+  font-size: 18px;
   font-weight: 600;
-  color: #667eea;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unit-number {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+.unit-description {
+  color: #64748b;
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.unit-progress-detail {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.progress-icon {
+  display: flex;
+  align-items: center;
+  color: #3b82f6;
+  font-size: 16px;
+}
+
+.progress-label {
+  font-weight: 500;
+  color: #475569;
+}
+
+.progress-stats {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.unit-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.projects-section {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.project-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.project-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.project-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.project-description {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  line-height: 1.6;
+}
+
+.project-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.project-progress .progress-text {
+  font-size: 13px;
+  color: #64748b;
+  min-width: 40px;
+  text-align: right;
+  margin-top: 0;
 }
 
 @media (max-width: 768px) {
   .header-content {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
-
-  .course-cover {
-    width: 100%;
-    height: 250px;
+  
+  .header-cover {
+    height: 200px;
   }
-
-  .course-title {
-    font-size: 24px;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-  }
-
-  .action-buttons .el-button {
-    width: 100%;
+  
+  .projects-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

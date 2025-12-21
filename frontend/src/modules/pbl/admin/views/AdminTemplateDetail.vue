@@ -218,8 +218,8 @@ const loadTemplateDetail = async () => {
     
     const response = await getAvailableTemplateDetail(uuid)
     
-    if (response.data && response.data.data) {
-      template.value = response.data.data
+    if (response.data && response.data) {
+      template.value = response.data
       // 自动展开第一个单元
       if (template.value.units && template.value.units.length > 0) {
         activeUnits.value = [template.value.units[0].id]

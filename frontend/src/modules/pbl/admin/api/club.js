@@ -10,7 +10,7 @@ import request from '@/utils/request'
  */
 export function getClubClasses(params) {
   return request({
-    url: '/admin/club/classes',
+    url: '/pbl/admin/club/classes',
     method: 'get',
     params
   })
@@ -21,7 +21,7 @@ export function getClubClasses(params) {
  */
 export function createClubClass(data) {
   return request({
-    url: '/admin/club/classes',
+    url: '/pbl/admin/club/classes',
     method: 'post',
     data
   })
@@ -32,7 +32,7 @@ export function createClubClass(data) {
  */
 export function getClubClassDetail(classUuid) {
   return request({
-    url: `/admin/club/classes/${classUuid}`,
+    url: `/pbl/admin/club/classes/${classUuid}`,
     method: 'get'
   })
 }
@@ -42,7 +42,7 @@ export function getClubClassDetail(classUuid) {
  */
 export function updateClubClass(classUuid, data) {
   return request({
-    url: `/admin/club/classes/${classUuid}`,
+    url: `/pbl/admin/club/classes/${classUuid}`,
     method: 'put',
     data
   })
@@ -53,7 +53,7 @@ export function updateClubClass(classUuid, data) {
  */
 export function deleteClubClass(classUuid) {
   return request({
-    url: `/admin/club/classes/${classUuid}`,
+    url: `/pbl/admin/club/classes/${classUuid}`,
     method: 'delete'
   })
 }
@@ -65,7 +65,7 @@ export function deleteClubClass(classUuid) {
  */
 export function getAvailableStudentsForClass(classUuid, params) {
   return request({
-    url: `/admin/club/classes/${classUuid}/available-students`,
+    url: `/pbl/admin/club/classes/${classUuid}/available-students`,
     method: 'get',
     params
   })
@@ -76,7 +76,7 @@ export function getAvailableStudentsForClass(classUuid, params) {
  */
 export function getClubClassMembers(classUuid) {
   return request({
-    url: `/admin/club/classes/${classUuid}/members`,
+    url: `/pbl/admin/club/classes/${classUuid}/members`,
     method: 'get'
   })
 }
@@ -86,7 +86,7 @@ export function getClubClassMembers(classUuid) {
  */
 export function addMembersToClubClass(classUuid, data) {
   return request({
-    url: `/admin/club/classes/${classUuid}/members`,
+    url: `/pbl/admin/club/classes/${classUuid}/members`,
     method: 'post',
     data
   })
@@ -97,7 +97,7 @@ export function addMembersToClubClass(classUuid, data) {
  */
 export function removeMemberFromClubClass(classUuid, studentId) {
   return request({
-    url: `/admin/club/classes/${classUuid}/members/${studentId}`,
+    url: `/pbl/admin/club/classes/${classUuid}/members/${studentId}`,
     method: 'delete'
   })
 }
@@ -107,7 +107,7 @@ export function removeMemberFromClubClass(classUuid, studentId) {
  */
 export function updateMemberRole(classUuid, studentId, data) {
   return request({
-    url: `/admin/club/classes/${classUuid}/members/${studentId}/role`,
+    url: `/pbl/admin/club/classes/${classUuid}/members/${studentId}/role`,
     method: 'put',
     data
   })
@@ -118,7 +118,7 @@ export function updateMemberRole(classUuid, studentId, data) {
  */
 export function resetMemberPassword(classUuid, studentId) {
   return request({
-    url: `/admin/club/classes/${classUuid}/members/${studentId}/reset-password`,
+    url: `/pbl/admin/club/classes/${classUuid}/members/${studentId}/reset-password`,
     method: 'post'
   })
 }
@@ -130,7 +130,7 @@ export function resetMemberPassword(classUuid, studentId) {
  */
 export function getCourseTemplates(params) {
   return request({
-    url: '/admin/club/course-templates',
+    url: '/pbl/admin/club/course-templates',
     method: 'get',
     params
   })
@@ -141,7 +141,7 @@ export function getCourseTemplates(params) {
  */
 export function getAvailableTemplates(params) {
   return request({
-    url: '/admin/available-templates',
+    url: '/pbl/admin/available-templates',
     method: 'get',
     params
   })
@@ -152,7 +152,7 @@ export function getAvailableTemplates(params) {
  */
 export function createCourseFromTemplate(data) {
   return request({
-    url: '/admin/club/courses/create-from-template',
+    url: '/pbl/admin/club/courses/create-from-template',
     method: 'post',
     data
   })
@@ -163,7 +163,7 @@ export function createCourseFromTemplate(data) {
  */
 export function enrollClassMembersToCourse(courseId) {
   return request({
-    url: `/admin/club/courses/${courseId}/enroll-class-members`,
+    url: `/pbl/admin/club/courses/${courseId}/enroll-class-members`,
     method: 'post'
   })
 }
@@ -229,7 +229,7 @@ export function getStudentClubClassDetail(classUuid) {
  */
 export function getGroups(params) {
   return request({
-    url: '/admin/classes-groups/groups',
+    url: '/pbl/admin/classes-groups/groups',
     method: 'get',
     params
   })
@@ -240,7 +240,7 @@ export function getGroups(params) {
  */
 export function createGroup(data) {
   return request({
-    url: '/admin/classes-groups/groups',
+    url: '/pbl/admin/classes-groups/groups',
     method: 'post',
     data
   })
@@ -251,7 +251,7 @@ export function createGroup(data) {
  */
 export function deleteGroup(groupUuid) {
   return request({
-    url: `/admin/classes-groups/groups/${groupUuid}`,
+    url: `/pbl/admin/classes-groups/groups/${groupUuid}`,
     method: 'delete'
   })
 }
@@ -261,7 +261,7 @@ export function deleteGroup(groupUuid) {
  */
 export function getGroupMembers(groupUuid) {
   return request({
-    url: `/admin/classes-groups/groups/${groupUuid}/members`,
+    url: `/pbl/admin/classes-groups/groups/${groupUuid}/members`,
     method: 'get'
   })
 }
@@ -271,7 +271,7 @@ export function getGroupMembers(groupUuid) {
  */
 export function getAvailableStudentsForGroup(groupUuid, keyword = '') {
   return request({
-    url: `/admin/classes-groups/groups/${groupUuid}/available-students`,
+    url: `/pbl/admin/classes-groups/groups/${groupUuid}/available-students`,
     method: 'get',
     params: keyword ? { keyword } : {}
   })
@@ -282,7 +282,7 @@ export function getAvailableStudentsForGroup(groupUuid, keyword = '') {
  */
 export function addMembersToGroup(groupUuid, data) {
   return request({
-    url: `/admin/classes-groups/groups/${groupUuid}/add-members`,
+    url: `/pbl/admin/classes-groups/groups/${groupUuid}/add-members`,
     method: 'post',
     data
   })
@@ -293,7 +293,7 @@ export function addMembersToGroup(groupUuid, data) {
  */
 export function removeMemberFromGroup(groupUuid, studentId) {
   return request({
-    url: `/admin/classes-groups/groups/${groupUuid}/members/${studentId}`,
+    url: `/pbl/admin/classes-groups/groups/${groupUuid}/members/${studentId}`,
     method: 'delete'
   })
 }
@@ -305,7 +305,7 @@ export function removeMemberFromGroup(groupUuid, studentId) {
  */
 export function getAvailableTemplatesList(params) {
   return request({
-    url: '/admin/available-templates',
+    url: '/pbl/admin/available-templates',
     method: 'get',
     params
   })
@@ -316,7 +316,7 @@ export function getAvailableTemplatesList(params) {
  */
 export function getAvailableTemplateDetail(templateUuid) {
   return request({
-    url: `/admin/available-templates/${templateUuid}`,
+    url: `/pbl/admin/available-templates/${templateUuid}`,
     method: 'get'
   })
 }
@@ -326,7 +326,7 @@ export function getAvailableTemplateDetail(templateUuid) {
  */
 export function createCourseFromAvailableTemplate(templateUuid, data) {
   return request({
-    url: `/admin/available-templates/${templateUuid}/create-course`,
+    url: `/pbl/admin/available-templates/${templateUuid}/create-course`,
     method: 'post',
     data
   })

@@ -185,10 +185,17 @@ def admin_login(login_data: InstitutionLoginRequest, db: Session = Depends(get_d
     )
 
 @router.get("/me")
-def get_current_admin_info(current_admin: Admin = Depends(get_current_admin)):
+def get_current_admin_info(current_admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     """获取当前管理员信息"""
     logger.debug(f"获取管理员信息 - 用户名: {current_admin.username}, ID: {current_admin.id}")
     admin_response = AdminResponse.model_validate(current_admin)
+    
+    # 如果管理员有关联学校，获取学校的 UUID
+    if current_admin.school_id:
+        school = db.query(School).filter(School.id == current_admin.school_id).first()
+        if school:
+            admin_response.school_uuid = school.uuid
+    
     return success_response(data=admin_response.model_dump(mode='json'))
 
 @router.post("/register")

@@ -1,6 +1,6 @@
 <template>
   <div class="school-dashboard">
-    <el-row :gutter="20">
+    <el-row :gutter="20" v-loading="loading">
       <!-- 数据卡片 -->
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card class="stat-card teachers-card">
@@ -51,50 +51,23 @@
       </el-col>
     </el-row>
     
-    <el-row :gutter="20" style="margin-top: 20px">
-      <!-- 快捷操作 -->
-      <el-col :xs="24" :sm="24" :lg="12">
-        <el-card>
-          <template #header>
-            <span>快捷操作</span>
-          </template>
-          <div class="quick-actions">
-            <el-button type="primary" @click="goTo('/pbl/school/teachers')" v-if="authStore.isSchoolAdmin">
-              <el-icon><Plus /></el-icon> 添加教师
-            </el-button>
-            <el-button type="success" @click="goTo('/pbl/school/students')" v-if="authStore.isSchoolAdmin">
-              <el-icon><Plus /></el-icon> 添加学生
-            </el-button>
-            <el-button type="warning" @click="goTo('/pbl/school/classes')" v-if="authStore.isSchoolAdmin">
-              <el-icon><Plus /></el-icon> 创建班级
-            </el-button>
-            <el-button type="info" @click="goTo('/pbl/school/available-templates')">
-              <el-icon><Document /></el-icon> 浏览模板
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <!-- 最近活动 -->
-      <el-col :xs="24" :sm="24" :lg="12">
-        <el-card>
-          <template #header>
-            <span>最近活动</span>
-          </template>
-          <el-empty v-if="!activities.length" description="暂无活动记录" :image-size="100" />
-          <el-timeline v-else>
-            <el-timeline-item
-              v-for="(activity, index) in activities"
-              :key="index"
-              :timestamp="activity.timestamp"
-              placement="top"
-            >
-              {{ activity.content }}
-            </el-timeline-item>
-          </el-timeline>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 快捷操作 -->
+    <el-card style="margin-top: 20px" v-if="authStore.isSchoolAdmin">
+      <template #header>
+        <span>快捷操作</span>
+      </template>
+      <div class="quick-actions">
+        <el-button type="primary" @click="goTo('/pbl/school/users')">
+          <el-icon><Plus /></el-icon> 用户管理
+        </el-button>
+        <el-button type="success" @click="goTo('/pbl/school/classes')">
+          <el-icon><Plus /></el-icon> 班级管理
+        </el-button>
+        <el-button type="info" @click="goTo('/pbl/school/available-templates')">
+          <el-icon><Document /></el-icon> 浏览模板
+        </el-button>
+      </div>
+    </el-card>
   </div>
 </template>
 
@@ -102,11 +75,15 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { ElMessage } from 'element-plus'
 import { User, UserFilled, Notebook, Reading, Plus, Document } from '@element-plus/icons-vue'
+import { getCurrentAdmin } from '@/api/admin'
+import request from '@/utils/request'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
+const loading = ref(false)
 const statistics = ref({
   teacherCount: 0,
   studentCount: 0,
@@ -114,30 +91,46 @@ const statistics = ref({
   courseCount: 0
 })
 
-const activities = ref([])
-
 onMounted(() => {
   loadStatistics()
-  loadActivities()
 })
 
-function loadStatistics() {
-  // TODO: 从后端API加载统计数据
-  statistics.value = {
-    teacherCount: 25,
-    studentCount: 480,
-    classCount: 12,
-    courseCount: 8
+async function loadStatistics() {
+  try {
+    loading.value = true
+    
+    // 获取当前管理员信息
+    const adminInfo = await getCurrentAdmin()
+    
+    if (!adminInfo.school_id) {
+      ElMessage.warning('未找到学校信息')
+      return
+    }
+    
+    // 等待一小段时间确保 school_uuid 已加载
+    if (!adminInfo.school_uuid) {
+      console.warn('school_uuid 暂未加载，将跳过统计数据获取')
+      return
+    }
+    
+    // 获取学校统计数据
+    const response = await request.get(`/pbl/admin/schools/${adminInfo.school_uuid}/statistics`)
+    
+    if (response.success) {
+      const data = response.data
+      statistics.value = {
+        teacherCount: data.teacher_count || 0,
+        studentCount: data.student_count || 0,
+        classCount: 0, // 暂时设为0，班级统计需要单独接口
+        courseCount: 0  // 暂时设为0，课程统计需要单独接口
+      }
+    }
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+    ElMessage.error('加载数据失败')
+  } finally {
+    loading.value = false
   }
-}
-
-function loadActivities() {
-  // TODO: 从后端API加载活动记录
-  activities.value = [
-    { timestamp: '2024-01-18 10:30', content: '张老师创建了新班级"AI实验班"' },
-    { timestamp: '2024-01-18 09:15', content: '导入了30名新学生' },
-    { timestamp: '2024-01-17 16:20', content: '李老师开始了课程"Python基础"' }
-  ]
 }
 
 function goTo(path) {
@@ -148,60 +141,61 @@ function goTo(path) {
 <style scoped lang="scss">
 .school-dashboard {
   .stat-card {
-    border-radius: 12px;
+    border-radius: 8px;
     transition: all 0.3s;
+    cursor: default;
     
     &:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
     .stat-content {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
+      padding: 8px 0;
       
       .stat-icon {
-        opacity: 0.8;
+        opacity: 0.9;
       }
       
       .stat-info {
         flex: 1;
         
         .stat-value {
-          font-size: 32px;
-          font-weight: bold;
-          line-height: 1;
-          margin-bottom: 8px;
+          font-size: 28px;
+          font-weight: 600;
+          line-height: 1.2;
+          margin-bottom: 4px;
         }
         
         .stat-label {
-          font-size: 14px;
+          font-size: 13px;
           color: #909399;
         }
       }
     }
     
     &.teachers-card {
-      border-top: 4px solid #409eff;
+      border-left: 3px solid #409eff;
       .stat-icon { color: #409eff; }
       .stat-value { color: #409eff; }
     }
     
     &.students-card {
-      border-top: 4px solid #67c23a;
+      border-left: 3px solid #67c23a;
       .stat-icon { color: #67c23a; }
       .stat-value { color: #67c23a; }
     }
     
     &.classes-card {
-      border-top: 4px solid #e6a23c;
+      border-left: 3px solid #e6a23c;
       .stat-icon { color: #e6a23c; }
       .stat-value { color: #e6a23c; }
     }
     
     &.courses-card {
-      border-top: 4px solid #f56c6c;
+      border-left: 3px solid #f56c6c;
       .stat-icon { color: #f56c6c; }
       .stat-value { color: #f56c6c; }
     }

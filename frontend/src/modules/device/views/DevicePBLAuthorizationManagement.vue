@@ -68,7 +68,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="group_name" label="小组名称" min-width="120" />
-        <el-table-column prop="course_name" label="所属课程" min-width="150" />
         <el-table-column prop="class_name" label="所属班级" min-width="150" />
         <el-table-column prop="authorized_by_name" label="授权人" width="120" />
         <el-table-column prop="authorized_at" label="授权时间" width="180">

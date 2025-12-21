@@ -217,9 +217,9 @@ const loadClassCourses = async () => {
   loading.value = true
   try {
     const res = await getClubClassDetail(route.params.uuid)
-    className.value = res.data.data.name
-    classId.value = res.data.data.id
-    courses.value = res.data.data.courses || []
+    className.value = res.data?.name
+    classId.value = res.data.id
+    courses.value = res.data.courses || []
   } catch (error) {
     ElMessage.error(error.message || '加载课程列表失败')
   } finally {

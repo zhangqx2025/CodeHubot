@@ -22,7 +22,7 @@
             <el-tag :type="getClassTypeTagType(classInfo.class_type)" size="large" effect="dark">
               {{ getClassTypeName(classInfo.class_type) }}
             </el-tag>
-            <h1 class="class-name">{{ classInfo.name }}</h1>
+            <h1 class="class-name">{{ classInfo?.name }}</h1>
             <p class="class-description">{{ classInfo.description || '暂无描述' }}</p>
           </div>
           <div class="header-right">
@@ -107,7 +107,7 @@
           </div>
         </template>
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="班级名称">{{ classInfo.name }}</el-descriptions-item>
+          <el-descriptions-item label="班级名称">{{ classInfo?.name }}</el-descriptions-item>
           <el-descriptions-item label="班级类型">
             <el-tag :type="getClassTypeTagType(classInfo.class_type)">
               {{ getClassTypeName(classInfo.class_type) }}
@@ -151,7 +151,7 @@ const loadClassDetail = async () => {
   try {
     const uuid = route.params.uuid
     const res = await getClubClassDetail(uuid)
-    classInfo.value = res.data.data
+    classInfo.value = res.data
     
     // 加载小组数量
     const groupRes = await getGroups({ class_id: classInfo.value.id })

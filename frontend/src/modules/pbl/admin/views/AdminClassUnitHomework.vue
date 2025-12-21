@@ -376,7 +376,7 @@ const filteredTemplates = computed(() => {
 const loadClassName = async () => {
   try {
     const res = await getClubClassDetail(route.params.uuid)
-    className.value = res.data.data.name
+    className.value = res.data?.name
   } catch (error) {
     console.error('加载班级名称失败:', error)
   }
@@ -386,10 +386,10 @@ const loadClassName = async () => {
 const loadFeedbackTemplates = async () => {
   try {
     const res = await request({
-      url: '/admin/feedback-templates',
+      url: '/pbl/admin/feedback-templates',
       method: 'get'
     })
-    feedbackTemplates.value = res.data.data || []
+    feedbackTemplates.value = res.data || []
   } catch (error) {
     console.error('加载评语模板失败:', error)
   }
@@ -400,10 +400,10 @@ const loadUnitDetail = async () => {
   loadingDetail.value = true
   try {
     const res = await request({
-      url: `/admin/club/classes/${route.params.uuid}/homework/units/${route.params.unitId}`,
+      url: `/pbl/admin/club/classes/${route.params.uuid}/homework/units/${route.params.unitId}`,
       method: 'get'
     })
-    unitDetail.value = res.data.data
+    unitDetail.value = res.data
   } catch (error) {
     ElMessage.error(error.message || '加载单元详情失败')
   } finally {
@@ -427,10 +427,10 @@ const loadTaskSubmissions = async () => {
   loadingSubmissions.value = true
   try {
     const res = await request({
-      url: `/admin/club/classes/${route.params.uuid}/homework/tasks/${selectedTask.value.id}/submissions`,
+      url: `/pbl/admin/club/classes/${route.params.uuid}/homework/tasks/${selectedTask.value.id}/submissions`,
       method: 'get'
     })
-    submissions.value = res.data.data.submissions || []
+    submissions.value = res.data.submissions || []
   } catch (error) {
     ElMessage.error(error.message || '加载提交列表失败')
   } finally {
@@ -478,7 +478,7 @@ const submitGrade = async () => {
   submittingGrade.value = true
   try {
     await request({
-      url: `/admin/club/classes/${route.params.uuid}/homework/submissions/${currentSubmission.value.submission_id}/review`,
+      url: `/pbl/admin/club/classes/${route.params.uuid}/homework/submissions/${currentSubmission.value.submission_id}/review`,
       method: 'put',
       data: {
         grade: gradeForm.value.grade,

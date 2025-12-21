@@ -300,9 +300,9 @@ const loadClasses = async () => {
     console.log('=== 班级列表响应 ===')
     console.log('完整响应:', res)
     console.log('res.data:', res.data)
-    console.log('res.data.data:', res.data.data)
+    console.log('res.data:', res.data)
     console.log('===================')
-    classes.value = res.data.data || []
+    classes.value = res.data || []
     console.log('classes.value 已设置:', classes.value)
   } catch (error) {
     console.error('加载班级列表错误:', error)
@@ -335,8 +335,8 @@ const loadAvailableTemplates = async () => {
   loadingTemplates.value = true
   try {
     const res = await getAvailableTemplates({ page: 1, page_size: 100 })
-    if (res.data && res.data.data) {
-      availableTemplates.value = res.data.data.items || []
+    if (res.data && res.data) {
+      availableTemplates.value = res.data.items || []
     }
   } catch (error) {
     console.error('加载可用模板失败:', error)

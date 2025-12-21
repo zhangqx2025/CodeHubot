@@ -36,6 +36,9 @@ class Agent(Base):
     created_at = Column(DateTime, default=get_beijing_time_naive)
     updated_at = Column(DateTime, default=get_beijing_time_naive, onupdate=get_beijing_time_naive)
     
+    # 关系
+    knowledge_bases = relationship("AgentKnowledgeBase", back_populates="agent", cascade="all, delete-orphan")
+    
     def __repr__(self):
         return f"<Agent(id={self.id}, name='{self.name}')>"
 

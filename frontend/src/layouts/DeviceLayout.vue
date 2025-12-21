@@ -37,6 +37,12 @@
           <span>设备授权</span>
         </el-menu-item>
         
+        <!-- 固件烧录 -->
+        <el-menu-item index="/device/firmware-flasher">
+          <el-icon><Upload /></el-icon>
+          <span>固件烧录</span>
+        </el-menu-item>
+        
         <!-- 设备分组暂时隐藏 -->
         <!-- <el-menu-item index="/device/device-groups">
           <el-icon><FolderOpened /></el-icon>
@@ -132,7 +138,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  HomeFilled, Cpu, FolderOpened, Box, Document, Key,
+  HomeFilled, Cpu, FolderOpened, Box, Document, Key, Upload,
   Expand, Fold, Grid, Setting, Plus, User, Lock, SwitchButton
 } from '@element-plus/icons-vue'
 import UserProfileDialog from '@/components/UserProfileDialog.vue'

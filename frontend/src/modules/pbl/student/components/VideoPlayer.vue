@@ -1,9 +1,10 @@
 <template>
-  <div class="video-player-container" :id="playerId"></div>
+  <div class="video-player-container" :id="playerId" @click="handleVideoClick"></div>
 </template>
 
 <script setup>
 import { onMounted, onBeforeUnmount, watch, nextTick, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import {
   createPlaySession,
   updatePlayProgress,
@@ -48,10 +49,14 @@ const props = defineProps({
   enableTracking: {
     type: Boolean,
     default: true
+  },
+  autoPauseInterval: {
+    type: Number,
+    default: 180  // 默认3分钟（180秒）自动暂停，设为0则禁用
   }
 })
 
-const emit = defineEmits(['ready', 'play', 'pause', 'ended', 'session-created'])
+const emit = defineEmits(['ready', 'play', 'pause', 'ended', 'error', 'session-created', 'auto-pause'])
 
 const playerId = `aliplayer-${Math.random().toString(36).substr(2, 9)}`
 let player = null
@@ -61,6 +66,37 @@ const sessionId = ref(null)
 const lastPosition = ref(0)
 const progressUpdateInterval = ref(null)
 const isTracking = ref(props.enableTracking)
+
+// 自动暂停相关状态
+const continuousPlayTime = ref(0)  // 连续播放时间（秒）
+const autoPauseTimer = ref(null)   // 自动暂停计时器
+
+/**
+ * 处理视频区域点击事件（暂停/播放）
+ */
+const handleVideoClick = (event) => {
+  if (!player) return
+  
+  // 检查是否点击的是控制栏区域
+  const target = event.target
+  const isControlBar = target.closest('.prism-controlbar') || 
+                       target.closest('.prism-big-play-btn') ||
+                       target.classList.contains('prism-controlbar')
+  
+  // 如果不是点击控制栏，则切换播放/暂停状态
+  if (!isControlBar) {
+    try {
+      const status = player.getStatus()
+      if (status === 'playing') {
+        player.pause()
+      } else if (status === 'pause' || status === 'ready') {
+        player.play()
+      }
+    } catch (error) {
+      console.error('切换播放状态失败:', error)
+    }
+  }
+}
 
 const initPlayer = () => {
   // 销毁旧实例
@@ -91,7 +127,13 @@ const initPlayer = () => {
     playsinline: true,
     preload: true,
     controlBarVisibility: 'hover',
-    useH5Prism: true
+    useH5Prism: true,
+    // 语言设置为中文
+    language: 'zh-cn',
+    // 启用快捷键（空格暂停/播放，左右键快进快退）
+    keyShortcut: true,
+    // 启用倍速播放
+    speedMode: 'web'
   }
 
   // 创建播放器实例
@@ -104,6 +146,14 @@ const initPlayer = () => {
   player.on('ready', () => {
     console.log('播放器准备就绪')
     emit('ready')
+    
+    // 检查是否有上次播放位置
+    if (props.resourceUuid) {
+      const savedPosition = getSavedPosition(props.resourceUuid)
+      if (savedPosition > 5) {  // 大于5秒才提示续播
+        showResumeDialog(savedPosition)
+      }
+    }
     
     // 如果启用了追踪且有资源UUID，创建播放会话
     if (isTracking.value && props.resourceUuid) {
@@ -119,6 +169,11 @@ const initPlayer = () => {
     if (isTracking.value && sessionId.value) {
       startProgressTracking()
     }
+    
+    // 启动自动暂停计时器
+    if (props.autoPauseInterval > 0) {
+      startAutoPauseTimer()
+    }
   })
 
   player.on('pause', () => {
@@ -128,10 +183,22 @@ const initPlayer = () => {
     // 停止进度更新定时器
     stopProgressTracking()
     
-    // 记录暂停事件
-    if (isTracking.value && sessionId.value && player) {
+    // 停止自动暂停计时器
+    stopAutoPauseTimer()
+    
+    // 记录暂停事件和保存播放位置
+    if (player) {
       const currentPos = Math.floor(player.getCurrentTime())
-      handlePauseEvent(currentPos)
+      
+      // 保存播放位置
+      if (props.resourceUuid) {
+        savePosition(props.resourceUuid, currentPos)
+      }
+      
+      // 记录暂停事件到服务器
+      if (isTracking.value && sessionId.value) {
+        handlePauseEvent(currentPos)
+      }
     }
   })
 
@@ -141,6 +208,16 @@ const initPlayer = () => {
     
     // 停止进度更新定时器
     stopProgressTracking()
+    
+    // 清除保存的播放位置（播放完成后）
+    if (props.resourceUuid) {
+      try {
+        const key = `video_position_${props.resourceUuid}`
+        sessionStorage.removeItem(key)
+      } catch (error) {
+        console.error('清除播放位置失败:', error)
+      }
+    }
     
     // 记录播放结束事件
     if (isTracking.value && sessionId.value && player) {
@@ -161,9 +238,111 @@ const initPlayer = () => {
   // 监听时间更新事件
   player.on('timeupdate', () => {
     if (player) {
-      lastPosition.value = Math.floor(player.getCurrentTime())
+      const currentTime = Math.floor(player.getCurrentTime())
+      lastPosition.value = currentTime
+      
+      // 每30秒自动保存一次播放位置（防止异常关闭丢失进度）
+      if (props.resourceUuid && currentTime % 30 === 0 && currentTime > 0) {
+        savePosition(props.resourceUuid, currentTime)
+      }
     }
   })
+  
+  // 监听错误事件
+  player.on('error', (error) => {
+    console.error('播放器错误:', error)
+    emit('error', error)
+  })
+}
+
+/**
+ * 获取保存的播放位置
+ */
+const getSavedPosition = (resourceUuid) => {
+  try {
+    const key = `video_position_${resourceUuid}`
+    const saved = sessionStorage.getItem(key)
+    return saved ? parseInt(saved) : 0
+  } catch (error) {
+    return 0
+  }
+}
+
+/**
+ * 保存播放位置
+ */
+const savePosition = (resourceUuid, position) => {
+  try {
+    const key = `video_position_${resourceUuid}`
+    sessionStorage.setItem(key, position.toString())
+  } catch (error) {
+    console.error('保存播放位置失败:', error)
+  }
+}
+
+/**
+ * 显示续播提示对话框
+ */
+const showResumeDialog = async (savedPosition) => {
+  if (!player) return
+  
+  // 暂停播放器，等待用户选择
+  player.pause()
+  
+  // 格式化时间显示
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${minutes}分${secs}秒`
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `检测到上次观看到 ${formatTime(savedPosition)}，是否继续播放？`,
+      '💡 视频续播',
+      {
+        confirmButtonText: '继续播放',
+        cancelButtonText: '从头播放',
+        distinguishCancelAndClose: true,
+        type: 'info',
+        center: true,
+        closeOnClickModal: false
+      }
+    )
+    
+    // 用户选择继续播放
+    console.log('用户选择继续播放，跳转到:', savedPosition, '秒')
+    player.seek(savedPosition)
+    if (props.autoplay) {
+      player.play()
+    }
+  } catch (action) {
+    // 用户选择从头播放或关闭对话框
+    if (action === 'cancel') {
+      console.log('用户选择从头播放')
+      // 清除保存的位置
+      if (props.resourceUuid) {
+        try {
+          const key = `video_position_${props.resourceUuid}`
+          sessionStorage.removeItem(key)
+        } catch (error) {
+          console.error('清除播放位置失败:', error)
+        }
+      }
+      // 从头播放
+      player.seek(0)
+      if (props.autoplay) {
+        player.play()
+      }
+    } else {
+      // 用户点击了关闭按钮（X），默认从头播放
+      console.log('用户关闭对话框，从头播放')
+      player.seek(0)
+      if (props.autoplay) {
+        player.play()
+      }
+    }
+  }
 }
 
 // ========== 播放追踪功能 ==========
@@ -229,6 +408,11 @@ const updateProgress = async () => {
     const isPaused = player.paused()
     const status = isPaused ? 'paused' : 'playing'
     
+    // 保存播放位置到本地（用于续播）
+    if (props.resourceUuid && currentPos > 0) {
+      savePosition(props.resourceUuid, currentPos)
+    }
+    
     await updatePlayProgress(sessionId.value, currentPos, status, 'progress')
   } catch (error) {
     console.error('更新播放进度失败:', error)
@@ -286,6 +470,60 @@ const cleanupTracking = () => {
   lastPosition.value = 0
 }
 
+// ========== 自动暂停功能 ==========
+
+/**
+ * 启动自动暂停计时器
+ */
+const startAutoPauseTimer = () => {
+  // 清除之前的计时器
+  stopAutoPauseTimer()
+  
+  // 每秒递增连续播放时间
+  autoPauseTimer.value = setInterval(() => {
+    continuousPlayTime.value++
+    
+    // 检查是否达到自动暂停时间
+    if (continuousPlayTime.value >= props.autoPauseInterval) {
+      handleAutoPause()
+    }
+  }, 1000)
+}
+
+/**
+ * 停止自动暂停计时器
+ */
+const stopAutoPauseTimer = () => {
+  if (autoPauseTimer.value) {
+    clearInterval(autoPauseTimer.value)
+    autoPauseTimer.value = null
+  }
+  // 重置连续播放时间
+  continuousPlayTime.value = 0
+}
+
+/**
+ * 处理自动暂停
+ */
+const handleAutoPause = () => {
+  if (!player) return
+  
+  // 停止计时器
+  stopAutoPauseTimer()
+  
+  // 暂停播放
+  player.pause()
+  
+  // 显示提示信息
+  console.log('已连续播放3分钟，自动暂停')
+  
+  // 触发自定义事件，由父组件决定如何显示提示
+  emit('auto-pause', {
+    playTime: props.autoPauseInterval,
+    currentPosition: player.getCurrentTime()
+  })
+}
+
 /**
  * 获取设备类型
  */
@@ -317,8 +555,20 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  // 保存当前播放位置（组件卸载前）
+  if (player && props.resourceUuid) {
+    const currentPos = Math.floor(player.getCurrentTime())
+    if (currentPos > 0) {
+      savePosition(props.resourceUuid, currentPos)
+      console.log('组件卸载，保存播放位置:', currentPos)
+    }
+  }
+  
   // 清理追踪资源
   cleanupTracking()
+  
+  // 清理自动暂停计时器
+  stopAutoPauseTimer()
   
   // 销毁播放器
   if (player) {
@@ -333,6 +583,20 @@ watch(() => [props.vid, props.source], () => {
     initPlayer()
   })
 })
+
+// 暴露方法给父组件
+defineExpose({
+  // 播放控制
+  play: () => player?.play(),
+  pause: () => player?.pause(),
+  seek: (time) => player?.seek(time),
+  // 获取播放器状态
+  getCurrentTime: () => player?.getCurrentTime() || 0,
+  getDuration: () => player?.getDuration() || 0,
+  getStatus: () => player?.getStatus(),
+  // 获取会话ID
+  getSessionId: () => sessionId.value
+})
 </script>
 
 <style scoped>
@@ -340,6 +604,22 @@ watch(() => [props.vid, props.source], () => {
   width: 100%;
   height: 100%;
   background-color: #000;
+  cursor: pointer;
+  position: relative;
+}
+
+/* 确保视频元素也显示指针 */
+.video-player-container :deep(video) {
+  cursor: pointer;
+}
+
+/* 控制栏区域保持默认光标 */
+.video-player-container :deep(.prism-controlbar) {
+  cursor: default;
+}
+
+.video-player-container :deep(.prism-controlbar *) {
+  cursor: pointer;
 }
 </style>
 

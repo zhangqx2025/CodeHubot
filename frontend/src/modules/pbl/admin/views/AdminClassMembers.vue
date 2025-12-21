@@ -202,9 +202,10 @@ const filteredMembers = computed(() => {
 const loadClassName = async () => {
   try {
     const res = await getClubClassDetail(route.params.uuid)
-    className.value = res.data.data.name
+    className.value = res.data?.name || '未知班级'
   } catch (error) {
     console.error('加载班级名称失败:', error)
+    className.value = '未知班级'
   }
 }
 
@@ -213,7 +214,7 @@ const loadMembers = async () => {
   loading.value = true
   try {
     const res = await getClubClassMembers(route.params.uuid)
-    members.value = res.data.data || []
+    members.value = res.data || []
   } catch (error) {
     ElMessage.error(error.message || '加载成员列表失败')
   } finally {
@@ -228,7 +229,7 @@ const loadAvailableStudents = async (search = '') => {
     const res = await getAvailableStudentsForClass(route.params.uuid, {
       search: search || undefined
     })
-    availableStudents.value = res.data.data || []
+    availableStudents.value = res.data || []
   } catch (error) {
     console.error('加载学生列表失败:', error)
     ElMessage.error('加载学生列表失败')
