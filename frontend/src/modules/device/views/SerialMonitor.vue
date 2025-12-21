@@ -435,6 +435,12 @@ const clearReceiveData = () => {
 
 // 提取MAC地址
 const extractMacAddresses = (text) => {
+  // 只处理包含 "MAC:" 或 "MAC Address:" 的行
+  const upperText = text.toUpperCase()
+  if (!upperText.includes('MAC:') && !upperText.includes('MAC ADDRESS:') && !upperText.includes('MAC ')) {
+    return
+  }
+  
   for (const pattern of macRegexPatterns) {
     const matches = text.matchAll(pattern.regex)
     for (const match of matches) {
