@@ -337,21 +337,33 @@ const nextUnit = ref(null)
 const loadAIAssistantConfig = async () => {
   try {
     const response = await getPublicConfigs()
+    console.log('🔍 [AI助手配置] API响应:', response)
+    
     const configs = response.data || []
+    console.log('🔍 [AI助手配置] 所有配置项:', configs)
     
     // 查找AI助手配置项
     const aiAssistantConfig = configs.find(
       config => config.config_key === 'enable_ai_assistant_in_unit'
     )
     
+    console.log('🔍 [AI助手配置] 找到的配置项:', aiAssistantConfig)
+    
     if (aiAssistantConfig) {
       // 处理布尔值配置
       if (aiAssistantConfig.config_type === 'boolean') {
-        showAIAssistant.value = aiAssistantConfig.config_value === 'true'
+        const newValue = aiAssistantConfig.config_value === 'true'
+        console.log('🔍 [AI助手配置] config_value:', aiAssistantConfig.config_value)
+        console.log('🔍 [AI助手配置] 设置 showAIAssistant 为:', newValue)
+        showAIAssistant.value = newValue
       }
+    } else {
+      console.warn('⚠️ [AI助手配置] 未找到配置项 enable_ai_assistant_in_unit，使用默认值')
     }
+    
+    console.log('✅ [AI助手配置] 最终 showAIAssistant 值:', showAIAssistant.value)
   } catch (error) {
-    console.error('加载AI助手配置失败:', error)
+    console.error('❌ [AI助手配置] 加载失败:', error)
     // 失败时保持默认值 true，不影响用户体验
   }
 }
