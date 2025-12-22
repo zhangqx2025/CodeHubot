@@ -28,24 +28,6 @@
             <div class="stat-label">在线设备</div>
           </div>
         </div>
-        <div class="stat-item">
-          <div class="stat-icon active">
-            <el-icon size="20"><CircleCheck /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-number">{{ deviceStats.active_devices || 0 }}</div>
-            <div class="stat-label">激活设备</div>
-          </div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-icon offline">
-            <el-icon size="20"><CircleClose /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-number">{{ deviceStats.error_devices || 0 }}</div>
-            <div class="stat-label">故障设备</div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -72,19 +54,6 @@
           <el-option label="全部状态" value="" />
           <el-option label="在线设备" value="online" />
           <el-option label="离线设备" value="offline" />
-        </el-select>
-        <el-select v-model="activeFilter" placeholder="激活状态" style="width: 120px; margin-right: 12px;" @change="handleFilter">
-          <el-option label="全部" value="" />
-          <el-option label="已激活" value="active" />
-          <el-option label="已停用" value="inactive" />
-        </el-select>
-        <el-select v-model="deviceStatusFilter" placeholder="绑定状态" style="width: 120px; margin-right: 12px;" @change="handleFilter" clearable>
-          <el-option label="全部状态" value="" />
-          <el-option label="待绑定" value="pending" />
-          <el-option label="已绑定" value="bound" />
-          <el-option label="激活" value="active" />
-          <el-option label="离线" value="offline" />
-          <el-option label="错误" value="error" />
         </el-select>
         <el-input
           v-model="searchKeyword"
