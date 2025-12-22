@@ -38,15 +38,42 @@
         border
         style="width: 100%"
       >
-        <el-table-column prop="name" label="小组名称" min-width="200" />
-        <el-table-column label="组长" width="150">
+        <el-table-column prop="name" label="小组名称" width="200" />
+        <el-table-column label="组长" width="120">
           <template #default="{ row }">
-            {{ row.leader?.name || '-' }}
+            <el-tag v-if="row.leader" type="danger" size="small">
+              {{ row.leader.name }}
+            </el-tag>
+            <span v-else style="color: #909399">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="成员" width="150" align="center">
+        <el-table-column label="成员" min-width="300">
           <template #default="{ row }">
-            <el-tag size="large">{{ row.member_count }}/{{ row.max_members }}</el-tag>
+            <div class="members-display">
+              <el-tag
+                v-for="member in row.members"
+                :key="member.id"
+                :type="member.role === 'leader' ? 'danger' : 'info'"
+                size="small"
+                style="margin: 2px"
+              >
+                {{ member.name }}
+                <span v-if="member.role === 'leader'" style="margin-left: 2px">(组长)</span>
+              </el-tag>
+              <span v-if="!row.members || row.members.length === 0" style="color: #909399">
+                暂无成员
+              </span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="人数" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag 
+              size="large" 
+              :type="row.member_count >= row.max_members ? 'danger' : 'success'"
+            >
+              {{ row.member_count }}/{{ row.max_members }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="180">
@@ -183,6 +210,25 @@
       :close-on-click-modal="false"
       @open="handleAddGroupMemberDialogOpen"
     >
+      <el-alert
+        v-if="currentGroupInfo"
+        :title="`小组容量：${currentGroupInfo.member_count}/${currentGroupInfo.max_members} (剩余 ${remainingSlots} 个名额)`"
+        :type="remainingSlots > 0 ? 'info' : 'warning'"
+        :closable="false"
+        style="margin-bottom: 16px"
+      >
+        <template #default>
+          <div>
+            <p style="margin: 0">
+              <strong>{{ currentGroupInfo.name }}</strong>
+            </p>
+            <p style="margin: 4px 0 0 0; font-size: 12px" v-if="remainingSlots <= 0">
+              ⚠️ 小组已满，无法添加更多成员
+            </p>
+          </div>
+        </template>
+      </el-alert>
+      
       <el-form label-width="100px">
         <el-form-item label="搜索学生">
           <el-input
@@ -204,7 +250,8 @@
             placeholder="请选择要添加的学生"
             style="width: 100%"
             :loading="loadingAvailableStudents"
-            :multiple-limit="20"
+            :multiple-limit="remainingSlots > 0 ? remainingSlots : 0"
+            :disabled="remainingSlots <= 0"
           >
             <el-option
               v-for="student in availableStudents"
@@ -219,7 +266,13 @@
             </el-option>
           </el-select>
           <div class="form-tip">
-            提示：只显示该班级中还未分配到该小组的学生
+            <div>已选择 <strong style="color: #409eff">{{ selectedStudentIds.length }}</strong> 人</div>
+            <div v-if="remainingSlots > 0">
+              剩余可添加 <strong style="color: #67c23a">{{ remainingSlots - selectedStudentIds.length }}</strong> 人
+            </div>
+            <div style="color: #909399; margin-top: 4px">
+              提示：只显示该班级中还未分配到该小组的学生
+            </div>
           </div>
         </el-form-item>
       </el-form>
@@ -282,6 +335,7 @@ const groupMembers = ref([])
 const groupMemberSearchKeyword = ref('')
 const currentGroupUuid = ref(null)
 const currentGroupName = ref('')
+const currentGroupInfo = ref(null)  // 新增：保存当前小组完整信息
 const addGroupMemberDialogVisible = ref(false)
 const addingGroupMembers = ref(false)
 
@@ -299,6 +353,14 @@ const filteredGroupMembers = computed(() => {
     m.name.toLowerCase().includes(keyword) || 
     m.student_number.includes(keyword)
   )
+})
+
+// 计算剩余容量
+const remainingSlots = computed(() => {
+  if (!currentGroupInfo.value) return 0
+  const max = currentGroupInfo.value.max_members || 20
+  const current = currentGroupInfo.value.member_count || 0
+  return Math.max(0, max - current)
 })
 
 // 加载小组列表
@@ -396,6 +458,7 @@ const viewGroupMembers = async (group) => {
 const addMembersToGroupAction = (group) => {
   currentGroupUuid.value = group.uuid
   currentGroupName.value = group.name
+  currentGroupInfo.value = group  // 保存完整的小组信息
   showAddGroupMemberDialog()
 }
 
@@ -420,7 +483,7 @@ const searchAvailableStudents = () => {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
     loadAvailableStudents(studentSearchKeyword.value)
-  }, 300)
+  }, 500)  // 优化：从300ms增加到500ms
 }
 
 // 对话框打开时加载学生列表
@@ -442,17 +505,62 @@ const submitAddGroupMembers = async () => {
     return
   }
   
+  // 检查是否超过剩余容量
+  if (selectedStudentIds.value.length > remainingSlots.value) {
+    ElMessage.warning(`最多只能添加 ${remainingSlots.value} 名成员`)
+    return
+  }
+  
   addingGroupMembers.value = true
   try {
     const res = await addMembersToGroup(currentGroupUuid.value, {
       student_ids: selectedStudentIds.value
     })
-    ElMessage.success(`成功添加 ${res.data.added_count} 名成员`)
+    
+    const { added_count, failed_count, failed_list, current_count, max_members } = res.data
+    
+    // 显示详细结果
+    if (failed_count > 0) {
+      // 有失败的情况，显示详细信息
+      const failedDetails = failed_list.map(f => 
+        `<li>${f.student_name}：${f.reason}</li>`
+      ).join('')
+      
+      await ElMessageBox.alert(
+        `<div style="text-align: left;">
+          <p style="margin-bottom: 12px;">
+            <strong style="color: #67C23A;">✓ 成功添加：${added_count} 人</strong>
+          </p>
+          <p style="margin-bottom: 12px;">
+            <strong style="color: #F56C6C;">✗ 失败：${failed_count} 人</strong>
+          </p>
+          <p style="margin-bottom: 8px;"><strong>失败原因：</strong></p>
+          <ul style="margin: 0; padding-left: 20px; max-height: 200px; overflow-y: auto;">
+            ${failedDetails}
+          </ul>
+          <p style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; color: #909399;">
+            当前小组人数：${current_count}/${max_members}
+          </p>
+        </div>`,
+        '添加结果',
+        {
+          dangerouslyUseHTMLString: true,
+          confirmButtonText: '知道了',
+          type: 'warning'
+        }
+      )
+    } else {
+      // 全部成功
+      ElMessage.success(`成功添加 ${added_count} 名成员！当前小组人数：${current_count}/${max_members}`)
+    }
+    
     addGroupMemberDialogVisible.value = false
+    
     // 如果小组成员对话框是打开的，刷新成员列表
     if (groupMembersDialogVisible.value) {
       viewGroupMembers({ uuid: currentGroupUuid.value, name: currentGroupName.value })
     }
+    
     // 刷新小组列表
     loadGroups()
   } catch (error) {
@@ -589,5 +697,13 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   line-height: 1.5;
+}
+
+.members-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  line-height: 1.8;
 }
 </style>

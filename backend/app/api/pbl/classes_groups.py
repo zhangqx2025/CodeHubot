@@ -397,7 +397,7 @@ def get_groups(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
-    """获取小组列表"""
+    """获取小组列表（包含所有成员信息）"""
     # 查询小组
     query = db.query(PBLGroup).filter(PBLGroup.is_active == True)
     
@@ -410,21 +410,34 @@ def get_groups(
     
     result = []
     for group in groups:
-        # 统计小组成员数
-        member_count = db.query(PBLGroupMember).filter(
+        # 获取小组所有成员
+        members_query = db.query(PBLGroupMember, User).join(
+            User, PBLGroupMember.user_id == User.id
+        ).filter(
             PBLGroupMember.group_id == group.id,
-            PBLGroupMember.is_active == True
-        ).count()
+            PBLGroupMember.is_active == True,
+            User.deleted_at == None
+        ).all()
         
-        # 获取组长信息
+        # 构建成员列表
+        members = []
         leader = None
-        if group.leader_id:
-            leader_user = db.query(User).filter(User.id == group.leader_id).first()
-            if leader_user:
-                leader = {
-                    'id': leader_user.id,
-                    'name': leader_user.name or leader_user.real_name
-                }
+        
+        for member, user in members_query:
+            member_info = {
+                'id': user.id,
+                'name': user.name or user.real_name,
+                'student_number': user.student_number,
+                'role': member.role
+            }
+            members.append(member_info)
+            
+            # 如果是组长，单独保存
+            if member.role == 'leader' or user.id == group.leader_id:
+                leader = member_info
+        
+        # 按角色排序：组长在前，然后是成员
+        members.sort(key=lambda x: 0 if x['role'] == 'leader' else 1)
         
         result.append({
             'id': group.id,
@@ -434,8 +447,9 @@ def get_groups(
             'class_id': group.class_id,
             'course_id': group.course_id,
             'leader': leader,
+            'members': members,  # 新增：所有成员列表
             'max_members': group.max_members,
-            'member_count': member_count,
+            'member_count': len(members),
             'created_at': group.created_at.isoformat() if group.created_at else None
         })
     
@@ -609,7 +623,7 @@ def add_members_to_group(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
-    """批量添加成员到小组"""
+    """批量添加成员到小组（优化版）"""
     # 权限检查
     if current_admin.role not in ['platform_admin', 'school_admin', 'teacher']:
         return error_response(
@@ -627,29 +641,83 @@ def add_members_to_group(
             status_code=status.HTTP_404_NOT_FOUND
         )
     
+    # 检查当前小组成员数量
+    current_member_count = db.query(PBLGroupMember).filter(
+        PBLGroupMember.group_id == group.id,
+        PBLGroupMember.is_active == True
+    ).count()
+    
+    # 计算剩余容量
+    max_members = group.max_members or 20
+    available_slots = max_members - current_member_count
+    
+    if available_slots <= 0:
+        return error_response(
+            message=f"小组已满，当前人数：{current_member_count}/{max_members}",
+            code=400,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # 批量查询所有要添加的学生
+    students = db.query(User).filter(
+        User.id.in_(request_data.student_ids),
+        User.role == 'student',
+        User.deleted_at == None
+    ).all()
+    
+    student_dict = {s.id: s for s in students}
+    
+    # 批量查询已存在的成员
+    existing_members = db.query(PBLGroupMember.user_id).filter(
+        PBLGroupMember.group_id == group.id,
+        PBLGroupMember.user_id.in_(request_data.student_ids),
+        PBLGroupMember.is_active == True
+    ).all()
+    
+    existing_ids = {m[0] for m in existing_members}
+    
+    # 处理添加逻辑
     success_count = 0
+    failed_list = []
+    
     for student_id in request_data.student_ids:
-        student = db.query(User).filter(
-            User.id == student_id,
-            User.role == 'student'
-        ).first()
-        
-        if not student:
+        # 检查是否超过容量
+        if success_count >= available_slots:
+            failed_list.append({
+                'student_id': student_id,
+                'student_name': student_dict.get(student_id).name if student_id in student_dict else '未知',
+                'reason': '小组容量已满'
+            })
             continue
         
-        # 权限检查
+        # 检查学生是否存在
+        if student_id not in student_dict:
+            failed_list.append({
+                'student_id': student_id,
+                'student_name': '未知',
+                'reason': '学生不存在或已删除'
+            })
+            continue
+        
+        student = student_dict[student_id]
+        
+        # 权限检查（学校管理员只能操作本校学生）
         if current_admin.role == 'school_admin':
             if student.school_id != current_admin.school_id:
+                failed_list.append({
+                    'student_id': student_id,
+                    'student_name': student.name or student.real_name,
+                    'reason': '无权限操作该学生'
+                })
                 continue
         
-        # 检查是否已经在小组中
-        existing_member = db.query(PBLGroupMember).filter(
-            PBLGroupMember.group_id == group.id,
-            PBLGroupMember.user_id == student_id,
-            PBLGroupMember.is_active == True
-        ).first()
-        
-        if existing_member:
+        # 检查是否已在小组中
+        if student_id in existing_ids:
+            failed_list.append({
+                'student_id': student_id,
+                'student_name': student.name or student.real_name,
+                'reason': '已在小组中'
+            })
             continue
         
         # 添加成员
@@ -664,11 +732,21 @@ def add_members_to_group(
     
     db.commit()
     
-    logger.info(f"添加成员到小组 - 小组UUID: {group_id}, 成功: {success_count}, 操作者: {current_admin.username}")
+    logger.info(
+        f"添加成员到小组 - 小组UUID: {group_id}, "
+        f"成功: {success_count}, 失败: {len(failed_list)}, "
+        f"操作者: {current_admin.username}"
+    )
     
     return success_response(
-        data={'added_count': success_count},
-        message=f"成功添加 {success_count} 名成员到小组"
+        data={
+            'added_count': success_count,
+            'failed_count': len(failed_list),
+            'failed_list': failed_list,
+            'current_count': current_member_count + success_count,
+            'max_members': max_members
+        },
+        message=f"成功添加 {success_count} 名成员" + (f"，{len(failed_list)} 名失败" if failed_list else "")
     )
 
 @router.delete("/groups/{group_id}/members/{student_id}")
