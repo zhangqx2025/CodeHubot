@@ -16,7 +16,7 @@
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ statistics.totalOutputs }}</span>
-              <span class="stat-label">提交作品</span>
+              <span class="stat-label">提交作业任务</span>
             </div>
           </div>
         </div>
@@ -62,8 +62,8 @@
           </el-empty>
         </el-tab-pane>
 
-        <!-- 我的作品 -->
-        <el-tab-pane label="我的作品" name="works">
+        <!-- 我的作业任务 -->
+        <el-tab-pane label="我的作业任务" name="works">
           <div v-if="portfolioWorks.length > 0" class="works-grid">
             <el-card
               v-for="work in portfolioWorks"
@@ -72,7 +72,7 @@
               shadow="hover"
             >
               <div class="work-cover">
-                <img v-if="work.thumbnail" :src="work.thumbnail" alt="作品封面" />
+                <img v-if="work.thumbnail" :src="work.thumbnail" alt="作业任务封面" />
                 <div v-else class="placeholder-cover">
                   <el-icon :size="50"><Document /></el-icon>
                 </div>
@@ -90,7 +90,7 @@
           
           <el-empty
             v-else
-            description="还没有提交作品"
+            description="还没有提交作业任务"
           >
             <el-button type="primary" @click="handleGoToTasks">查看任务</el-button>
           </el-empty>
@@ -208,7 +208,7 @@ const loadPortfolioWorks = async () => {
   try {
     const response = await request.get('/pbl/student/my-tasks')
     const tasks = response.data || []
-    // 转换任务数据为作品展示格式
+    // 转换任务数据为作业任务展示格式
     portfolioWorks.value = tasks.map(task => ({
       id: task.task_uuid,
       title: task.task_title,
@@ -219,7 +219,7 @@ const loadPortfolioWorks = async () => {
     }))
     statistics.totalOutputs = portfolioWorks.value.length
   } catch (error) {
-    console.error('加载作品集失败:', error)
+    console.error('加载作业任务失败:', error)
   }
 }
 
@@ -362,7 +362,7 @@ onMounted(() => {
   gap: 12px;
 }
 
-/* 作品网格 */
+/* 作业任务网格 */
 .works-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
