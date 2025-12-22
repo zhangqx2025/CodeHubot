@@ -546,7 +546,11 @@ def get_available_students_for_group(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
-    """获取小组可添加的学生列表（班级中未分组的学生）"""
+    """获取小组可添加的学生列表
+    
+    返回该班级中还未分配到任何小组的学生
+    一个学生只能属于一个小组，已分配到其他小组的学生不会显示
+    """
     # 权限检查
     if current_admin.role not in ['platform_admin', 'school_admin', 'teacher']:
         return error_response(
@@ -595,14 +599,21 @@ def get_available_students_for_group(
     
     class_students = query.all()
     
-    # 获取已经在小组中的学生ID列表
+    # 获取该班级所有小组的ID列表
+    class_group_ids = db.query(PBLGroup.id).filter(
+        PBLGroup.class_id == group.class_id,
+        PBLGroup.is_active == True
+    ).all()
+    class_group_ids = [gid[0] for gid in class_group_ids]
+    
+    # 获取已经在该班级任何小组中的学生ID列表（不仅仅是当前小组）
     grouped_student_ids = db.query(PBLGroupMember.user_id).filter(
-        PBLGroupMember.group_id == group.id,
+        PBLGroupMember.group_id.in_(class_group_ids),  # 查询该班级所有小组
         PBLGroupMember.is_active == True
     ).all()
-    grouped_student_ids = [sid[0] for sid in grouped_student_ids]
+    grouped_student_ids = set([sid[0] for sid in grouped_student_ids])  # 使用set提高查询效率
     
-    # 过滤出未分组的学生
+    # 过滤出未分配到任何小组的学生
     result = []
     for student in class_students:
         if student.id not in grouped_student_ids:

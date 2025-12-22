@@ -276,7 +276,11 @@
               剩余可添加 <strong style="color: #67c23a">{{ remainingSlots - selectedStudentIds.length }}</strong> 人
             </div>
             <div style="color: #909399; margin-top: 4px">
-              提示：只显示该班级中还未分配到该小组的学生
+              <el-icon style="vertical-align: middle"><InfoFilled /></el-icon>
+              提示：只显示该班级中还未分配到任何小组的学生
+            </div>
+            <div style="color: #E6A23C; margin-top: 4px; font-size: 12px">
+              ⚠️ 一个学生只能属于一个小组
             </div>
           </div>
         </el-form-item>
@@ -297,7 +301,7 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  ArrowLeft, Plus, User, Delete, Search, Star
+  ArrowLeft, Plus, User, Delete, Search, Star, InfoFilled
 } from '@element-plus/icons-vue'
 import {
   getClubClassDetail, getGroups, createGroup, deleteGroup,
