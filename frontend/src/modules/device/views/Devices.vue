@@ -135,15 +135,6 @@
                 >
                   <el-icon><DocumentCopy /></el-icon>
                 </el-button>
-                <el-button 
-                  type="text" 
-                  size="small" 
-                  @click.stop="regenerateUUID(device)"
-                  class="uuid-regenerate-btn"
-                  :title="device.uuid ? '重新生成UUID' : '生成UUID'"
-                >
-                  <el-icon><Refresh /></el-icon>
-                </el-button>
               </div>
             </div>
           </div>
@@ -265,7 +256,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getDevices, getDevicesWithProductInfo, getDevicesStatistics, setDeviceSchool } from '@/api/device'
 import { getProductsSummary } from '@/api/product'
 import {
-  Monitor, Plus, Refresh, Search,
+  Monitor, Plus, Search,
   TrendCharts, Operation, View, Edit, Setting, Document, Delete, DocumentCopy,
   CircleCheck, CircleClose, School
 } from '@element-plus/icons-vue'
@@ -488,94 +479,6 @@ const copyUUID = async (device) => {
     }
     document.body.removeChild(textArea)
   }
-}
-
-// UUID重新生成功能
-const regenerateUUID = async (device) => {
-  try {
-    ElMessageBox.confirm(
-      `<div style="text-align: left;">
-        <p><strong>⚠️ 重要提醒：请谨慎操作！</strong></p>
-        <p>您即将为设备 "<strong>${device.name}</strong>" 重新生成UUID。</p>
-        
-        <p><strong>🔄 什么情况下需要重新生成UUID？</strong></p>
-        <ul style="margin: 8px 0; padding-left: 20px;">
-          <li>设备UUID被泄露或存在安全风险</li>
-          <li>设备需要重新注册到系统</li>
-          <li>解决UUID冲突问题</li>
-          <li>设备重置后需要新的身份标识</li>
-        </ul>
-        
-        <p><strong>⚠️ 重新生成后的影响：</strong></p>
-        <ul style="margin: 8px 0; padding-left: 20px; color: #E6A23C;">
-          <li>原有的设备连接将立即失效</li>
-          <li>需要在Coze智能体中更新新的UUID值</li>
-          <li>所有基于旧UUID的配置需要重新设置</li>
-          <li>设备历史数据关联可能受到影响</li>
-        </ul>
-        
-        <p style="color: #F56C6C; font-weight: bold;">建议：除非必要，否则不建议频繁重新生成UUID！</p>
-      </div>`,
-      '重新生成UUID - 谨慎操作',
-      {
-        confirmButtonText: '我已了解风险，确定生成',
-        cancelButtonText: '取消',
-        type: 'warning',
-        dangerouslyUseHTMLString: true,
-        customClass: 'uuid-regenerate-dialog'
-      }
-    ).then(async () => {
-      // 生成新的UUID
-      const newUUID = generateUUID()
-      
-      // 更新设备的UUID
-      const deviceIndex = devices.value.findIndex(d => d.id === device.id)
-      if (deviceIndex !== -1) {
-        const oldUUID = devices.value[deviceIndex].uuid
-        devices.value[deviceIndex].uuid = newUUID
-        
-        // 这里应该调用API更新后端数据
-        // await updateDeviceUUID(device.id, newUUID)
-        
-        ElMessage({
-          message: `设备UUID已重新生成！请记得在Coze智能体中更新新的UUID值。`,
-          type: 'success',
-          duration: 5000,
-          showClose: true
-        })
-        
-        // 显示新旧UUID对比
-        ElMessageBox.alert(
-          `<div style="text-align: left;">
-            <p><strong>UUID更新成功！</strong></p>
-            <p><strong>旧UUID：</strong><br><code style="background: #f5f5f5; padding: 2px 4px; font-family: monospace;">${oldUUID}</code></p>
-            <p><strong>新UUID：</strong><br><code style="background: #e8f5e8; padding: 2px 4px; font-family: monospace; color: #67C23A;">${newUUID}</code></p>
-            <p style="color: #E6A23C; margin-top: 12px;">
-              <strong>⚠️ 重要提醒：</strong><br>
-              请立即在Coze智能体配置中将UUID更新为新值，否则设备将无法正常工作！
-            </p>
-          </div>`,
-          'UUID更新完成',
-          {
-            confirmButtonText: '我知道了',
-            dangerouslyUseHTMLString: true,
-            type: 'success'
-          }
-        )
-      }
-    })
-  } catch (error) {
-    // 用户取消操作
-  }
-}
-
-// 生成UUID的工具函数
-const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
 }
 
 // 页面跳转方法
@@ -1146,24 +1049,6 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-}
-
-.uuid-regenerate-btn {
-  padding: 2px 4px !important;
-  min-width: auto !important;
-  height: 20px;
-  color: #909399;
-  flex-shrink: 0;
-}
-
-.uuid-regenerate-btn:hover {
-  color: #409eff;
-  background-color: #ecf5ff;
-}
-
-.uuid-regenerate-btn .el-icon {
-  margin: 0;
-  font-size: 12px;
 }
 
 /* 响应式设计 */
