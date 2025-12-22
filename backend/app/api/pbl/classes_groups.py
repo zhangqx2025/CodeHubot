@@ -796,6 +796,65 @@ def remove_member_from_group(
     
     return success_response(message="成员已从小组移除")
 
+@router.put("/groups/{group_id}/set-leader/{student_id}")
+def set_group_leader(
+    group_id: str,
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """设置小组组长"""
+    # 权限检查
+    if current_admin.role not in ['platform_admin', 'school_admin', 'teacher']:
+        return error_response(
+            message="无权限操作",
+            code=403,
+            status_code=status.HTTP_403_FORBIDDEN
+        )
+    
+    # 查询小组
+    group = db.query(PBLGroup).filter(PBLGroup.uuid == group_id).first()
+    if not group:
+        return error_response(
+            message="小组不存在",
+            code=404,
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+    
+    # 查找该学生是否在小组中
+    member = db.query(PBLGroupMember).filter(
+        PBLGroupMember.group_id == group.id,
+        PBLGroupMember.user_id == student_id,
+        PBLGroupMember.is_active == True
+    ).first()
+    
+    if not member:
+        return error_response(
+            message="该学生不在小组中",
+            code=404,
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+    
+    # 将原来的组长改为普通成员
+    old_leader = db.query(PBLGroupMember).filter(
+        PBLGroupMember.group_id == group.id,
+        PBLGroupMember.role == 'leader',
+        PBLGroupMember.is_active == True
+    ).first()
+    
+    if old_leader:
+        old_leader.role = 'member'
+    
+    # 设置新组长
+    member.role = 'leader'
+    group.leader_id = student_id
+    
+    db.commit()
+    
+    logger.info(f"设置小组组长 - 小组UUID: {group_id}, 新组长ID: {student_id}, 操作者: {current_admin.username}")
+    
+    return success_response(message="组长设置成功")
+
 @router.delete("/groups/{group_id}")
 def delete_group(
     group_id: str,

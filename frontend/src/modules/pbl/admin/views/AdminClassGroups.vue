@@ -187,8 +187,18 @@
             {{ formatDateTime(row.joined_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
+            <el-button 
+              v-if="row.role !== 'leader'"
+              link 
+              type="primary" 
+              @click="setGroupLeaderAction(row)"
+            >
+              <el-icon><Star /></el-icon>
+              设为组长
+            </el-button>
+            <el-tag v-else type="danger" size="small">当前组长</el-tag>
             <el-button link type="danger" @click="removeGroupMemberAction(row)">
               移除
             </el-button>
@@ -287,12 +297,12 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  ArrowLeft, Plus, User, Delete, Search
+  ArrowLeft, Plus, User, Delete, Search, Star
 } from '@element-plus/icons-vue'
 import {
   getClubClassDetail, getGroups, createGroup, deleteGroup,
   getGroupMembers, addMembersToGroup, removeMemberFromGroup,
-  getAvailableStudentsForGroup
+  getAvailableStudentsForGroup, setGroupLeader
 } from '@pbl/admin/api/club'
 import dayjs from 'dayjs'
 
@@ -562,6 +572,34 @@ const submitAddGroupMembers = async () => {
     ElMessage.error(error.message || '添加成员失败')
   } finally {
     addingGroupMembers.value = false
+  }
+}
+
+// 设置小组组长
+const setGroupLeaderAction = async (member) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要将 "${member.name}" 设置为组长吗？<br><br>` +
+      `<span style="color: #E6A23C;">原组长将变为普通成员</span>`,
+      '设置组长',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: true
+      }
+    )
+    
+    await setGroupLeader(currentGroupUuid.value, member.id)
+    ElMessage.success(`已将 ${member.name} 设置为组长`)
+    
+    // 刷新成员列表和小组列表
+    viewGroupMembers({ uuid: currentGroupUuid.value, name: currentGroupName.value })
+    loadGroups()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '设置组长失败')
+    }
   }
 }
 

@@ -298,6 +298,16 @@ export function removeMemberFromGroup(groupUuid, studentId) {
   })
 }
 
+/**
+ * 设置小组组长
+ */
+export function setGroupLeader(groupUuid, studentId) {
+  return request({
+    url: `/pbl/admin/classes-groups/groups/${groupUuid}/set-leader/${studentId}`,
+    method: 'put'
+  })
+}
+
 // ===== 可用模板管理 =====
 
 /**
