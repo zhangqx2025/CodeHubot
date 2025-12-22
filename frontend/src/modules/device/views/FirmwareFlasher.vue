@@ -119,43 +119,16 @@
 
       <!-- 操作按钮 -->
       <div class="action-section">
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-button 
-              type="primary" 
-              size="large"
-              style="width: 100%;"
-              :disabled="!isConnected || !selectedFirmware || isFlashing"
-              :loading="isFlashing"
-              @click="handleFlash"
-            >
-              <el-icon v-if="!isFlashing"><Upload /></el-icon>
-              {{ isFlashing ? '烧录中...' : '开始烧录' }}
-            </el-button>
-          </el-col>
-          <el-col :span="12">
-            <el-button 
-              type="danger" 
-              size="large"
-              style="width: 100%;"
-              :disabled="!isConnected || isFlashing"
-              @click="handleErase"
-            >
-              <el-icon><Delete /></el-icon>
-              擦除Flash
-            </el-button>
-          </el-col>
-        </el-row>
-        
         <el-button 
-          type="success" 
+          type="primary" 
           size="large"
-          style="width: 100%; margin-top: 12px;"
-          :disabled="!isConnected || isFlashing"
-          @click="handleReset"
+          style="width: 100%;"
+          :disabled="!isConnected || !selectedFirmware || isFlashing"
+          :loading="isFlashing"
+          @click="handleFlash"
         >
-          <el-icon><Refresh /></el-icon>
-          重启设备
+          <el-icon v-if="!isFlashing"><Upload /></el-icon>
+          {{ isFlashing ? '烧录中...' : '开始烧录' }}
         </el-button>
       </div>
 
@@ -248,14 +221,7 @@
             <el-icon class="tip-icon" color="#9C27B0"><Check /></el-icon>
             <div>
               <strong>5. 开始烧录：</strong>
-              <p>点击"开始烧录"按钮，等待烧录完成（约2-3分钟）</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <el-icon class="tip-icon" color="#909399"><Check /></el-icon>
-            <div>
-              <strong>6. 故障排除：</strong>
-              <p>如果烧录失败，可以先尝试"擦除Flash"，然后重新烧录</p>
+              <p>点击"开始烧录"按钮，等待烧录完成（约2-3分钟），设备会自动重启</p>
             </div>
           </div>
         </div>
@@ -266,9 +232,9 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import {
-  Link, Close, FolderOpened, Upload, Delete, Refresh,
+  Link, Close, FolderOpened, Upload,
   Document, InfoFilled, Check
 } from '@element-plus/icons-vue'
 
@@ -487,54 +453,6 @@ const handleFlash = async () => {
   }
 }
 
-// 擦除Flash
-const handleErase = async () => {
-  if (!isConnected.value) {
-    ElMessage.error('请先连接设备！')
-    return
-  }
-
-  try {
-    await ElMessageBox.confirm(
-      '确定要擦除整个 Flash 吗？此操作不可恢复！',
-      '警告',
-      {
-        confirmButtonText: '确定擦除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-
-    addLog('🗑️ 开始擦除 Flash...')
-    await esploader.eraseFlash()
-    addLog('✅ Flash 擦除完成！', 'success')
-    ElMessage.success('Flash 擦除完成')
-  } catch (error) {
-    if (error !== 'cancel') {
-      addLog(`❌ 擦除失败: ${error.message}`, 'error')
-      ElMessage.error('擦除失败')
-    }
-  }
-}
-
-// 重启设备
-const handleReset = async () => {
-  if (!isConnected.value) {
-    ElMessage.error('请先连接设备！')
-    return
-  }
-
-  try {
-    addLog('🔄 正在重启设备...')
-    await esploader.hardReset()
-    addLog('✅ 设备已重启！', 'success')
-    ElMessage.success('设备已重启')
-  } catch (error) {
-    addLog(`❌ 重启失败: ${error.message}`, 'error')
-    addLog('💡 提示：请手动按一下设备上的 RESET 按钮', 'info')
-    ElMessage.error('重启失败，请手动按 RESET 按钮')
-  }
-}
 
 // 检查浏览器支持
 onMounted(() => {
