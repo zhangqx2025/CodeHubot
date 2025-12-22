@@ -139,7 +139,7 @@
               :playAuth="videoPlayData.playAuth"
               :source="videoPlayData.source" 
               :cover="videoPlayData.cover"
-              :resourceUuid="currentStep.resourceUuid || currentStep.id"
+              :resourceUuid="currentStep.uuid"
               :autoplay="true"
               :autoPauseInterval="180"
               :enableTracking="true"
