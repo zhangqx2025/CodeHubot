@@ -19,7 +19,7 @@ import request from '@/utils/request'
  */
 export function createChatSession(data) {
   return request({
-    url: '/api/pbl/ai-chat/sessions',
+    url: '/pbl/ai-chat/sessions',
     method: 'post',
     data
   })
@@ -32,7 +32,7 @@ export function createChatSession(data) {
  */
 export function getChatSession(sessionUuid) {
   return request({
-    url: `/api/pbl/ai-chat/sessions/${sessionUuid}`,
+    url: `/pbl/ai-chat/sessions/${sessionUuid}`,
     method: 'get'
   })
 }
@@ -44,7 +44,7 @@ export function getChatSession(sessionUuid) {
  */
 export function endChatSession(sessionUuid) {
   return request({
-    url: `/api/pbl/ai-chat/sessions/${sessionUuid}/end`,
+    url: `/pbl/ai-chat/sessions/${sessionUuid}/end`,
     method: 'put'
   })
 }
@@ -66,7 +66,7 @@ export function endChatSession(sessionUuid) {
  */
 export function saveChatMessage(data) {
   return request({
-    url: '/api/pbl/ai-chat/messages',
+    url: '/pbl/ai-chat/messages',
     method: 'post',
     data
   })
@@ -81,7 +81,7 @@ export function saveChatMessage(data) {
  */
 export function saveChatMessagesBatch(data) {
   return request({
-    url: '/api/pbl/ai-chat/messages/batch',
+    url: '/pbl/ai-chat/messages/batch',
     method: 'post',
     data
   })
@@ -96,7 +96,7 @@ export function saveChatMessagesBatch(data) {
  */
 export function updateMessageFeedback(messageUuid, data) {
   return request({
-    url: `/api/pbl/ai-chat/messages/${messageUuid}/feedback`,
+    url: `/pbl/ai-chat/messages/${messageUuid}/feedback`,
     method: 'put',
     data
   })
@@ -109,7 +109,7 @@ export function updateMessageFeedback(messageUuid, data) {
  */
 export function getSessionMessages(sessionUuid) {
   return request({
-    url: `/api/pbl/ai-chat/messages/session/${sessionUuid}`,
+    url: `/pbl/ai-chat/messages/session/${sessionUuid}`,
     method: 'get'
   })
 }
@@ -125,7 +125,7 @@ export function getSessionMessages(sessionUuid) {
  */
 export function getStudentChatStats(userId) {
   return request({
-    url: `/api/pbl/ai-chat/stats/student/${userId}`,
+    url: `/pbl/ai-chat/stats/student/${userId}`,
     method: 'get'
   })
 }
@@ -138,7 +138,7 @@ export function getStudentChatStats(userId) {
  */
 export function getUnitPopularQuestions(unitUuid, limit = 10) {
   return request({
-    url: `/api/pbl/ai-chat/stats/unit/${unitUuid}/popular-questions`,
+    url: `/pbl/ai-chat/stats/unit/${unitUuid}/popular-questions`,
     method: 'get',
     params: { limit }
   })
@@ -154,7 +154,7 @@ export function getUnitPopularQuestions(unitUuid, limit = 10) {
  */
 export function getChatAnalytics(params) {
   return request({
-    url: '/api/pbl/ai-chat/analytics/overview',
+    url: '/pbl/ai-chat/analytics/overview',
     method: 'get',
     params
   })
@@ -187,3 +187,4 @@ export function getBrowserType() {
   if (ua.indexOf('Edge') > -1) return 'Edge'
   return 'Unknown'
 }
+

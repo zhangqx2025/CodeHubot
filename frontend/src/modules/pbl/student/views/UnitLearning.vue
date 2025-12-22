@@ -341,6 +341,7 @@ const loadAIAssistantConfig = async () => {
     
     const configs = response.data || []
     console.log('🔍 [AI助手配置] 所有配置项:', configs)
+    console.log('🔍 [AI助手配置] 所有配置项的键名:', configs.map(c => c.config_key))
     
     // 查找AI助手配置项
     const aiAssistantConfig = configs.find(

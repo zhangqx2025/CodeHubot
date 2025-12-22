@@ -15,7 +15,7 @@ import request from '@/utils/request'
  */
 export function createPlaySession(resourceUuid, duration, deviceType = null) {
   return request({
-    url: '/api/pbl/video/progress/session/create',
+    url: '/pbl/video/progress/session/create',
     method: 'post',
     data: {
       resource_uuid: resourceUuid,
@@ -35,7 +35,7 @@ export function createPlaySession(resourceUuid, duration, deviceType = null) {
  */
 export function updatePlayProgress(sessionId, currentPosition, status = 'playing', eventType = 'progress') {
   return request({
-    url: '/api/pbl/video/progress/progress/update',
+    url: '/pbl/video/progress/progress/update',
     method: 'post',
     data: {
       session_id: sessionId,
@@ -55,7 +55,7 @@ export function updatePlayProgress(sessionId, currentPosition, status = 'playing
  */
 export function recordSeekEvent(sessionId, fromPosition, toPosition) {
   return request({
-    url: '/api/pbl/video/progress/event/seek',
+    url: '/pbl/video/progress/event/seek',
     method: 'post',
     data: {
       session_id: sessionId,
@@ -73,7 +73,7 @@ export function recordSeekEvent(sessionId, fromPosition, toPosition) {
  */
 export function recordPauseEvent(sessionId, position) {
   return request({
-    url: '/api/pbl/video/progress/event/pause',
+    url: '/pbl/video/progress/event/pause',
     method: 'post',
     data: {
       session_id: sessionId,
@@ -90,7 +90,7 @@ export function recordPauseEvent(sessionId, position) {
  */
 export function recordEndEvent(sessionId, position) {
   return request({
-    url: '/api/pbl/video/progress/event/ended',
+    url: '/pbl/video/progress/event/ended',
     method: 'post',
     data: {
       session_id: sessionId,
@@ -108,7 +108,7 @@ export function recordEndEvent(sessionId, position) {
  */
 export function getLastPosition(resourceUuid) {
   return request({
-    url: `/api/pbl/video/progress/last-position/${resourceUuid}`,
+    url: `/pbl/video/progress/last-position/${resourceUuid}`,
     method: 'get'
   })
 }
@@ -121,7 +121,7 @@ export function getLastPosition(resourceUuid) {
  */
 export function getUserWatchStats(resourceUuid, userId = null) {
   return request({
-    url: `/api/pbl/video/progress/stats/user/${resourceUuid}`,
+    url: `/pbl/video/progress/stats/user/${resourceUuid}`,
     method: 'get',
     params: userId ? { user_id: userId } : {}
   })
@@ -134,7 +134,7 @@ export function getUserWatchStats(resourceUuid, userId = null) {
  */
 export function getVideoWatchStats(resourceUuid) {
   return request({
-    url: `/api/pbl/video/progress/stats/video/${resourceUuid}`,
+    url: `/pbl/video/progress/stats/video/${resourceUuid}`,
     method: 'get'
   })
 }
@@ -147,7 +147,7 @@ export function getVideoWatchStats(resourceUuid) {
  */
 export function getStudentsRanking(resourceUuid, limit = 20) {
   return request({
-    url: `/api/pbl/video/progress/stats/ranking/${resourceUuid}`,
+    url: `/pbl/video/progress/stats/ranking/${resourceUuid}`,
     method: 'get',
     params: { limit }
   })
@@ -160,7 +160,7 @@ export function getStudentsRanking(resourceUuid, limit = 20) {
  */
 export function getSessionInfo(sessionId) {
   return request({
-    url: `/api/pbl/video/progress/session/${sessionId}`,
+    url: `/pbl/video/progress/session/${sessionId}`,
     method: 'get'
   })
 }
@@ -174,7 +174,7 @@ export function getSessionInfo(sessionId) {
  */
 export function getVideoPlayAuth(resourceUuid) {
   return request({
-    url: `/api/pbl/video/play-auth/${resourceUuid}`,
+    url: `/pbl/video/play-auth/${resourceUuid}`,
     method: 'get'
   })
 }
@@ -186,7 +186,7 @@ export function getVideoPlayAuth(resourceUuid) {
  */
 export function getVideoInfo(resourceUuid) {
   return request({
-    url: `/api/pbl/video/info/${resourceUuid}`,
+    url: `/pbl/video/info/${resourceUuid}`,
     method: 'get'
   })
 }
@@ -198,7 +198,7 @@ export function getVideoInfo(resourceUuid) {
  */
 export function getWatchStats(resourceUuid) {
   return request({
-    url: `/api/pbl/video/watch-stats/${resourceUuid}`,
+    url: `/pbl/video/watch-stats/${resourceUuid}`,
     method: 'get'
   })
 }
@@ -211,7 +211,7 @@ export function getWatchStats(resourceUuid) {
  */
 export function getWatchHistory(resourceUuid, limit = 50) {
   return request({
-    url: `/api/pbl/video/watch-history/${resourceUuid}`,
+    url: `/pbl/video/watch-history/${resourceUuid}`,
     method: 'get',
     params: { limit }
   })

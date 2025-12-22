@@ -150,4 +150,10 @@ try:
 except ImportError as e:
     print(f"警告: 无法导入learning_progress: {e}")
 
+try:
+    from app.api.pbl.ai_chat import router as ai_chat_router
+    pbl_router.include_router(ai_chat_router, prefix="/ai-chat", tags=["PBL-AI对话"])
+except ImportError as e:
+    print(f"警告: 无法导入ai_chat: {e}")
+
 print(f"✓ PBL路由注册完成，已注册 {len(pbl_router.routes)} 个路由")

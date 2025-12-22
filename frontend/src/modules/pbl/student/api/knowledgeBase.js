@@ -13,7 +13,7 @@ import request from '@/utils/request'
  */
 export function searchUnitKnowledge(unitUuid, query, limit = 5) {
   return request({
-    url: `/api/pbl/knowledge/units/${unitUuid}/search`,
+    url: `/pbl/knowledge/units/${unitUuid}/search`,
     method: 'get',
     params: { query, limit }
   })
@@ -31,7 +31,7 @@ export function searchUnitKnowledge(unitUuid, query, limit = 5) {
  */
 export function logKnowledgeUsage(data) {
   return request({
-    url: '/api/pbl/knowledge/usage-log',
+    url: '/pbl/knowledge/usage-log',
     method: 'post',
     data
   })
@@ -45,7 +45,7 @@ export function logKnowledgeUsage(data) {
  */
 export function getPopularKnowledge(unitUuid, limit = 10) {
   return request({
-    url: `/api/pbl/knowledge/units/${unitUuid}/popular`,
+    url: `/pbl/knowledge/units/${unitUuid}/popular`,
     method: 'get',
     params: { limit }
   })
@@ -58,7 +58,7 @@ export function getPopularKnowledge(unitUuid, limit = 10) {
  */
 export function getKnowledgeCategories(unitUuid) {
   return request({
-    url: `/api/pbl/knowledge/units/${unitUuid}/categories`,
+    url: `/pbl/knowledge/units/${unitUuid}/categories`,
     method: 'get'
   })
 }
@@ -70,7 +70,7 @@ export function getKnowledgeCategories(unitUuid) {
  */
 export function getKnowledgeDetail(knowledgeUuid) {
   return request({
-    url: `/api/pbl/knowledge/knowledge/${knowledgeUuid}`,
+    url: `/pbl/knowledge/knowledge/${knowledgeUuid}`,
     method: 'get'
   })
 }
@@ -82,7 +82,7 @@ export function getKnowledgeDetail(knowledgeUuid) {
  */
 export function createKnowledge(data) {
   return request({
-    url: '/api/pbl/knowledge/knowledge',
+    url: '/pbl/knowledge/knowledge',
     method: 'post',
     data
   })
@@ -96,8 +96,9 @@ export function createKnowledge(data) {
  */
 export function updateKnowledge(knowledgeUuid, data) {
   return request({
-    url: `/api/pbl/knowledge/knowledge/${knowledgeUuid}`,
+    url: `/pbl/knowledge/knowledge/${knowledgeUuid}`,
     method: 'put',
     data
   })
 }
+
