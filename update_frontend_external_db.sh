@@ -81,18 +81,12 @@ main() {
     echo ""
     echo ""
 
-    # 4. 进入 docker 目录
-    print_info "进入 docker 目录..."
-    cd docker
-    print_success "已进入 docker 目录"
-    echo ""
-
-    # 5. 停止前端服务
+    # 4. 停止前端服务
     print_separator
     print_info "正在停止前端服务..."
     print_separator
     
-    docker-compose -f docker-compose.external-db.yml stop frontend
+    docker-compose -f docker/docker-compose.external-db.yml stop frontend
     
     if [ $? -ne 0 ]; then
         print_warning "停止前端服务失败（可能服务未运行）"
@@ -101,13 +95,13 @@ main() {
     fi
     echo ""
 
-    # 6. 重新构建前端镜像
+    # 5. 重新构建前端镜像
     print_separator
     print_info "正在重新构建前端镜像..."
     print_warning "这可能需要几分钟时间，请耐心等待..."
     print_separator
     
-    docker-compose -f docker-compose.external-db.yml build --no-cache frontend
+    docker-compose -f docker/docker-compose.external-db.yml build --no-cache frontend
     
     if [ $? -ne 0 ]; then
         print_error "前端镜像构建失败"
@@ -117,12 +111,12 @@ main() {
     print_success "前端镜像构建成功"
     echo ""
 
-    # 7. 启动前端服务
+    # 6. 启动前端服务
     print_separator
     print_info "正在启动前端服务..."
     print_separator
     
-    docker-compose -f docker-compose.external-db.yml up -d frontend
+    docker-compose -f docker/docker-compose.external-db.yml up -d frontend
     
     if [ $? -ne 0 ]; then
         print_error "前端服务启动失败"
@@ -132,27 +126,27 @@ main() {
     print_success "前端服务已启动"
     echo ""
 
-    # 8. 等待服务启动
+    # 7. 等待服务启动
     print_info "等待前端服务完全启动..."
     sleep 5
     echo ""
 
-    # 9. 检查服务状态
+    # 8. 检查服务状态
     print_separator
     print_info "检查前端服务状态..."
     print_separator
     
-    docker-compose -f docker-compose.external-db.yml ps frontend
+    docker-compose -f docker/docker-compose.external-db.yml ps frontend
     echo ""
 
-    # 10. 显示前端日志
+    # 9. 显示前端日志
     print_separator
     print_info "前端服务日志（最后 20 行）:"
     print_separator
-    docker-compose -f docker-compose.external-db.yml logs --tail=20 frontend
+    docker-compose -f docker/docker-compose.external-db.yml logs --tail=20 frontend
     echo ""
 
-    # 11. 完成
+    # 10. 完成
     print_separator
     print_success "✅ 前端更新完成！"
     print_separator
