@@ -400,14 +400,46 @@ async def get_sensor_data(device_uuid: str, sensor: str):
         device_name = device.name if device else "未知设备"
         last_seen = device.last_seen if device else None
         
-        logger.info(f"✅ 传感器数据: {sensor_data.sensor_name} = {sensor_data.sensor_value}{sensor_data.sensor_unit}")
+        # 转换 value 为数字类型（Coze要求返回number类型）
+        try:
+            numeric_value = float(sensor_data.sensor_value)
+        except (ValueError, TypeError):
+            # 如果无法转换为数字，保留原值（可能是布尔值或其他类型）
+            numeric_value = sensor_data.sensor_value
+            logger.warning(f"⚠️  传感器值无法转换为数字: {sensor_data.sensor_value}")
+        
+        # 🔧 如果数据库中 sensor_unit 为空，根据传感器类型给出默认单位
+        sensor_unit = sensor_data.sensor_unit
+        if not sensor_unit or sensor_unit.strip() == "":
+            # 默认单位映射
+            default_units = {
+                "temperature": "°C",      # 温度
+                "humidity": "%",          # 湿度
+                "ds18b20": "°C",         # DS18B20温度
+                "rain": "",              # 雨水（布尔值，无单位）
+                "rain_level": "级",      # 雨水级别
+                "light": "lx",           # 光照
+                "pressure": "Pa",        # 气压
+                "altitude": "m",         # 海拔
+                "distance": "cm",        # 距离
+                "gas": "ppm",            # 气体浓度
+                "soil_moisture": "%",    # 土壤湿度
+                "voltage": "V",          # 电压
+                "current": "A",          # 电流
+                "power": "W"             # 功率
+            }
+            sensor_unit = default_units.get(actual_sensor_name, "")
+            if sensor_unit:
+                logger.info(f"💡 使用默认单位: {actual_sensor_name} → {sensor_unit}")
+        
+        logger.info(f"✅ 传感器数据: {sensor_data.sensor_name} = {numeric_value} {sensor_unit}")
         
         return StandardResponse(
             code=200,
             msg="成功",
             data={
-                "value": sensor_data.sensor_value,
-                "unit": sensor_data.sensor_unit or "",
+                "value": numeric_value,  # 转换为数字类型
+                "unit": sensor_unit,     # 使用默认单位（如果数据库为空）
                 "sensor_name": sensor_data.sensor_name,
                 "sensor_type": sensor_data.sensor_type or "",
                 "timestamp": sensor_data.timestamp.isoformat() if sensor_data.timestamp else None,
