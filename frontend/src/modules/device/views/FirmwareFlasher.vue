@@ -260,7 +260,7 @@ const firmwareList = ref([
     version: '1.7',
     filename: '/firmware/ESP32-S3-Lite-01-v1.7.bin',
     size: '约 6 MB',
-    date: '2024-12-23',
+    date: '2025-12-23',
     description: '最新稳定版本，包含所有功能优化',
     address: '0x0'
   },
