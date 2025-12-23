@@ -41,3 +41,4 @@ WHERE `config_key` = 'enable_ai_assistant_in_unit';
 SELECT '' AS '';
 SELECT '💡 刷新浏览器页面即可看到效果' AS '';
 
+

@@ -96,3 +96,4 @@ class AIChatMessage(Base):
     __table_args__ = (
         Index('idx_session_sequence', 'session_id', 'sequence_number'),
     )
+
