@@ -255,12 +255,12 @@ let transport = null
 // 固件列表配置
 const firmwareList = ref([
   {
-    id: 'esp32s3-lite-v1.6',
-    name: 'ESP32-S3-Lite v1.6',
-    version: '1.6',
-    filename: '/firmware/ESP32-S3-Lite-01-v1.6.bin',
+    id: 'esp32s3-lite-v1.7',
+    name: 'ESP32-S3-Lite v1.7',
+    version: '1.7',
+    filename: '/firmware/ESP32-S3-Lite-01-v1.7.bin',
     size: '约 6 MB',
-    date: '2024-12-20',
+    date: '2024-12-23',
     description: '最新稳定版本，包含所有功能优化',
     address: '0x0'
   },
