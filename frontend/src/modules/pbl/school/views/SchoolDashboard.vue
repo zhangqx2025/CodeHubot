@@ -1,73 +1,151 @@
 <template>
   <div class="school-dashboard">
-    <el-row :gutter="20" v-loading="loading">
-      <!-- 数据卡片 -->
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card class="stat-card teachers-card">
-          <div class="stat-content">
-            <el-icon :size="48" class="stat-icon"><User /></el-icon>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.teacherCount || 0 }}</div>
-              <div class="stat-label">教师总数</div>
+    <!-- 学校管理员视图 -->
+    <template v-if="authStore.isSchoolAdmin">
+      <el-row :gutter="20" v-loading="loading">
+        <!-- 数据卡片 -->
+        <el-col :xs="24" :sm="12" :lg="6">
+          <el-card class="stat-card teachers-card">
+            <div class="stat-content">
+              <el-icon :size="48" class="stat-icon"><User /></el-icon>
+              <div class="stat-info">
+                <div class="stat-value">{{ statistics.teacherCount || 0 }}</div>
+                <div class="stat-label">教师总数</div>
+              </div>
             </div>
-          </div>
-        </el-card>
-      </el-col>
+          </el-card>
+        </el-col>
+        
+        <el-col :xs="24" :sm="12" :lg="6">
+          <el-card class="stat-card students-card">
+            <div class="stat-content">
+              <el-icon :size="48" class="stat-icon"><UserFilled /></el-icon>
+              <div class="stat-info">
+                <div class="stat-value">{{ statistics.studentCount || 0 }}</div>
+                <div class="stat-label">学生总数</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        
+        <el-col :xs="24" :sm="12" :lg="6">
+          <el-card class="stat-card classes-card">
+            <div class="stat-content">
+              <el-icon :size="48" class="stat-icon"><Notebook /></el-icon>
+              <div class="stat-info">
+                <div class="stat-value">{{ statistics.classCount || 0 }}</div>
+                <div class="stat-label">班级总数</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        
+        <el-col :xs="24" :sm="12" :lg="6">
+          <el-card class="stat-card courses-card">
+            <div class="stat-content">
+              <el-icon :size="48" class="stat-icon"><Reading /></el-icon>
+              <div class="stat-info">
+                <div class="stat-value">{{ statistics.courseCount || 0 }}</div>
+                <div class="stat-label">进行中课程</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
       
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card class="stat-card students-card">
-          <div class="stat-content">
-            <el-icon :size="48" class="stat-icon"><UserFilled /></el-icon>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.studentCount || 0 }}</div>
-              <div class="stat-label">学生总数</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card class="stat-card classes-card">
-          <div class="stat-content">
-            <el-icon :size="48" class="stat-icon"><Notebook /></el-icon>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.classCount || 0 }}</div>
-              <div class="stat-label">班级总数</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card class="stat-card courses-card">
-          <div class="stat-content">
-            <el-icon :size="48" class="stat-icon"><Reading /></el-icon>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.courseCount || 0 }}</div>
-              <div class="stat-label">进行中课程</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+      <!-- 快捷操作 -->
+      <el-card style="margin-top: 20px">
+        <template #header>
+          <span>快捷操作</span>
+        </template>
+        <div class="quick-actions">
+          <el-button type="primary" @click="goTo('/pbl/school/users')">
+            <el-icon><Plus /></el-icon> 用户管理
+          </el-button>
+          <el-button type="success" @click="goTo('/pbl/school/classes')">
+            <el-icon><Plus /></el-icon> 班级管理
+          </el-button>
+          <el-button type="info" @click="goTo('/pbl/school/available-templates')">
+            <el-icon><Document /></el-icon> 浏览模板
+          </el-button>
+        </div>
+      </el-card>
+    </template>
     
-    <!-- 快捷操作 -->
-    <el-card style="margin-top: 20px" v-if="authStore.isSchoolAdmin">
-      <template #header>
-        <span>快捷操作</span>
-      </template>
-      <div class="quick-actions">
-        <el-button type="primary" @click="goTo('/pbl/school/users')">
-          <el-icon><Plus /></el-icon> 用户管理
-        </el-button>
-        <el-button type="success" @click="goTo('/pbl/school/classes')">
-          <el-icon><Plus /></el-icon> 班级管理
-        </el-button>
-        <el-button type="info" @click="goTo('/pbl/school/available-templates')">
-          <el-icon><Document /></el-icon> 浏览模板
-        </el-button>
-      </div>
-    </el-card>
+    <!-- 教师视图 -->
+    <template v-else-if="authStore.isTeacher">
+      <el-row :gutter="20" v-loading="loading">
+        <!-- 教师统计卡片 -->
+        <el-col :xs="24" :sm="12" :lg="6">
+          <el-card class="stat-card courses-card">
+            <div class="stat-content">
+              <el-icon :size="48" class="stat-icon"><Reading /></el-icon>
+              <div class="stat-info">
+                <div class="stat-value">{{ teacherStatistics.myCourses || 0 }}</div>
+                <div class="stat-label">我的课程</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        
+        <el-col :xs="24" :sm="12" :lg="6">
+          <el-card class="stat-card students-card">
+            <div class="stat-content">
+              <el-icon :size="48" class="stat-icon"><UserFilled /></el-icon>
+              <div class="stat-info">
+                <div class="stat-value">{{ teacherStatistics.myStudents || 0 }}</div>
+                <div class="stat-label">我的学生</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        
+        <el-col :xs="24" :sm="12" :lg="6">
+          <el-card class="stat-card pending-card">
+            <div class="stat-content">
+              <el-icon :size="48" class="stat-icon"><EditPen /></el-icon>
+              <div class="stat-info">
+                <div class="stat-value">{{ teacherStatistics.pendingGrading || 0 }}</div>
+                <div class="stat-label">待批改作业</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        
+        <el-col :xs="24" :sm="12" :lg="6">
+          <el-card class="stat-card classes-card">
+            <div class="stat-content">
+              <el-icon :size="48" class="stat-icon"><Notebook /></el-icon>
+              <div class="stat-info">
+                <div class="stat-value">{{ teacherStatistics.myClasses || 0 }}</div>
+                <div class="stat-label">我的班级</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      
+      <!-- 教师快捷操作 -->
+      <el-card style="margin-top: 20px">
+        <template #header>
+          <span>快捷操作</span>
+        </template>
+        <div class="quick-actions">
+          <el-button type="primary" @click="goTo('/pbl/school/my-courses')">
+            <el-icon><Reading /></el-icon> 我的课程
+          </el-button>
+          <el-button type="warning" @click="goTo('/pbl/school/grading')">
+            <el-icon><EditPen /></el-icon> 作业批改
+          </el-button>
+          <el-button type="success" @click="goTo('/pbl/school/classes')">
+            <el-icon><Notebook /></el-icon> 班级管理
+          </el-button>
+          <el-button type="info" @click="goTo('/pbl/school/available-templates')">
+            <el-icon><Document /></el-icon> 浏览模板
+          </el-button>
+        </div>
+      </el-card>
+    </template>
   </div>
 </template>
 
@@ -76,7 +154,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
-import { User, UserFilled, Notebook, Reading, Plus, Document } from '@element-plus/icons-vue'
+import { User, UserFilled, Notebook, Reading, Plus, Document, EditPen } from '@element-plus/icons-vue'
 import { getCurrentAdmin } from '@/api/admin'
 import request from '@/utils/request'
 
@@ -84,6 +162,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const loading = ref(false)
+
+// 学校管理员统计数据
 const statistics = ref({
   teacherCount: 0,
   studentCount: 0,
@@ -91,11 +171,24 @@ const statistics = ref({
   courseCount: 0
 })
 
-onMounted(() => {
-  loadStatistics()
+// 教师统计数据
+const teacherStatistics = ref({
+  myCourses: 0,
+  myStudents: 0,
+  pendingGrading: 0,
+  myClasses: 0
 })
 
-async function loadStatistics() {
+onMounted(() => {
+  if (authStore.isSchoolAdmin) {
+    loadAdminStatistics()
+  } else if (authStore.isTeacher) {
+    loadTeacherStatistics()
+  }
+})
+
+// 加载学校管理员统计数据
+async function loadAdminStatistics() {
   try {
     loading.value = true
     
@@ -113,6 +206,29 @@ async function loadStatistics() {
     }
   } catch (error) {
     console.error('加载统计数据失败:', error)
+    ElMessage.error('加载数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 加载教师统计数据
+async function loadTeacherStatistics() {
+  try {
+    loading.value = true
+    
+    // TODO: 调用教师统计API
+    // const response = await request.get('/pbl/teacher/statistics')
+    
+    // 暂时使用模拟数据
+    teacherStatistics.value = {
+      myCourses: 0,
+      myStudents: 0,
+      pendingGrading: 0,
+      myClasses: 0
+    }
+  } catch (error) {
+    console.error('加载教师统计数据失败:', error)
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
@@ -184,6 +300,12 @@ function goTo(path) {
       border-left: 3px solid #f56c6c;
       .stat-icon { color: #f56c6c; }
       .stat-value { color: #f56c6c; }
+    }
+    
+    &.pending-card {
+      border-left: 3px solid #e6a23c;
+      .stat-icon { color: #e6a23c; }
+      .stat-value { color: #e6a23c; }
     }
   }
   

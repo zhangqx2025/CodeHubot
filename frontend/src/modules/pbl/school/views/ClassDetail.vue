@@ -73,7 +73,6 @@
           </div>
         </template>
         <div class="actions-container">
-          <!-- 第一行 -->
           <div class="actions-grid">
             <el-button size="large" @click="viewMembers">
               <el-icon><UserFilled /></el-icon>
@@ -83,17 +82,6 @@
               <el-icon><Grid /></el-icon>
               分组管理
             </el-button>
-            <el-button size="large" @click="viewTeachers">
-              <el-icon><User /></el-icon>
-              教师管理
-            </el-button>
-          </div>
-          <!-- 第二行 -->
-          <div class="actions-grid">
-            <el-button size="large" @click="viewCourses">
-              <el-icon><Reading /></el-icon>
-              课程管理
-            </el-button>
             <el-button size="large" @click="viewProgress">
               <el-icon><TrendCharts /></el-icon>
               学习进度
@@ -101,6 +89,15 @@
             <el-button size="large" @click="viewHomework">
               <el-icon><Document /></el-icon>
               作业管理
+            </el-button>
+            <!-- 学校管理员专用按钮 -->
+            <el-button v-if="authStore.isSchoolAdmin" size="large" @click="viewTeachers">
+              <el-icon><User /></el-icon>
+              教师管理
+            </el-button>
+            <el-button v-if="authStore.isSchoolAdmin" size="large" @click="viewCourses">
+              <el-icon><Reading /></el-icon>
+              课程管理
             </el-button>
           </div>
         </div>
@@ -138,6 +135,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 import {
   ArrowLeft, ArrowRight, Edit, UserFilled, Reading, Grid, Clock, User, TrendCharts, Document
@@ -147,6 +145,7 @@ import dayjs from 'dayjs'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const loading = ref(true)
 const classInfo = ref(null)
@@ -384,12 +383,6 @@ onMounted(() => {
   .card-header {
     font-size: 16px;
     font-weight: 600;
-  }
-  
-  .actions-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
   }
   
   .actions-grid {

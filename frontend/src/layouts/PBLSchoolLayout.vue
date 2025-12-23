@@ -36,6 +36,11 @@
         
         <!-- 教师功能 -->
         <template v-else-if="authStore.isTeacher">
+          <el-menu-item index="/pbl/school/dashboard">
+            <el-icon><HomeFilled /></el-icon>
+            <span>教师工作台</span>
+          </el-menu-item>
+          
           <el-menu-item index="/pbl/school/classes">
             <el-icon><School /></el-icon>
             <span>我的班级课程</span>
@@ -107,7 +112,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  School, HomeFilled, User, UserFilled, Files, Grid, Lock, SwitchButton
+  School, HomeFilled, User, UserFilled, Files, Grid, Lock, SwitchButton, Reading, EditPen
 } from '@element-plus/icons-vue'
 import UserProfileDialog from '@/components/UserProfileDialog.vue'
 

@@ -51,41 +51,8 @@ const studentRoutes = {
   ]
 }
 
-// PBL教师端路由
-const teacherRoutes = {
-  path: '/pbl/teacher',
-  component: () => import('@/layouts/PBLTeacherLayout.vue'),
-  meta: { requiresAuth: true, roles: ['teacher'] },
-  redirect: '/pbl/teacher/dashboard',
-  children: [
-    {
-      path: 'dashboard',
-      name: 'TeacherDashboard',
-      component: () => import('@pbl/teacher/views/TeacherDashboard.vue'),
-      meta: { title: '教学仪表盘' }
-    },
-    {
-      path: 'courses',
-      name: 'TeacherCourses',
-      component: () => import('@pbl/teacher/views/TeacherCourses.vue'),
-      meta: { title: '课程管理' }
-    },
-    {
-      path: 'tasks',
-      name: 'TeacherTasks',
-      component: () => import('@pbl/teacher/views/TeacherTasks.vue'),
-      meta: { title: '任务管理' }
-    },
-    {
-      path: 'students',
-      name: 'TeacherStudents',
-      component: () => import('@pbl/teacher/views/TeacherStudents.vue'),
-      meta: { title: '学生管理' }
-    }
-  ]
-}
-
 // PBL学校管理平台路由（学校管理员和教师）
+// 注意：教师路由已合并到此处，统一管理
 const schoolRoutes = {
   path: '/pbl/school',
   component: () => import('@/layouts/PBLSchoolLayout.vue'),
@@ -99,6 +66,34 @@ const schoolRoutes = {
       meta: { 
         title: '概览',
         roles: ['school_admin', 'teacher']
+      }
+    },
+    // 教师专用功能
+    {
+      path: 'my-courses',
+      name: 'SchoolMyCourses',
+      component: () => import('@pbl/teacher/views/TeacherCourses.vue'),
+      meta: { 
+        title: '我的课程',
+        roles: ['teacher']
+      }
+    },
+    {
+      path: 'grading',
+      name: 'SchoolGrading',
+      component: () => import('@pbl/teacher/views/TeacherTasks.vue'),
+      meta: { 
+        title: '作业批改',
+        roles: ['teacher']
+      }
+    },
+    {
+      path: 'my-students',
+      name: 'SchoolMyStudents',
+      component: () => import('@pbl/teacher/views/TeacherStudents.vue'),
+      meta: { 
+        title: '我的学生',
+        roles: ['teacher']
       }
     },
     // 学校管理员专用功能 - 用户管理
@@ -185,11 +180,29 @@ const schoolRoutes = {
       }
     },
     {
+      path: 'classes/:uuid/progress/units/:unitId',
+      name: 'SchoolClassUnitDetail',
+      component: () => import('@pbl/admin/views/AdminClassUnitDetail.vue'),
+      meta: {
+        title: '单元详情',
+        roles: ['school_admin', 'teacher']
+      }
+    },
+    {
       path: 'classes/:uuid/homework',
       name: 'SchoolClassHomework',
       component: () => import('@pbl/admin/views/AdminClassHomework.vue'),
       meta: {
         title: '作业管理',
+        roles: ['school_admin', 'teacher']
+      }
+    },
+    {
+      path: 'classes/:uuid/homework/units/:unitId',
+      name: 'SchoolClassHomeworkUnitDetail',
+      component: () => import('@pbl/admin/views/AdminClassUnitHomework.vue'),
+      meta: {
+        title: '单元作业',
         roles: ['school_admin', 'teacher']
       }
     },
@@ -210,16 +223,6 @@ const schoolRoutes = {
       meta: {
         title: '模板详情',
         roles: ['school_admin', 'teacher']
-      }
-    },
-    // 教师专用功能
-    {
-      path: 'my-classes',
-      name: 'SchoolMyClasses',
-      component: () => import('@pbl/admin/views/MyClasses.vue'),
-      meta: { 
-        title: '我的班级',
-        roles: ['teacher']
       }
     },
     {
@@ -391,4 +394,4 @@ const channelRoutes = {
   ]
 }
 
-export default [studentRoutes, teacherRoutes, schoolRoutes, adminRoutes, channelRoutes]
+export default [studentRoutes, schoolRoutes, adminRoutes, channelRoutes]

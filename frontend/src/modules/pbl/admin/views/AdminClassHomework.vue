@@ -360,7 +360,13 @@ const loadFeedbackTemplates = async () => {
 
 // 选择单元 - 跳转到单独页面
 const selectUnit = (unit) => {
-  router.push(`/pbl/admin/classes/${route.params.uuid}/homework/units/${unit.id}`)
+  // 根据当前路由路径判断跳转到 school 还是 admin
+  const currentPath = route.path
+  if (currentPath.includes('/pbl/school/')) {
+    router.push(`/pbl/school/classes/${route.params.uuid}/homework/units/${unit.id}`)
+  } else {
+    router.push(`/pbl/admin/classes/${route.params.uuid}/homework/units/${unit.id}`)
+  }
 }
 
 // 批改作业
@@ -584,7 +590,13 @@ const formatDateTime = (dateStr) => {
 }
 
 const goBack = () => {
-  router.push(`/pbl/admin/classes/${route.params.uuid}`)
+  // 根据当前路由路径判断返回到 school 还是 admin
+  const currentPath = route.path
+  if (currentPath.includes('/pbl/school/')) {
+    router.push(`/pbl/school/classes/${route.params.uuid}`)
+  } else {
+    router.push(`/pbl/admin/classes/${route.params.uuid}`)
+  }
 }
 
 onMounted(async () => {

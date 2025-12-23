@@ -207,7 +207,12 @@ const submitCreateCourse = async () => {
       duration: 3000
     })
     // 返回班级详情页
-    router.push(`/pbl/admin/classes/${route.params.uuid}`)
+    const currentPath = route.path
+    if (currentPath.includes('/pbl/school/')) {
+      router.push(`/pbl/school/classes/${route.params.uuid}`)
+    } else {
+      router.push(`/pbl/admin/classes/${route.params.uuid}`)
+    }
   } catch (error) {
     ElMessage.error(error.message || '创建课程失败')
   } finally {
@@ -240,7 +245,13 @@ const formatDate = (dateStr) => {
 }
 
 const goBack = () => {
-  router.push(`/pbl/admin/classes/${route.params.uuid}`)
+  // 根据当前路由路径判断返回到 school 还是 admin
+  const currentPath = route.path
+  if (currentPath.includes('/pbl/school/')) {
+    router.push(`/pbl/school/classes/${route.params.uuid}`)
+  } else {
+    router.push(`/pbl/admin/classes/${route.params.uuid}`)
+  }
 }
 
 onMounted(() => {

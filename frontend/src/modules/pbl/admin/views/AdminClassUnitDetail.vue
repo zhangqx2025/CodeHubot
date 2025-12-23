@@ -201,7 +201,7 @@ const filteredStudents = computed(() => {
 // 加载班级名称
 const loadClassName = async () => {
   try {
-    const res = await getClubClassDetail(route.params.classUuid)
+    const res = await getClubClassDetail(route.params.uuid)
     className.value = res.data?.name
   } catch (error) {
     console.error('加载班级名称失败:', error)
@@ -213,7 +213,7 @@ const loadUnitDetail = async () => {
   loadingDetail.value = true
   try {
     const res = await request({
-      url: `/pbl/admin/club/classes/${route.params.classUuid}/progress/units/${route.params.unitId}`,
+      url: `/pbl/admin/club/classes/${route.params.uuid}/progress/units/${route.params.unitId}`,
       method: 'get',
       params: {
         search: searchKeyword.value || undefined
@@ -271,7 +271,13 @@ const getSubmittedTasks = (taskProgress) => {
 }
 
 const goBack = () => {
-  router.push(`/pbl/admin/classes/${route.params.classUuid}/progress`)
+  // 根据当前路由路径判断返回到 school 还是 admin
+  const currentPath = route.path
+  if (currentPath.includes('/pbl/school/')) {
+    router.push(`/pbl/school/classes/${route.params.uuid}/progress`)
+  } else {
+    router.push(`/pbl/admin/classes/${route.params.uuid}/progress`)
+  }
 }
 
 onMounted(async () => {

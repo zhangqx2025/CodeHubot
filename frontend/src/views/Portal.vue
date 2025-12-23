@@ -77,8 +77,8 @@
         </el-button>
       </div>
       
-      <!-- PBL学习平台 - 学习/教学入口（所有用户可见） -->
-      <div v-if="canAccessPBL" class="portal-card pbl-card" @click="enterPBLLearning">
+      <!-- PBL学习平台 - 仅学生可见 -->
+      <div v-if="canAccessPBL && authStore.isStudent" class="portal-card pbl-card" @click="enterPBLLearning">
         <div class="card-icon">
           <el-icon :size="40"><Reading /></el-icon>
         </div>
@@ -95,21 +95,25 @@
         </el-button>
       </div>
       
-      <!-- 学校管理平台 - 学校级管理（教师和学校管理员） -->
-      <div v-if="authStore.isTeacher || isSchoolAdmin" class="portal-card school-card" @click="enterSchoolManagement">
+      <!-- 学校管理平台 - 教师和学校管理员统一入口 -->
+      <div v-if="canAccessPBL && (authStore.isTeacher || isSchoolAdmin)" class="portal-card school-card" @click="enterSchoolManagement">
         <div class="card-icon">
           <el-icon :size="40"><School /></el-icon>
         </div>
-        <h2>学校管理系统</h2>
-        <p class="card-description">本校师生管理、班级管理、课程配置、数据统计</p>
+        <h2 v-if="authStore.isTeacher">PBL教学系统</h2>
+        <h2 v-else>学校管理系统</h2>
+        <p v-if="authStore.isTeacher" class="card-description">我的课程管理、作业批改、学生管理、班级管理</p>
+        <p v-else class="card-description">本校师生管理、班级管理、课程配置、数据统计</p>
         <ul class="card-features">
-          <li><el-icon><Check /></el-icon> 教师管理</li>
-          <li><el-icon><Check /></el-icon> 学生管理</li>
+          <li v-if="authStore.isTeacher"><el-icon><Check /></el-icon> 我的课程</li>
+          <li v-if="authStore.isTeacher"><el-icon><Check /></el-icon> 作业批改</li>
+          <li v-if="!authStore.isTeacher"><el-icon><Check /></el-icon> 教师管理</li>
+          <li v-if="!authStore.isTeacher"><el-icon><Check /></el-icon> 学生管理</li>
           <li><el-icon><Check /></el-icon> 班级管理</li>
-          <li><el-icon><Check /></el-icon> 数据统计</li>
+          <li><el-icon><Check /></el-icon> 课程模板库</li>
         </ul>
         <el-button type="warning" size="large" class="enter-btn">
-          管理入口 <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+          {{ authStore.isTeacher ? '教学入口' : '管理入口' }} <el-icon class="el-icon--right"><ArrowRight /></el-icon>
         </el-button>
       </div>
       
@@ -239,24 +243,13 @@ function enterAI() {
   router.push('/ai/dashboard')
 }
 
-// 进入 PBL 学习平台 - 学习/教学功能（根据角色跳转）
+// 进入 PBL 学习平台 - 学生专用
 function enterPBLLearning() {
-  const role = authStore.userInfo?.role
-  
-  // 根据角色跳转到学习或教学界面
-  if (role === 'teacher') {
-    // 教师 -> 教学平台
-    router.push('/pbl/teacher/dashboard')
-  } else if (role === 'student') {
-    // 学生 -> 学习平台
-    router.push('/pbl/student/courses')
-  } else {
-    // 其他角色（包括管理员）默认进入学生视角（浏览模式）
-    router.push('/pbl/student/courses')
-  }
+  // 学生 -> 学习平台
+  router.push('/pbl/student/courses')
 }
 
-// 进入学校管理平台 - 学校级管理
+// 进入学校管理平台 - 教师和学校管理员统一入口
 function enterSchoolManagement() {
   // 教师和学校管理员都进入学校管理平台
   // 内部通过权限控制显示不同的功能菜单
