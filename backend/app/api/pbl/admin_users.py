@@ -2,11 +2,13 @@
 学校用户管理 API
 用于学校管理员管理本校的教师和学生
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from pydantic import BaseModel, Field, validator
 import re
+import csv
+import io
 
 from ...db.session import SessionLocal
 from ...core.response import success_response, error_response
@@ -530,4 +532,340 @@ def delete_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="删除用户失败"
         )
+
+
+@router.post("/batch-import/students")
+async def batch_import_students(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    批量导入学生
+    CSV格式：name, student_number, class_name, gender, password
+    """
+    # 检查管理员是否关联学校
+    if not current_admin.school_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="您的账号未关联任何学校"
+        )
+    
+    # 获取学校信息
+    school = db.query(School).filter(School.id == current_admin.school_id).first()
+    if not school:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="您关联的学校不存在"
+        )
+    
+    # 读取文件内容
+    try:
+        contents = await file.read()
+        decoded = contents.decode('utf-8-sig')  # 处理BOM
+        csv_reader = csv.DictReader(io.StringIO(decoded))
+    except Exception as e:
+        logger.error(f"读取CSV文件失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="文件格式错误，请使用UTF-8编码的CSV文件"
+        )
+    
+    # 预加载所有班级
+    classes = db.query(PBLClass).filter(
+        PBLClass.school_id == school.id
+    ).all()
+    class_dict = {cls.class_name: cls for cls in classes}
+    
+    success_count = 0
+    error_count = 0
+    errors = []
+    row_num = 1
+    
+    for row in csv_reader:
+        row_num += 1
+        try:
+            name = row.get('name', '').strip()
+            student_number = row.get('student_number', '').strip()
+            class_name = row.get('class_name', '').strip()
+            gender = row.get('gender', '').strip()
+            password = row.get('password', '').strip() or '123456'  # 默认密码
+            
+            # 必填字段验证
+            if not name or not student_number or not class_name or not gender:
+                errors.append({
+                    'row': row_num,
+                    'error': '缺少必填字段（姓名/学号/班级/性别）'
+                })
+                error_count += 1
+                continue
+            
+            # 性别转换
+            gender_map = {'男': 'male', '女': 'female'}
+            gender_value = gender_map.get(gender)
+            if not gender_value:
+                errors.append({
+                    'row': row_num,
+                    'error': f'性别格式错误：{gender}，应填写"男"或"女"'
+                })
+                error_count += 1
+                continue
+            
+            # 查找班级
+            class_obj = class_dict.get(class_name)
+            if not class_obj:
+                errors.append({
+                    'row': row_num,
+                    'error': f'班级不存在：{class_name}'
+                })
+                error_count += 1
+                continue
+            
+            # 检查学号是否重复
+            existing = db.query(User).filter(
+                User.school_id == school.id,
+                User.student_number == student_number,
+                User.deleted_at == None
+            ).first()
+            if existing:
+                errors.append({
+                    'row': row_num,
+                    'error': f'学号已存在：{student_number}'
+                })
+                error_count += 1
+                continue
+            
+            # 生成用户名：学号@学校代码
+            username = f"{student_number}@{school.school_code}"
+            
+            # 检查用户名是否重复
+            existing_username = db.query(User).filter(
+                User.username == username,
+                User.deleted_at == None
+            ).first()
+            if existing_username:
+                errors.append({
+                    'row': row_num,
+                    'error': f'用户名已存在：{username}'
+                })
+                error_count += 1
+                continue
+            
+            # 验证密码强度
+            is_valid, error_msg = validate_password_strength(password, username)
+            if not is_valid:
+                errors.append({
+                    'row': row_num,
+                    'error': f'密码不符合要求：{error_msg}'
+                })
+                error_count += 1
+                continue
+            
+            # 创建用户
+            new_user = User(
+                username=username,
+                password_hash=get_password_hash(password),
+                role='student',
+                name=name,
+                real_name=name,
+                gender=gender_value,
+                student_number=student_number,
+                class_id=class_obj.id,
+                school_id=school.id,
+                is_active=True
+            )
+            db.add(new_user)
+            success_count += 1
+            
+        except Exception as e:
+            logger.error(f"处理第{row_num}行时出错: {str(e)}")
+            errors.append({
+                'row': row_num,
+                'error': str(e)
+            })
+            error_count += 1
+    
+    # 提交事务
+    try:
+        db.commit()
+        logger.info(
+            f"批量导入学生完成 - 成功: {success_count}, 失败: {error_count}, "
+            f"操作者: {current_admin.username}"
+        )
+    except Exception as e:
+        db.rollback()
+        logger.error(f"批量导入学生失败: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="批量导入失败"
+        )
+    
+    return success_response(
+        data={
+            'success_count': success_count,
+            'error_count': error_count,
+            'errors': errors[:10]  # 只返回前10条错误
+        },
+        message=f"导入完成，成功 {success_count} 条，失败 {error_count} 条"
+    )
+
+
+@router.post("/batch-import/teachers")
+async def batch_import_teachers(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    批量导入教师
+    CSV格式：name, teacher_number, subject, gender, password
+    """
+    # 检查管理员是否关联学校
+    if not current_admin.school_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="您的账号未关联任何学校"
+        )
+    
+    # 获取学校信息
+    school = db.query(School).filter(School.id == current_admin.school_id).first()
+    if not school:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="您关联的学校不存在"
+        )
+    
+    # 读取文件内容
+    try:
+        contents = await file.read()
+        decoded = contents.decode('utf-8-sig')  # 处理BOM
+        csv_reader = csv.DictReader(io.StringIO(decoded))
+    except Exception as e:
+        logger.error(f"读取CSV文件失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="文件格式错误，请使用UTF-8编码的CSV文件"
+        )
+    
+    success_count = 0
+    error_count = 0
+    errors = []
+    row_num = 1
+    
+    for row in csv_reader:
+        row_num += 1
+        try:
+            name = row.get('name', '').strip()
+            teacher_number = row.get('teacher_number', '').strip()
+            subject = row.get('subject', '').strip()
+            gender = row.get('gender', '').strip()
+            password = row.get('password', '').strip() or '123456'  # 默认密码
+            
+            # 必填字段验证
+            if not name or not teacher_number or not gender:
+                errors.append({
+                    'row': row_num,
+                    'error': '缺少必填字段（姓名/工号/性别）'
+                })
+                error_count += 1
+                continue
+            
+            # 性别转换
+            gender_map = {'男': 'male', '女': 'female'}
+            gender_value = gender_map.get(gender)
+            if not gender_value:
+                errors.append({
+                    'row': row_num,
+                    'error': f'性别格式错误：{gender}，应填写"男"或"女"'
+                })
+                error_count += 1
+                continue
+            
+            # 检查工号是否重复
+            existing = db.query(User).filter(
+                User.school_id == school.id,
+                User.teacher_number == teacher_number,
+                User.deleted_at == None
+            ).first()
+            if existing:
+                errors.append({
+                    'row': row_num,
+                    'error': f'工号已存在：{teacher_number}'
+                })
+                error_count += 1
+                continue
+            
+            # 生成用户名：工号@学校代码
+            username = f"{teacher_number}@{school.school_code}"
+            
+            # 检查用户名是否重复
+            existing_username = db.query(User).filter(
+                User.username == username,
+                User.deleted_at == None
+            ).first()
+            if existing_username:
+                errors.append({
+                    'row': row_num,
+                    'error': f'用户名已存在：{username}'
+                })
+                error_count += 1
+                continue
+            
+            # 验证密码强度
+            is_valid, error_msg = validate_password_strength(password, username)
+            if not is_valid:
+                errors.append({
+                    'row': row_num,
+                    'error': f'密码不符合要求：{error_msg}'
+                })
+                error_count += 1
+                continue
+            
+            # 创建用户
+            new_user = User(
+                username=username,
+                password_hash=get_password_hash(password),
+                role='teacher',
+                name=name,
+                real_name=name,
+                gender=gender_value,
+                teacher_number=teacher_number,
+                subject=subject or None,
+                school_id=school.id,
+                is_active=True
+            )
+            db.add(new_user)
+            success_count += 1
+            
+        except Exception as e:
+            logger.error(f"处理第{row_num}行时出错: {str(e)}")
+            errors.append({
+                'row': row_num,
+                'error': str(e)
+            })
+            error_count += 1
+    
+    # 提交事务
+    try:
+        db.commit()
+        logger.info(
+            f"批量导入教师完成 - 成功: {success_count}, 失败: {error_count}, "
+            f"操作者: {current_admin.username}"
+        )
+    except Exception as e:
+        db.rollback()
+        logger.error(f"批量导入教师失败: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="批量导入失败"
+        )
+    
+    return success_response(
+        data={
+            'success_count': success_count,
+            'error_count': error_count,
+            'errors': errors[:10]  # 只返回前10条错误
+        },
+        message=f"导入完成，成功 {success_count} 条，失败 {error_count} 条"
+    )
 
