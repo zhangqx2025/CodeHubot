@@ -678,14 +678,15 @@ def add_members_to_group(
     
     student_dict = {s.id: s for s in students}
     
-    # 批量查询已存在的成员
-    existing_members = db.query(PBLGroupMember.user_id).filter(
+    # 批量查询已存在的成员（包括被禁用的，避免唯一键冲突）
+    existing_members = db.query(PBLGroupMember).filter(
         PBLGroupMember.group_id == group.id,
-        PBLGroupMember.user_id.in_(request_data.student_ids),
-        PBLGroupMember.is_active == True
+        PBLGroupMember.user_id.in_(request_data.student_ids)
     ).all()
     
-    existing_ids = {m[0] for m in existing_members}
+    # 创建成员字典：user_id -> member对象
+    existing_member_dict = {m.user_id: m for m in existing_members}
+    existing_ids = set(existing_member_dict.keys())
     
     # 处理添加逻辑
     success_count = 0
@@ -724,14 +725,23 @@ def add_members_to_group(
         
         # 检查是否已在小组中
         if student_id in existing_ids:
-            failed_list.append({
-                'student_id': student_id,
-                'student_name': student.name or student.real_name,
-                'reason': '已在小组中'
-            })
+            existing_member = existing_member_dict[student_id]
+            # 如果成员已存在但被禁用，则重新激活
+            if not existing_member.is_active:
+                existing_member.is_active = True
+                existing_member.joined_at = get_beijing_time_naive()
+                success_count += 1
+                logger.info(f"重新激活小组成员 - 小组ID: {group.id}, 用户ID: {student_id}")
+            else:
+                # 已经是活跃成员，跳过
+                failed_list.append({
+                    'student_id': student_id,
+                    'student_name': student.name or student.real_name,
+                    'reason': '已在小组中'
+                })
             continue
         
-        # 添加成员
+        # 添加新成员
         member = PBLGroupMember(
             group_id=group.id,
             user_id=student_id,
