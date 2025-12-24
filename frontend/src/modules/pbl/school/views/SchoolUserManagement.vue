@@ -239,7 +239,7 @@
         >
           <template #default>
             <div style="font-size: 13px; line-height: 1.8;">
-              <div><strong>用户名规则：</strong>自动生成为"学校代码_角色_工号/学号"的格式</div>
+              <div><strong>用户名规则：</strong>自动生成为"工号/学号@学校代码"的格式</div>
               <div style="margin-top: 8px;"><strong>密码要求：</strong></div>
               <ul style="margin: 5px 0; padding-left: 20px;">
                 <li>至少 8 位字符</li>
@@ -424,9 +424,9 @@ const validatePassword = (rule, value, callback) => {
     const schoolCode = adminInfo.value.school_code || ''
     let username = ''
     if (form.role === 'teacher' && form.teacher_number) {
-      username = `${schoolCode}_T_${form.teacher_number}`
+      username = `${form.teacher_number}@${schoolCode}`
     } else if (form.role === 'student' && form.student_number) {
-      username = `${schoolCode}_S_${form.student_number}`
+      username = `${form.student_number}@${schoolCode}`
     }
     
     if (username && value.toLowerCase() === username.toLowerCase()) {

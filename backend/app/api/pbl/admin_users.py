@@ -210,14 +210,14 @@ def create_user(
             detail="角色必须是 teacher 或 student"
         )
     
-    # 生成用户名
+    # 生成用户名（格式：工号/学号@学校代码）
     if user_data.role == 'teacher':
         if not user_data.teacher_number:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="教师工号不能为空"
             )
-        username = f"{school.school_code}_T_{user_data.teacher_number}"
+        username = f"{user_data.teacher_number}@{school.school_code}"
         
         # 检查教师工号是否重复
         existing = db.query(User).filter(
@@ -253,7 +253,7 @@ def create_user(
                 detail="班级不存在或不属于该学校"
             )
         
-        username = f"{school.school_code}_S_{user_data.student_number}"
+        username = f"{user_data.student_number}@{school.school_code}"
         
         # 检查学号是否重复
         existing = db.query(User).filter(
