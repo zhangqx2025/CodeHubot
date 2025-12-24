@@ -1194,19 +1194,15 @@ async def register_device(
 async def get_device_config(
     device_uuid: str,
     limit: int = Query(20, ge=1, le=200, description="返回最近的传感器数据条数"),
-    user_or_internal = Depends(verify_internal_or_user),
     db: Session = Depends(get_db)
 ):
-    """获取设备配置信息 - 支持JWT和内部API密钥认证
-    
-    认证方式：
-    1. JWT Token（用户请求，前端调用）
-    2. X-Internal-API-Key（内部服务）
+    """获取设备配置信息 - 无权限校验
     
     ⚠️  新架构说明：
     - 新版插件服务使用 plugin-backend-service，不再调用此接口
     - 此接口主要供前端或其他内部服务使用
     - 保留此接口以支持前端和兼容性
+    - 已移除权限校验，任何人都可以访问
     """
     # 使用joinedload预加载产品信息，避免N+1查询问题
     device = db.query(Device).options(joinedload(Device.product)).filter(Device.uuid == device_uuid).first()
@@ -1217,14 +1213,8 @@ async def get_device_config(
             detail="设备不存在"
         )
     
-    # 数据权限检查：内部API调用跳过权限检查，用户请求需要验证权限
-    if user_or_internal != "internal":
-        # 用户请求：检查数据权限
-        if not can_access_device(device, user_or_internal):
-            raise HTTPException(status_code=403, detail="无权访问该设备")
-    else:
-        # 内部API调用：跳过权限检查
-        logger.info(f"🔓 内部API调用，跳过权限检查: device_uuid={device_uuid}")
+    # 权限校验已移除 - 允许任何人访问设备配置
+    logger.info(f"🔓 访问设备配置（无权限校验）: device_uuid={device_uuid}")
 
     # 直接从 device_sensors 表获取最新数据（按时间倒序，limit 条）
     sensor_rows = db.query(DeviceSensor).filter(
@@ -1361,10 +1351,9 @@ async def get_device_full_config(
 async def update_device_config(
     device_uuid: str,
     config_data: dict,
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """更新设备配置信息 - 数据权限控制"""
+    """更新设备配置信息 - 无权限校验"""
     device = db.query(Device).filter(Device.uuid == device_uuid).first()
     
     if not device:
@@ -1373,12 +1362,8 @@ async def update_device_config(
             detail="设备不存在"
         )
     
-    # 配置权限检查：只有设备所有者和管理员可以更新设备配置
-    if not can_configure_device(device, current_user, db):
-        raise HTTPException(
-            status_code=403,
-            detail="无权更新该设备配置（学生只能使用授权设备，不能配置设备）"
-        )
+    # 权限校验已移除 - 允许任何人更新设备配置
+    logger.info(f"🔓 更新设备配置（无权限校验）: device_uuid={device_uuid}")
     
     # 更新配置字段
     if "device_sensor_config" in config_data:
@@ -1752,21 +1737,17 @@ async def get_device_sensor_data(
 async def get_device_realtime_data(
     device_uuid: str,
     limit: int = Query(10, ge=1, le=100, description="返回最近的数据条数"),
-    user_or_internal = Depends(verify_internal_or_user),
     db: Session = Depends(get_db)
 ):
-    """获取设备实时传感器数据 - 支持JWT和内部API密钥认证
+    """获取设备实时传感器数据 - 无权限校验
     
     ⚠️  已废弃：请使用 /{device_uuid}/sensor-data 接口
-    
-    认证方式：
-    1. JWT Token（用户请求，前端调用）
-    2. X-Internal-API-Key（内部服务）
     
     ⚠️  新架构说明：
     - 新版插件服务使用 plugin-backend-service 直接访问数据库，不再调用此接口
     - 此接口主要供前端查看实时数据使用
     - 保留此接口以支持前端和兼容性
+    - 已移除权限校验，任何人都可以访问
     """
     from sqlalchemy.orm import joinedload
     from datetime import timezone, timedelta
@@ -1777,14 +1758,8 @@ async def get_device_realtime_data(
     if not device:
         raise HTTPException(status_code=404, detail="设备不存在")
     
-    # 数据权限检查：内部API调用跳过权限检查，用户请求需要验证权限
-    if user_or_internal != "internal":
-        # 用户请求：检查数据权限
-        if not can_access_device(device, user_or_internal):
-            raise HTTPException(status_code=403, detail="无权访问该设备")
-    else:
-        # 内部API调用：跳过权限检查
-        logger.info(f"🔓 内部API调用，跳过权限检查: device_uuid={device_uuid}")
+    # 权限校验已移除 - 允许任何人访问设备数据
+    logger.info(f"🔓 访问设备实时数据（无权限校验）: device_uuid={device_uuid}")
     
     # 统一时区（数据库存北京时间）
     beijing_tz = timezone(timedelta(hours=8))
