@@ -8,12 +8,8 @@ from fastapi import APIRouter
 pbl_router = APIRouter()
 
 # 尝试导入所有PBL endpoint
+# 注意：认证相关接口已统一到 /api/auth，不再需要单独的 auth router
 # 学生端路由
-try:
-    from app.api.pbl.student_auth import router as student_auth_router
-    pbl_router.include_router(student_auth_router, prefix="/student/auth", tags=["PBL-学生认证"])
-except ImportError as e:
-    print(f"警告: 无法导入student_auth: {e}")
 
 try:
     from app.api.pbl.student_courses import router as student_courses_router
@@ -34,11 +30,6 @@ except ImportError as e:
     print(f"警告: 无法导入student_club: {e}")
 
 # 教师端路由
-try:
-    from app.api.pbl.teacher_auth import router as teacher_auth_router
-    pbl_router.include_router(teacher_auth_router, prefix="/teacher/auth", tags=["PBL-教师认证"])
-except ImportError as e:
-    print(f"警告: 无法导入teacher_auth: {e}")
 
 try:
     from app.api.pbl.teacher_courses import router as teacher_courses_router
@@ -47,11 +38,6 @@ except ImportError as e:
     print(f"警告: 无法导入teacher_courses: {e}")
 
 # 管理员路由
-try:
-    from app.api.pbl.admin_auth import router as admin_auth_router
-    pbl_router.include_router(admin_auth_router, prefix="/admin/auth", tags=["PBL-管理认证"])
-except ImportError as e:
-    print(f"警告: 无法导入admin_auth: {e}")
 
 try:
     from app.api.pbl.admin_courses import router as admin_courses_router
@@ -137,12 +123,6 @@ try:
     pbl_router.include_router(class_analytics_router, prefix="/class-analytics", tags=["PBL-班级分析"])
 except ImportError as e:
     print(f"警告: 无法导入class_analytics: {e}")
-
-try:
-    from app.api.pbl.channel_auth import router as channel_auth_router
-    pbl_router.include_router(channel_auth_router, prefix="/channel/auth", tags=["PBL-渠道认证"])
-except ImportError as e:
-    print(f"警告: 无法导入channel_auth: {e}")
 
 try:
     from app.api.pbl.channel_schools import router as channel_schools_router

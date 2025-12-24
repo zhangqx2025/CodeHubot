@@ -819,7 +819,7 @@ const getRoleText = (role) => {
 // 获取当前管理员信息
 const loadAdminInfo = async () => {
   try {
-    const response = await request.get('/pbl/admin/auth/me')
+    const response = await request.get('/auth/user-info')
     if (response.success) {
       const admin = response.data
       adminInfo.value = admin

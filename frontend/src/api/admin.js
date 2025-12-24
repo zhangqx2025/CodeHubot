@@ -7,7 +7,7 @@ import { API_ENDPOINTS, createApiUrl, handleApiError } from './config'
  */
 export const platformAdminLogin = async (loginData) => {
   try {
-    const response = await request.post('/pbl/admin/auth/platform-login', loginData)
+    const response = await request.post('/auth/login', loginData)
     return response
   } catch (error) {
     throw new Error(handleApiError(error))
@@ -19,7 +19,7 @@ export const platformAdminLogin = async (loginData) => {
  */
 export const adminLogin = async (loginData) => {
   try {
-    const response = await request.post('/pbl/admin/auth/login', loginData)
+    const response = await request.post('/auth/login', loginData)
     return response
   } catch (error) {
     throw new Error(handleApiError(error))
@@ -31,7 +31,7 @@ export const adminLogin = async (loginData) => {
  */
 export const getCurrentAdmin = async () => {
   try {
-    const response = await request.get('/pbl/admin/auth/me')
+    const response = await request.get('/auth/user-info')
     return response.data.data || response.data
   } catch (error) {
     throw new Error(handleApiError(error))

@@ -44,7 +44,7 @@ channelClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('channel_refresh_token')
         if (refreshToken) {
-          const response = await channelClient.post('/api/pbl/channel/auth/refresh', {
+          const response = await channelClient.post('/api/auth/refresh', {
             refresh_token: refreshToken
           })
           
@@ -83,14 +83,14 @@ channelClient.interceptors.response.use(
  * @param {string} loginData.password - 密码
  */
 export const channelLogin = (loginData) => {
-  return channelClient.post('/api/pbl/channel/auth/login', loginData)
+  return channelClient.post('/api/auth/login', loginData)
 }
 
 /**
  * 获取当前渠道商信息
  */
 export const getChannelInfo = () => {
-  return channelClient.get('/api/pbl/channel/auth/me')
+  return channelClient.get('/api/auth/user-info')
 }
 
 /**
@@ -98,7 +98,7 @@ export const getChannelInfo = () => {
  * @param {string} refreshToken - 刷新令牌
  */
 export const refreshChannelToken = (refreshToken) => {
-  return channelClient.post('/api/pbl/channel/auth/refresh', {
+  return channelClient.post('/api/auth/refresh', {
     refresh_token: refreshToken
   })
 }

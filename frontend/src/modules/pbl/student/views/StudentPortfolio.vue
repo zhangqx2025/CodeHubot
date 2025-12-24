@@ -156,7 +156,7 @@ const handleGoToTasks = () => {
 const loadStudentInfo = async () => {
   try {
     // 从后端API获取当前用户完整信息
-    const response = await request.get('/pbl/student/auth/me')
+    const response = await request.get('/auth/user-info')
     const user = response.data
     
     if (user) {

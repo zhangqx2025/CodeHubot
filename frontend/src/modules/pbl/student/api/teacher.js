@@ -44,7 +44,7 @@ teacherClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('teacher_refresh_token')
         if (refreshToken) {
-          const response = await teacherClient.post('/api/pbl/teacher/auth/refresh', {
+          const response = await teacherClient.post('/api/auth/refresh', {
             refresh_token: refreshToken
           })
           
@@ -84,14 +84,14 @@ teacherClient.interceptors.response.use(
  * @param {string} loginData.password - 密码
  */
 export const teacherLogin = (loginData) => {
-  return teacherClient.post('/api/pbl/teacher/auth/login', loginData)
+  return teacherClient.post('/api/auth/login', loginData)
 }
 
 /**
  * 获取当前教师信息
  */
 export const getTeacherInfo = () => {
-  return teacherClient.get('/api/pbl/teacher/auth/me')
+  return teacherClient.get('/api/auth/user-info')
 }
 
 /**
@@ -99,7 +99,7 @@ export const getTeacherInfo = () => {
  * @param {string} refreshToken - 刷新令牌
  */
 export const refreshTeacherToken = (refreshToken) => {
-  return teacherClient.post('/api/pbl/teacher/auth/refresh', {
+  return teacherClient.post('/api/auth/refresh', {
     refresh_token: refreshToken
   })
 }
@@ -111,7 +111,7 @@ export const refreshTeacherToken = (refreshToken) => {
  * @param {string} passwordData.new_password - 新密码
  */
 export const changePassword = (passwordData) => {
-  return teacherClient.post('/api/pbl/teacher/auth/change-password', passwordData)
+  return teacherClient.post('/api/auth/change-password', passwordData)
 }
 
 /**
@@ -122,7 +122,7 @@ export const changePassword = (passwordData) => {
  * @param {string} profileData.subject - 科目
  */
 export const updateProfile = (profileData) => {
-  return teacherClient.put('/api/pbl/teacher/auth/profile', profileData)
+  return teacherClient.put('/api/auth/profile', profileData)
 }
 
 // ===== 课程管理 =====

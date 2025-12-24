@@ -567,10 +567,28 @@ async def refresh_access_token(request: RefreshTokenRequest, db: Session = Depen
             detail="Token刷新失败，请稍后重试"
         )
 
-@router.get("/user-info", response_model=UserResponse)
-async def get_user_info(current_user: User = Depends(get_current_user)):
-    """获取当前用户信息"""
-    return current_user
+@router.get("/user-info")
+async def get_user_info(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """获取当前用户信息（支持所有角色）"""
+    logger.debug(f"获取用户信息 - 用户名: {current_user.username}, ID: {current_user.id}, 角色: {current_user.role}")
+    
+    user_response = UserResponse.model_validate(current_user)
+    response_data = user_response.model_dump(mode='json')
+    
+    # 如果用户关联了学校，返回学校信息
+    if current_user.school_id:
+        from app.models.school import School
+        school = db.query(School).filter(School.id == current_user.school_id).first()
+        if school:
+            response_data['school'] = {
+                "id": school.id,
+                "uuid": school.uuid,
+                "school_code": school.school_code,
+                "school_name": school.school_name
+            }
+            response_data['school_uuid'] = school.uuid  # 兼容旧版API
+    
+    return success_response(data=response_data)
 
 @router.post("/change-password")
 async def change_password(
