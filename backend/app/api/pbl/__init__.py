@@ -77,6 +77,12 @@ try:
 except ImportError as e:
     print(f"警告: 无法导入admin_resources: {e}")
 
+try:
+    from app.api.pbl.admin_users import router as admin_users_router
+    pbl_router.include_router(admin_users_router, prefix="/admin/users", tags=["PBL-用户管理"])
+except ImportError as e:
+    print(f"警告: 无法导入admin_users: {e}")
+
 # 其他PBL功能路由
 try:
     from app.api.pbl.schools import router as schools_router
