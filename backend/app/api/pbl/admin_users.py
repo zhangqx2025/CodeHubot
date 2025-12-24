@@ -297,7 +297,8 @@ def create_user(
         real_name=user_data.name,
         gender=user_data.gender,
         school_id=school.id,
-        is_active=True
+        is_active=True,
+        need_change_password=True  # 首次登录需要修改密码
     )
     
     # 设置角色特定字段
@@ -672,7 +673,8 @@ async def batch_import_students(
                 student_number=student_number,
                 class_id=class_obj.id,
                 school_id=school.id,
-                is_active=True
+                is_active=True,
+                need_change_password=True  # 首次登录需要修改密码
             )
             db.add(new_user)
             success_count += 1
@@ -832,7 +834,8 @@ async def batch_import_teachers(
                 teacher_number=teacher_number,
                 subject=subject or None,
                 school_id=school.id,
-                is_active=True
+                is_active=True,
+                need_change_password=True  # 首次登录需要修改密码
             )
             db.add(new_user)
             success_count += 1
