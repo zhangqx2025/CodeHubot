@@ -87,6 +87,7 @@ def channel_login(login_data: ChannelLoginRequest, db: Session = Depends(get_db)
         },
         message="登录成功"
     )
+"""
 
 @router.get("/me")
 def get_current_channel_info(current_channel: Admin = Depends(get_current_channel_partner)):
