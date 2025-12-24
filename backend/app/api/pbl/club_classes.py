@@ -1869,7 +1869,6 @@ def get_class_progress(
     end_idx = start_idx + page_size
     paginated_results = all_results[start_idx:end_idx]
     
-    logger.info(f"班级进度查询完成 - 班级: {class_uuid}, 总学生数: {total_filtered}, 当前页: {page}/{total_pages}")
     return success_response(data={
         'items': paginated_results,
         'total': total_filtered,
@@ -2113,7 +2112,6 @@ def get_class_progress_by_units(
             'task_count': task_count_dict.get(unit.id, 0)
         })
     
-    logger.info(f"获取单元列表 - 班级: {class_uuid}, 单元数: {len(unit_list)}, 查询次数: 3次")
     return success_response(data=unit_list)
 
 
@@ -2289,7 +2287,6 @@ def get_unit_progress_detail(
             'task_progress': task_progress_list
         })
     
-    logger.info(f"单元进度查询完成 - 单元ID: {unit_id}, 学生数: {len(student_progress)}, 使用2次数据库查询")
     return success_response(data={
         'unit': {
             'id': unit.id,

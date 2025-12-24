@@ -196,10 +196,6 @@ def get_my_school_users(
             status_code=status.HTTP_404_NOT_FOUND
         )
     
-    logger.info(
-        f"管理员 {current_admin.username} 查询自己学校 {school.school_name} 的用户列表"
-    )
-    
     # 构建查询
     query = db.query(User).filter(
         User.school_id == school.id,
@@ -283,10 +279,6 @@ def get_my_school_statistics(
             code=404,
             status_code=status.HTTP_404_NOT_FOUND
         )
-    
-    logger.info(
-        f"管理员 {current_admin.username} 查询自己学校 {school.school_name} 的统计信息"
-    )
     
     # 统计教师数
     teacher_count = db.query(func.count(User.id)).filter(

@@ -107,7 +107,6 @@ def get_teacher_courses(
     1. 通过 pbl_class_teachers 表查询教师负责的班级
     2. 通过班级ID查询对应的课程（pbl_courses 表的 class_id）
     """
-    logger.info(f"教师 {current_teacher.username} (ID: {current_teacher.id}) 查询课程列表")
     
     # 1. 查询教师负责的班级
     class_relations = db.query(PBLClassTeacher).filter(
@@ -179,7 +178,6 @@ def get_teacher_course_detail(
     db: Session = Depends(get_db)
 ):
     """获取课程详情（包含班级信息）"""
-    logger.info(f"教师 {current_teacher.username} 查询课程详情: {course_uuid}")
     
     # 查询课程
     course = db.query(PBLCourse).filter(PBLCourse.uuid == course_uuid).first()
@@ -287,7 +285,6 @@ def get_course_groups(
     db: Session = Depends(get_db)
 ):
     """获取课程的所有小组"""
-    logger.info(f"教师 {current_teacher.username} 查询课程小组: {course_uuid}")
     
     # 验证权限
     course = db.query(PBLCourse).filter(PBLCourse.uuid == course_uuid).first()
@@ -582,7 +579,6 @@ def get_class_members(
     db: Session = Depends(get_db)
 ):
     """获取班级成员列表"""
-    logger.info(f"教师 {current_teacher.username} 查询班级成员: {course_uuid}")
     
     # 验证权限
     try:
@@ -651,7 +647,6 @@ def get_course_units(
     db: Session = Depends(get_db)
 ):
     """获取课程的所有单元列表（用于进度和作业管理）"""
-    logger.info(f"教师 {current_teacher.username} 查询课程单元: {course_uuid}")
     
     # 验证权限
     try:
@@ -693,7 +688,6 @@ def get_unit_progress(
     db: Session = Depends(get_db)
 ):
     """获取指定单元的学习进度（按学生展示）"""
-    logger.info(f"教师 {current_teacher.username} 查询单元进度: course={course_uuid}, unit={unit_id}")
     
     # 验证权限
     try:
@@ -783,7 +777,6 @@ def get_course_progress(
     db: Session = Depends(get_db)
 ):
     """获取课程学习进度统计（已废弃，请使用单元级别的进度查询）"""
-    logger.info(f"教师 {current_teacher.username} 查询课程进度: {course_uuid}")
     
     # 验证权限
     course = db.query(PBLCourse).filter(PBLCourse.uuid == course_uuid).first()
@@ -887,7 +880,6 @@ def get_unit_homework(
     db: Session = Depends(get_db)
 ):
     """获取指定单元的作业提交情况（按学生展示）"""
-    logger.info(f"教师 {current_teacher.username} 查询单元作业: course={course_uuid}, unit={unit_id}")
     
     # 验证权限
     try:
@@ -996,7 +988,6 @@ def get_course_homework(
     db: Session = Depends(get_db)
 ):
     """获取课程作业列表（已废弃，请使用单元级别的作业查询）"""
-    logger.info(f"教师 {current_teacher.username} 查询课程作业: {course_uuid}")
     
     # 验证权限
     course = db.query(PBLCourse).filter(PBLCourse.uuid == course_uuid).first()
@@ -1068,7 +1059,6 @@ def get_homework_submissions(
     db: Session = Depends(get_db)
 ):
     """获取作业提交列表"""
-    logger.info(f"教师 {current_teacher.username} 查询作业提交: task_id={task_id}")
     
     # 查询任务
     task = db.query(PBLTask).filter(PBLTask.id == task_id).first()

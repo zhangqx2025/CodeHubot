@@ -70,7 +70,6 @@ def get_channel_schools(
     db: Session = Depends(get_db)
 ):
     """获取渠道商负责的所有学校列表"""
-    logger.info(f"渠道商 {current_channel.username} (ID: {current_channel.id}) 查询学校列表")
     
     # 查询渠道商负责的学校关联
     relations = db.query(ChannelSchoolRelation).filter(
@@ -142,7 +141,6 @@ def get_school_detail(
     db: Session = Depends(get_db)
 ):
     """获取学校详细信息"""
-    logger.info(f"渠道商 {current_channel.username} 查询学校详情: school_id={school_id}")
     
     # 验证权限
     try:
@@ -215,7 +213,6 @@ def get_school_courses(
     db: Session = Depends(get_db)
 ):
     """获取学校的所有课程列表"""
-    logger.info(f"渠道商 {current_channel.username} 查询学校课程: school_id={school_id}")
     
     # 验证权限
     try:
@@ -284,7 +281,6 @@ def get_course_detail(
     db: Session = Depends(get_db)
 ):
     """获取课程详细信息（只读）"""
-    logger.info(f"渠道商 {current_channel.username} 查询课程详情: {course_uuid}")
     
     # 查询课程
     course = db.query(PBLCourse).filter(PBLCourse.uuid == course_uuid).first()
@@ -399,7 +395,6 @@ def get_course_progress(
     db: Session = Depends(get_db)
 ):
     """获取课程学习进度统计（只读）"""
-    logger.info(f"渠道商 {current_channel.username} 查询课程进度: {course_uuid}")
     
     # 查询课程
     course = db.query(PBLCourse).filter(PBLCourse.uuid == course_uuid).first()
@@ -497,7 +492,6 @@ def get_course_homework(
     db: Session = Depends(get_db)
 ):
     """获取课程作业统计（只读）"""
-    logger.info(f"渠道商 {current_channel.username} 查询课程作业: {course_uuid}")
     
     # 查询课程
     course = db.query(PBLCourse).filter(PBLCourse.uuid == course_uuid).first()

@@ -79,8 +79,6 @@ def get_channel_partners(
     db: Session = Depends(get_db)
 ):
     """获取所有渠道商列表（含统计数据）"""
-    logger.info(f"渠道管理员 {current_manager.username} 查询渠道商列表")
-    
     # 查询所有渠道商
     partners = db.query(Admin).filter(
         Admin.role == 'channel_partner'
@@ -170,8 +168,6 @@ def get_channel_partner_detail(
     db: Session = Depends(get_db)
 ):
     """获取渠道商详情（含负责的学校列表）"""
-    logger.info(f"渠道管理员 {current_manager.username} 查询渠道商详情: {partner_id}")
-    
     # 查询渠道商
     partner = db.query(Admin).filter(
         Admin.id == partner_id,
@@ -452,8 +448,6 @@ def get_schools(
     db: Session = Depends(get_db)
 ):
     """获取所有学校列表（含渠道商分配信息）"""
-    logger.info(f"渠道管理员 {current_manager.username} 查询学校列表")
-    
     from ...models.pbl import School
     schools = db.query(School).all()
     
@@ -497,8 +491,6 @@ def get_available_schools(
     db: Session = Depends(get_db)
 ):
     """获取所有可分配的学校列表"""
-    logger.info(f"渠道管理员 {current_manager.username} 查询可分配学校列表")
-    
     from ...models.pbl import School
     schools = db.query(School).all()
     
@@ -521,8 +513,6 @@ def get_channel_statistics(
     db: Session = Depends(get_db)
 ):
     """获取渠道业务统计数据"""
-    logger.info(f"渠道管理员 {current_manager.username} 查询渠道统计数据")
-    
     # 总渠道商数
     total_partners = db.query(func.count(Admin.id)).filter(
         Admin.role == 'channel_partner'
