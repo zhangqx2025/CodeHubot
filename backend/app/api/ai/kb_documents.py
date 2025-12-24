@@ -910,20 +910,15 @@ async def search_knowledge_base(
         # 1. 查询扩展（为智能家居等场景添加同义词和场景词）
         from app.utils.query_expander import expand_query
         expanded_query = expand_query(query, domain='smart_home', mode='embedding')
-        if expanded_query != query:
-            logger.info(f"查询扩展: '{query}' -> '{expanded_query}'")
         
         # 2. 对扩展后的查询文本进行向量化
         from app.services.embedding_service import get_embedding_service
         embedding_service = get_embedding_service()
         
-        logger.info(f"开始向量化查询文本...")
         query_vector = await embedding_service.embed_text(expanded_query)
         
         if not query_vector:
             return error_response(message="查询文本向量化失败，请稍后重试", code=500)
-        
-        logger.info(f"查询文本向量化成功，向量维度: {len(query_vector)}")
         
         # 2. 获取所有有向量的文档块
         chunks = db.query(DocumentChunk).filter(

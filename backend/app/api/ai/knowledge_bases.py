@@ -673,8 +673,6 @@ async def get_available_knowledge_bases_for_agent(
     logger = logging.getLogger(__name__)
     
     try:
-        logger.info(f"[可用知识库] 开始查询智能体 {agent_uuid} 的可用知识库")
-        
         # 获取智能体
         agent = db.query(Agent).filter(
             Agent.uuid == agent_uuid,
@@ -685,23 +683,18 @@ async def get_available_knowledge_bases_for_agent(
             logger.warning(f"[可用知识库] 智能体不存在: {agent_uuid}")
             return error_response(message="智能体不存在", code=404)
         
-        logger.info(f"[可用知识库] 找到智能体: {agent.name} (id={agent.id})")
-        
         # 权限检查
         if agent.user_id != current_user.id and current_user.role != 'platform_admin':
             logger.warning(f"[可用知识库] 用户 {current_user.id} 无权查看智能体 {agent.id}")
             return error_response(message="无权查看该智能体", code=403)
         
         # 获取已关联的知识库ID列表
-        logger.info(f"[可用知识库] 查询已关联的知识库...")
         associated_kb_ids = db.query(AgentKnowledgeBase.knowledge_base_id).filter(
             AgentKnowledgeBase.agent_id == agent.id
         ).all()
         associated_kb_ids = [item[0] for item in associated_kb_ids]
-        logger.info(f"[可用知识库] 已关联 {len(associated_kb_ids)} 个知识库")
         
         # 构建可访问的知识库查询
-        logger.info(f"[可用知识库] 构建基础查询...")
         query = db.query(KnowledgeBase).filter(
             KnowledgeBase.deleted_at.is_(None)
         )
@@ -713,45 +706,37 @@ async def get_available_knowledge_bases_for_agent(
         # 排除已关联的知识库
         if associated_kb_ids:
             query = query.filter(~KnowledgeBase.id.in_(associated_kb_ids))
-            logger.info(f"[可用知识库] 排除已关联的知识库")
         
         # 根据用户权限过滤
         accessible_kb_ids = []
         
         # 1. 用户创建的知识库
-        logger.info(f"[可用知识库] 查询用户创建的知识库...")
         try:
             owner_kbs = query.filter(KnowledgeBase.owner_id == current_user.id).all()
             accessible_kb_ids.extend([kb.id for kb in owner_kbs])
-            logger.info(f"[可用知识库] 找到 {len(owner_kbs)} 个用户创建的知识库")
         except Exception as e:
             logger.error(f"[可用知识库] 查询用户创建的知识库失败: {e}")
         
         # 2. 公开知识库
-        logger.info(f"[可用知识库] 查询公开知识库...")
         try:
             public_kbs = query.filter(KnowledgeBase.access_level == 'public').all()
             accessible_kb_ids.extend([kb.id for kb in public_kbs])
-            logger.info(f"[可用知识库] 找到 {len(public_kbs)} 个公开知识库")
         except Exception as e:
             logger.error(f"[可用知识库] 查询公开知识库失败: {e}")
         
         # 3. 学校级/课程级知识库（根据用户学校）
         if current_user.school_id:
-            logger.info(f"[可用知识库] 查询学校级知识库 (school_id={current_user.school_id})...")
             try:
                 school_kbs = query.filter(
                     KnowledgeBase.scope_type == 'school',
                     KnowledgeBase.scope_id == current_user.school_id
                 ).all()
                 accessible_kb_ids.extend([kb.id for kb in school_kbs])
-                logger.info(f"[可用知识库] 找到 {len(school_kbs)} 个学校级知识库")
             except Exception as e:
                 logger.error(f"[可用知识库] 查询学校级知识库失败: {e}")
             
             # 课程级知识库（用户有权限的课程）
             if current_user.role == 'teacher':
-                logger.info(f"[可用知识库] 查询教师课程的知识库...")
                 try:
                     from app.models.course_model import CourseTeacher
                     course_ids = db.query(CourseTeacher.course_id).filter(
@@ -759,7 +744,6 @@ async def get_available_knowledge_bases_for_agent(
                         CourseTeacher.deleted_at.is_(None)
                     ).all()
                     course_ids = [item[0] for item in course_ids]
-                    logger.info(f"[可用知识库] 教师任教 {len(course_ids)} 个课程")
                     
                     if course_ids:
                         course_kbs = query.filter(
@@ -767,29 +751,23 @@ async def get_available_knowledge_bases_for_agent(
                             KnowledgeBase.scope_id.in_(course_ids)
                         ).all()
                         accessible_kb_ids.extend([kb.id for kb in course_kbs])
-                        logger.info(f"[可用知识库] 找到 {len(course_kbs)} 个课程级知识库")
                 except Exception as e:
                     logger.error(f"[可用知识库] 查询课程级知识库失败: {e}")
         
         # 4. 系统级知识库
-        logger.info(f"[可用知识库] 查询系统级知识库...")
         try:
             system_kbs = query.filter(KnowledgeBase.scope_type == 'system').all()
             accessible_kb_ids.extend([kb.id for kb in system_kbs])
-            logger.info(f"[可用知识库] 找到 {len(system_kbs)} 个系统级知识库")
         except Exception as e:
             logger.error(f"[可用知识库] 查询系统级知识库失败: {e}")
         
         # 去重并获取知识库详情
         accessible_kb_ids = list(set(accessible_kb_ids))
-        logger.info(f"[可用知识库] 去重后共 {len(accessible_kb_ids)} 个可访问知识库")
         
         if accessible_kb_ids:
             available_kbs = query.filter(KnowledgeBase.id.in_(accessible_kb_ids)).all()
         else:
             available_kbs = []
-        
-        logger.info(f"[可用知识库] 最终可用知识库数量: {len(available_kbs)}")
         
         # 构建响应
         result = []
@@ -808,7 +786,6 @@ async def get_available_knowledge_bases_for_agent(
             except Exception as e:
                 logger.error(f"[可用知识库] 序列化知识库 {kb.id} 失败: {e}")
         
-        logger.info(f"[可用知识库] 查询完成，返回 {len(result)} 个可用知识库")
         return success_response(data={"knowledge_bases": result, "total": len(result)})
     
     except Exception as e:
@@ -827,8 +804,6 @@ async def list_agent_knowledge_bases(
     logger = logging.getLogger(__name__)
     
     try:
-        logger.info(f"[智能体知识库] 开始查询智能体 {agent_uuid} 的关联知识库")
-        
         # 获取智能体
         agent = db.query(Agent).filter(
             Agent.uuid == agent_uuid,
@@ -847,20 +822,14 @@ async def list_agent_knowledge_bases(
             return error_response(message="无权查看该智能体", code=403)
         
         # 查询关联的知识库
-        logger.info(f"[智能体知识库] 开始查询关联表...")
         associations = db.query(AgentKnowledgeBase).filter(
             AgentKnowledgeBase.agent_id == agent.id
         ).all()
         
-        logger.info(f"[智能体知识库] 找到 {len(associations)} 个关联记录")
-        
         result_list = []
         for idx, assoc in enumerate(associations):
-            logger.info(f"[智能体知识库] 处理关联 {idx+1}/{len(associations)}: kb_id={assoc.knowledge_base_id}")
-            
             kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == assoc.knowledge_base_id).first()
             if kb and kb.deleted_at is None:
-                logger.info(f"[智能体知识库] 找到知识库: {kb.name}")
                 try:
                     result_list.append(AgentKnowledgeBaseResponse(
                         id=assoc.id,
@@ -878,7 +847,6 @@ async def list_agent_knowledge_bases(
                         created_at=assoc.created_at,
                         updated_at=assoc.updated_at
                     ).model_dump())
-                    logger.info(f"[智能体知识库] 成功序列化关联 {idx+1}")
                 except Exception as e:
                     logger.error(f"[智能体知识库] 序列化关联 {idx+1} 失败: {str(e)}", exc_info=True)
                     raise
@@ -888,7 +856,6 @@ async def list_agent_knowledge_bases(
         # 按优先级排序
         result_list.sort(key=lambda x: x['priority'], reverse=True)
         
-        logger.info(f"[智能体知识库] 查询完成，返回 {len(result_list)} 个知识库")
         return success_response(data={"knowledge_bases": result_list})
     
     except Exception as e:
