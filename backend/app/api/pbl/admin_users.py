@@ -102,6 +102,82 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = Field(None, description="是否启用")
 
 
+@router.get("/list")
+def get_user_list(
+    role: Optional[str] = None,
+    keyword: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    获取用户列表
+    权限：学校管理员只能查看自己学校的用户
+    """
+    # 检查管理员是否关联学校
+    if not current_admin.school_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="您的账号未关联任何学校"
+        )
+    
+    # 构建查询
+    query = db.query(User).filter(
+        User.school_id == current_admin.school_id,
+        User.deleted_at == None
+    )
+    
+    # 角色筛选
+    if role:
+        query = query.filter(User.role == role)
+    else:
+        # 默认只查询教师和学生
+        query = query.filter(User.role.in_(['teacher', 'student']))
+    
+    # 关键词搜索
+    if keyword:
+        query = query.filter(
+            (User.name.like(f'%{keyword}%')) |
+            (User.real_name.like(f'%{keyword}%')) |
+            (User.username.like(f'%{keyword}%')) |
+            (User.teacher_number.like(f'%{keyword}%')) |
+            (User.student_number.like(f'%{keyword}%'))
+        )
+    
+    # 总数
+    total = query.count()
+    
+    # 分页
+    users = query.order_by(User.id.desc()).offset(skip).limit(limit).all()
+    
+    # 序列化结果
+    result = []
+    for user in users:
+        result.append({
+            'id': user.id,
+            'username': user.username,
+            'name': user.name or user.real_name,
+            'real_name': user.real_name,
+            'role': user.role,
+            'teacher_number': user.teacher_number,
+            'student_number': user.student_number,
+            'gender': user.gender,
+            'subject': user.subject,
+            'phone': user.phone,
+            'email': user.email,
+            'is_active': user.is_active,
+            'created_at': user.created_at.isoformat() if user.created_at else None
+        })
+    
+    return success_response(data={
+        'items': result,
+        'total': total,
+        'skip': skip,
+        'limit': limit
+    })
+
+
 @router.post("")
 def create_user(
     user_data: UserCreate,
