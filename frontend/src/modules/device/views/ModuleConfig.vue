@@ -187,7 +187,7 @@ const moduleConfig = reactive({
 const fetchConfig = async () => {
   loading.value = true
   try {
-    const response = await request.get('/api/system/modules')
+    const response = await request.get('/api/system-config/modules')
     Object.assign(moduleConfig, response.data)
   } catch (error) {
     console.error('获取模块配置失败:', error)
@@ -211,7 +211,7 @@ const saveConfig = async () => {
     )
 
     saving.value = true
-    const response = await request.put('/api/system/modules', moduleConfig)
+    const response = await request.put('/api/system-config/modules', moduleConfig)
     Object.assign(moduleConfig, response.data)
     ElMessage.success('配置保存成功')
     
@@ -250,7 +250,7 @@ const initConfig = async () => {
     )
 
     initializing.value = true
-    const response = await request.post('/api/system/modules/init')
+    const response = await request.post('/api/system-config/modules/init')
     ElMessage.success(response.data.message || '配置初始化成功')
     
     // 重新获取配置

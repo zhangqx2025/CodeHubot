@@ -8,7 +8,7 @@ import request from '@/utils/request'
  */
 export function getPlatformConfig() {
   return request({
-    url: '/system/platform',
+    url: '/system-config/platform',
     method: 'get'
   })
 }
@@ -18,7 +18,7 @@ export function getPlatformConfig() {
  */
 export function updatePlatformConfig(data) {
   return request({
-    url: '/system/platform',
+    url: '/system-config/platform',
     method: 'put',
     data
   })
@@ -29,7 +29,7 @@ export function updatePlatformConfig(data) {
  */
 export function getModuleConfig() {
   return request({
-    url: '/system/modules',
+    url: '/system-config/modules',
     method: 'get'
   })
 }
@@ -39,7 +39,7 @@ export function getModuleConfig() {
  */
 export function updateModuleConfig(data) {
   return request({
-    url: '/system/modules',
+    url: '/system-config/modules',
     method: 'put',
     data
   })
@@ -50,7 +50,7 @@ export function updateModuleConfig(data) {
  */
 export function initSystemConfig() {
   return request({
-    url: '/system/modules/init',
+    url: '/system-config/modules/init',
     method: 'post'
   })
 }
@@ -60,7 +60,7 @@ export function initSystemConfig() {
  */
 export function getAllConfigs(params) {
   return request({
-    url: '/system/configs',
+    url: '/system-config/configs',
     method: 'get',
     params
   })
@@ -71,7 +71,7 @@ export function getAllConfigs(params) {
  */
 export function getPublicConfigs() {
   return request({
-    url: '/system/configs/public',
+    url: '/system-config/configs/public',
     method: 'get'
   })
 }
@@ -81,7 +81,7 @@ export function getPublicConfigs() {
  */
 export function getPoliciesConfig() {
   return request({
-    url: '/system/policies',
+    url: '/system-config/policies',
     method: 'get'
   })
 }
@@ -91,7 +91,7 @@ export function getPoliciesConfig() {
  */
 export function updatePoliciesConfig(data) {
   return request({
-    url: '/system/policies',
+    url: '/system-config/policies',
     method: 'put',
     data
   })

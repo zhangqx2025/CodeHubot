@@ -30,6 +30,7 @@ class LLMModel(Base):
     is_active = Column(Integer, default=1, comment="是否激活")
     is_default = Column(Integer, default=0, comment="是否默认模型")
     is_system = Column(Integer, default=0, comment="是否系统内置")
+    is_deleted = Column(Integer, default=0, comment="是否删除（0=未删除，1=已删除，软删除）")
     sort_order = Column(Integer, default=0, comment="排序顺序")
     created_at = Column(DateTime, default=get_beijing_time_naive)
     updated_at = Column(DateTime, default=get_beijing_time_naive, onupdate=get_beijing_time_naive)

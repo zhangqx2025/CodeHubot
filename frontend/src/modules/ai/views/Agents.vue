@@ -265,12 +265,12 @@ const addAgent = () => {
 
 // 跳转到编排页面
 const editAgent = (row) => {
-  router.push(`/agents/${row.uuid}/edit`)
+  router.push(`/ai/agents/${row.uuid}/edit`)
 }
 
 // 立即使用智能体
 const useAgent = (agent) => {
-  router.push(`/agents/${agent.uuid}/chat`)
+  router.push(`/ai/agents/${agent.uuid}/chat`)
 }
 
 // 删除智能体
@@ -316,7 +316,7 @@ const handleSubmit = async () => {
       ElMessage.success('创建成功，正在跳转到编排页面...')
       dialogVisible.value = false
       // 跳转到编排页面
-      router.push(`/agents/${newAgentUuid}/edit`)
+      router.push(`/ai/agents/${newAgentUuid}/edit`)
   } catch (error) {
     ElMessage.error(error.response?.data?.detail || '操作失败')
     console.error(error)

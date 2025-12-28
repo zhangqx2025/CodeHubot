@@ -69,8 +69,8 @@ class PlatformConfigResponse(BaseModel):
     platform_name: str = Field(..., description="平台名称")
     platform_description: str = Field(..., description="平台描述")
     enable_user_registration: bool = Field(..., description="是否开启用户注册")
-    user_agreement: str = Field(default="", description="用户协议内容")
-    privacy_policy: str = Field(default="", description="隐私政策内容")
+    user_agreement: Optional[str] = Field(None, description="用户协议内容（仅在include_policies=true时返回）")
+    privacy_policy: Optional[str] = Field(None, description="隐私政策内容（仅在include_policies=true时返回）")
 
 
 class PlatformConfigUpdate(BaseModel):

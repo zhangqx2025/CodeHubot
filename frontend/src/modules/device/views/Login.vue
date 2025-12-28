@@ -312,9 +312,11 @@ const handleLogin = async () => {
   })
 }
 
-// 页面加载时获取平台配置
+// 页面加载时获取平台配置和用户协议
 onMounted(async () => {
   await platformStore.loadConfig()
+  // 登录页面需要显示用户协议和隐私政策，所以这里加载
+  await platformStore.loadPolicies()
 })
 </script>
 

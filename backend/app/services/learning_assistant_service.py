@@ -369,6 +369,121 @@ class LearningAssistantService:
         
         return "\n".join(parts) if parts else "通用学习场景"
     
+    async def _retrieve_knowledge(
+        self,
+        query: str,
+        top_k: int = 5,
+        similarity_threshold: float = 0.70
+    ) -> List[Dict]:
+        """
+        从官方知识库中检索相关知识（RAG核心）
+        
+        Args:
+            query: 用户问题
+            top_k: 返回最相关的N个文本块
+            similarity_threshold: 相似度阈值
+            
+        Returns:
+            List[Dict]: 检索结果列表
+        """
+        from app.models.agent import Agent
+        from app.models.knowledge_base import AgentKnowledgeBase, KnowledgeBase
+        from app.models.document import DocumentChunk
+        from app.services.embedding_service import get_embedding_service
+        import numpy as np
+        
+        try:
+            # 1. 获取学习助手关联的知识库
+            system_agent = self.db.query(Agent).filter(
+                Agent.uuid == 'system-learning-assistant'
+            ).first()
+            
+            if not system_agent:
+                logger.warning("未找到系统学习助手智能体")
+                return []
+            
+            kb_associations = self.db.query(AgentKnowledgeBase).filter(
+                AgentKnowledgeBase.agent_id == system_agent.id,
+                AgentKnowledgeBase.is_enabled == 1
+            ).order_by(AgentKnowledgeBase.priority.desc()).all()
+            
+            if not kb_associations:
+                logger.info("学习助手未关联任何知识库")
+                return []
+            
+            logger.info(f"学习助手关联了 {len(kb_associations)} 个知识库")
+            
+            # 2. 向量化用户问题
+            embedding_service = get_embedding_service()
+            query_vector = await embedding_service.embed_text(query)
+            
+            if not query_vector:
+                logger.warning("问题向量化失败")
+                return []
+            
+            logger.info("问题向量化成功")
+            
+            # 3. 在所有关联的知识库中检索
+            all_results = []
+            
+            for assoc in kb_associations:
+                kb = self.db.query(KnowledgeBase).filter(
+                    KnowledgeBase.id == assoc.knowledge_base_id
+                ).first()
+                
+                if not kb:
+                    continue
+                
+                logger.info(f"检索知识库: {kb.name}")
+                
+                # 获取该知识库的所有已向量化文本块
+                chunks = self.db.query(DocumentChunk).filter(
+                    DocumentChunk.knowledge_base_id == kb.id,
+                    DocumentChunk.embedding_vector.isnot(None)
+                ).all()
+                
+                if not chunks:
+                    logger.info(f"知识库 '{kb.name}' 中没有已向量化的内容")
+                    continue
+                
+                logger.info(f"知识库 '{kb.name}' 中找到 {len(chunks)} 个文本块")
+                
+                # 4. 计算相似度
+                threshold = float(assoc.similarity_threshold) if assoc.similarity_threshold else similarity_threshold
+                
+                for chunk in chunks:
+                    try:
+                        chunk_vector = chunk.embedding_vector
+                        
+                        # 计算余弦相似度
+                        similarity = embedding_service.calculate_similarity(query_vector, chunk_vector)
+                        
+                        if similarity >= threshold:
+                            all_results.append({
+                                'chunk_id': chunk.id,
+                                'content': chunk.content,
+                                'similarity': similarity,
+                                'kb_name': kb.name,
+                                'kb_id': kb.id,
+                                'document_id': chunk.document_id
+                            })
+                    
+                    except Exception as e:
+                        logger.error(f"计算相似度失败: {str(e)}")
+                        continue
+            
+            # 5. 按相似度排序，取 Top-K
+            all_results.sort(key=lambda x: x['similarity'], reverse=True)
+            final_results = all_results[:top_k]
+            
+            logger.info(f"检索完成，共找到 {len(all_results)} 个相关文本块，返回 Top-{len(final_results)}")
+            
+            return final_results
+        
+        except Exception as e:
+            logger.error(f"知识库检索失败: {str(e)}", exc_info=True)
+            return []
+    
     async def _call_llm(
         self,
         message: str,
@@ -376,7 +491,7 @@ class LearningAssistantService:
         conversation_history: List[LearningAssistantMessage]
     ) -> Dict:
         """
-        调用LLM生成回复
+        调用LLM生成回复（集成RAG检索）
         """
         from app.models.llm_model import LLMModel
         from app.services.llm_service import create_llm_service
@@ -412,9 +527,32 @@ class LearningAssistantService:
                 'model': 'unknown'
             }
         
-        # 3. 构建消息列表
+        # 3. 【RAG检索】从知识库中检索相关内容
+        knowledge_results = await self._retrieve_knowledge(message, top_k=3)
+        
+        # 4. 构建增强后的上下文
+        enhanced_context = context
+        
+        if knowledge_results:
+            logger.info(f"检索到 {len(knowledge_results)} 条相关知识")
+            
+            # 将检索结果插入到系统提示词中
+            knowledge_text = "\n\n[参考资料]\n"
+            knowledge_text += "以下内容来自课程官方文档，请优先参考这些内容回答：\n\n"
+            
+            for i, result in enumerate(knowledge_results, 1):
+                knowledge_text += f"【资料{i}】（相似度：{result['similarity']:.2%}）\n"
+                knowledge_text += f"{result['content']}\n\n"
+            
+            knowledge_text += "---\n请基于以上参考资料，结合你的知识，为学生提供准确的回答。"
+            
+            enhanced_context = f"{context}\n{knowledge_text}"
+        else:
+            logger.info("未检索到相关知识，使用通用知识回答")
+        
+        # 5. 构建消息列表
         messages = [
-            {"role": "system", "content": context}
+            {"role": "system", "content": enhanced_context}
         ]
         
         # 添加历史消息（已按时间升序排列，包含当前用户消息）
@@ -427,14 +565,24 @@ class LearningAssistantService:
         
         # 注意：conversation_history已经包含了刚保存的用户消息，无需再次添加
         
-        # 4. 调用LLM服务
+        # 6. 调用LLM服务
         try:
             llm_service = create_llm_service(llm_model)
             response = llm_service.chat(messages=messages)
             
+            # 构建知识来源列表（供前端展示）
+            knowledge_sources = [
+                {
+                    'kb_name': r['kb_name'],
+                    'content': r['content'][:200] + '...' if len(r['content']) > 200 else r['content'],
+                    'similarity': round(r['similarity'], 4)
+                }
+                for r in knowledge_results
+            ]
+            
             return {
                 'content': response.get('response', '抱歉，我现在无法回答。'),
-                'knowledge_sources': [],  # 知识库检索功能待后续实现
+                'knowledge_sources': knowledge_sources,
                 'token_usage': response.get('token_usage', {
                     'prompt': 0,
                     'completion': 0,

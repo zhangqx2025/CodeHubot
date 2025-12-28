@@ -1105,10 +1105,10 @@ import {
   createWorkflow,
   updateWorkflow,
   executeWorkflow
-} from '@device/api/workflow'
-import { getActiveLLMModels } from '@/api/llm-model'
-import { getKnowledgeBases } from '@device/api/knowledgeBases'
-import { getAgents } from '@device/api/agent'
+} from '../api/workflow'
+import { getActiveLLMModels } from '../api/llm-model'
+import { getKnowledgeBases } from '../api/knowledgeBases'
+import { getAgents } from '../api/agent'
 // import ExecutionPanel from '@device/components/workflow/ExecutionPanel.vue' // 组件暂时不可用
 
 const route = useRoute()

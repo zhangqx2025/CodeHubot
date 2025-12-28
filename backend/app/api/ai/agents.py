@@ -97,10 +97,10 @@ def get_agents(
     current_user: User = Depends(get_current_user)
 ):
     """获取智能体列表"""
-    # 查询Agent并join User表以获取所有者信息
+    # 查询Agent并join User表以获取所有者信息（排除已删除的）
     query = db.query(Agent, User.nickname, User.username).join(
         User, Agent.user_id == User.id
-    )
+    ).filter(Agent.is_deleted == 0)
     
     # 权限过滤
     if is_admin_user(current_user):
@@ -149,10 +149,13 @@ def get_agent(
     current_user: User = Depends(get_current_user)
 ):
     """获取智能体详情（通过UUID）"""
-    # 查询Agent并join User表以获取所有者信息
+    # 查询Agent并join User表以获取所有者信息（排除已删除的）
     result = db.query(Agent, User.nickname, User.username).join(
         User, Agent.user_id == User.id
-    ).filter(Agent.uuid == agent_uuid).first()
+    ).filter(
+        Agent.uuid == agent_uuid,
+        Agent.is_deleted == 0
+    ).first()
     
     if not result:
         raise HTTPException(status_code=404, detail="智能体不存在")
@@ -180,10 +183,13 @@ def update_agent(
     current_user: User = Depends(get_current_user)
 ):
     """更新智能体（通过UUID）"""
-    # 查询Agent并join User表以获取所有者信息
+    # 查询Agent并join User表以获取所有者信息（排除已删除的）
     result = db.query(Agent, User.nickname, User.username).join(
         User, Agent.user_id == User.id
-    ).filter(Agent.uuid == agent_uuid).first()
+    ).filter(
+        Agent.uuid == agent_uuid,
+        Agent.is_deleted == 0
+    ).first()
     
     if not result:
         raise HTTPException(status_code=404, detail="智能体不存在")
@@ -229,8 +235,11 @@ def delete_agent(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """删除智能体（通过UUID）"""
-    agent = db.query(Agent).filter(Agent.uuid == agent_uuid).first()
+    """删除智能体（软删除，通过UUID）"""
+    agent = db.query(Agent).filter(
+        Agent.uuid == agent_uuid,
+        Agent.is_deleted == 0
+    ).first()
     
     if not agent:
         raise HTTPException(status_code=404, detail="智能体不存在")
@@ -242,7 +251,8 @@ def delete_agent(
     if agent.is_system == 1:
         raise HTTPException(status_code=400, detail="系统内置智能体不允许删除")
     
-    db.delete(agent)
+    # 软删除：标记为已删除
+    agent.is_deleted = 1
     db.commit()
     
     return success_response(message="智能体已删除")

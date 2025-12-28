@@ -97,6 +97,16 @@ request.interceptors.request.use(
 // ============================================================================
 request.interceptors.response.use(
   response => {
+    // 处理 204 No Content 响应（删除操作常用）
+    if (response.status === 204) {
+      return {
+        success: true,
+        data: null,
+        message: '操作成功',
+        originalResponse: response
+      }
+    }
+    
     const res = response.data
     
     // 统一处理两种响应格式：

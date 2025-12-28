@@ -28,10 +28,16 @@ export default [
         meta: { title: '创建智能体' }
       },
       {
-        path: 'agents/:id/edit',
+        path: 'agents/:uuid/edit',
         name: 'AIAgentEdit',
         component: () => import('@ai/views/AgentEditor.vue'),
         meta: { title: '编辑智能体' }
+      },
+      {
+        path: 'agents/:uuid/chat',
+        name: 'AIAgentChat',
+        component: () => import('@ai/views/Chat.vue'),
+        meta: { title: '智能体对话' }
       },
       {
         path: 'workflows',
@@ -46,7 +52,7 @@ export default [
         meta: { title: '创建工作流' }
       },
       {
-        path: 'workflows/:id/edit',
+        path: 'workflows/:uuid/edit',
         name: 'AIWorkflowEdit',
         component: () => import('@ai/views/WorkflowEditor.vue'),
         meta: { title: '编辑工作流' }
@@ -58,7 +64,7 @@ export default [
         meta: { title: '知识库管理' }
       },
       {
-        path: 'knowledge-bases/:id',
+        path: 'knowledge-bases/:uuid',
         name: 'AIKnowledgeBaseDetail',
         component: () => import('@ai/views/KnowledgeBaseDetail.vue'),
         meta: { title: '知识库详情' }
@@ -67,31 +73,31 @@ export default [
         path: 'plugins',
         name: 'AIPluginList',
         component: () => import('@ai/views/Plugins.vue'),
-        meta: { title: '插件管理' }
+        meta: { title: '插件管理', requiresAdmin: true }
       },
       {
         path: 'plugins/create',
         name: 'AIPluginCreate',
         component: () => import('@ai/views/PluginEditor.vue'),
-        meta: { title: '创建插件' }
+        meta: { title: '创建插件', requiresAdmin: true }
       },
       {
-        path: 'plugins/:id/edit',
+        path: 'plugins/:uuid/edit',
         name: 'AIPluginEdit',
         component: () => import('@ai/views/PluginEditor.vue'),
-        meta: { title: '编辑插件' }
+        meta: { title: '编辑插件', requiresAdmin: true }
       },
       {
-        path: 'plugins/:id/view',
+        path: 'plugins/:uuid/view',
         name: 'AIPluginView',
         component: () => import('@ai/views/PluginViewer.vue'),
-        meta: { title: '查看插件' }
+        meta: { title: '查看插件', requiresAdmin: true }
       },
       {
         path: 'llm-models',
         name: 'AILLMModelList',
         component: () => import('@ai/views/LLMModels.vue'),
-        meta: { title: 'LLM模型管理' }
+        meta: { title: 'LLM模型配置', requiresAdmin: true }
       },
       {
         path: 'prompt-templates',

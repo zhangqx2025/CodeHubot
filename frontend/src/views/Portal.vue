@@ -65,12 +65,11 @@
           <el-icon :size="40"><MagicStick /></el-icon>
         </div>
         <h2>智能体开发系统</h2>
-        <p class="card-description">智能体开发、工作流编排、知识库管理、插件开发</p>
+        <p class="card-description">{{ aiDescription }}</p>
         <ul class="card-features">
-          <li><el-icon><Check /></el-icon> AI对话与智能体</li>
-          <li><el-icon><Check /></el-icon> 工作流编排</li>
-          <li><el-icon><Check /></el-icon> 知识库管理</li>
-          <li><el-icon><Check /></el-icon> 插件开发</li>
+          <li v-for="feature in aiFeatures" :key="feature.label">
+            <el-icon><Check /></el-icon> {{ feature.label }}
+          </li>
         </ul>
         <el-button type="primary" size="large" class="enter-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
           进入系统 <el-icon class="el-icon--right"><ArrowRight /></el-icon>
@@ -185,20 +184,22 @@ import {
 import { useAuth, getRoleText } from '@/composables/useAuth'
 import UserProfileDialog from '@/components/UserProfileDialog.vue'
 import { getModuleConfig } from '@/modules/device/api/systemConfig'
+import { useConfigStore } from '@/stores/config'
 
 const router = useRouter()
 const { authStore, loading, isAdmin, isSchoolAdmin, isChannelManager, platformName, platformDescription } = useAuth()
+const configStore = useConfigStore()
 
 // 对话框状态
 const profileDialogVisible = ref(false)
 const profileDialogTab = ref('profile')
 const forceChangePassword = ref(false)
 
-// 模块配置
+// 模块配置（默认值为 false，防止配置加载失败时显示未授权模块）
 const moduleConfig = ref({
-  enable_device_module: true,
-  enable_ai_module: true,
-  enable_pbl_module: true
+  enable_device_module: false,
+  enable_ai_module: false,
+  enable_pbl_module: false
 })
 
 // 简化计算属性
@@ -206,10 +207,33 @@ const canAccessDevice = computed(() => authStore.isAuthenticated && moduleConfig
 const canAccessAI = computed(() => authStore.isAuthenticated && moduleConfig.value.enable_ai_module)
 const canAccessPBL = computed(() => authStore.isAuthenticated && moduleConfig.value.enable_pbl_module)
 
+// AI 模块功能列表（根据配置动态显示）
+const aiFeatures = computed(() => {
+  const features = [
+    { label: 'AI对话与智能体', show: configStore.aiAgentEnabled },
+    { label: '工作流编排', show: configStore.aiWorkflowEnabled },
+    { label: '知识库管理', show: configStore.aiKnowledgeBaseEnabled },
+    { label: '插件开发', show: configStore.aiPromptTemplateEnabled }
+  ]
+  return features.filter(f => f.show)
+})
+
+// AI 模块描述（根据启用的功能动态生成）
+const aiDescription = computed(() => {
+  const enabledFeatures = aiFeatures.value.map(f => f.label)
+  return enabledFeatures.length > 0 
+    ? enabledFeatures.join('、') 
+    : '智能体开发系统'
+})
+
 // 检查是否需要强制修改密码
-onMounted(() => {
+onMounted(async () => {
   checkForceChangePassword()
-  loadModuleConfig()
+  await loadModuleConfig()
+  // 加载 AI 模块的详细配置（用于显示具体功能）
+  if (moduleConfig.value.enable_ai_module) {
+    await configStore.loadPublicConfigs()
+  }
 })
 
 function checkForceChangePassword() {
@@ -434,6 +458,9 @@ function handleProfileUpdated() {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  min-height: 480px; // 设置最小高度确保卡片一致
   
   &:hover {
     transform: translateY(-10px);
@@ -495,6 +522,8 @@ function handleProfileUpdated() {
     padding: 0;
     margin: 18px 0;
     text-align: left;
+    flex: 1; // 让功能列表占据剩余空间
+    min-height: 140px; // 设置最小高度确保按钮对齐
     
     li {
       padding: 7px 0;
@@ -516,6 +545,7 @@ function handleProfileUpdated() {
     width: 100%;
     font-size: 15px;
     height: 44px;
+    flex-shrink: 0; // 防止按钮被压缩
   }
 }
 

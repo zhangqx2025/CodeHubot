@@ -2,6 +2,9 @@
   <div class="agent-editor">
     <el-page-header @back="goBack" :content="pageTitle">
       <template #extra>
+        <span v-if="autoSaveStatus" class="auto-save-status" :class="autoSaveStatus">
+          {{ autoSaveStatusText }}
+        </span>
         <el-button type="primary" @click="saveAgent" :loading="saving">
           <el-icon><Document /></el-icon>
           保存
@@ -159,7 +162,7 @@
       </el-card>
 
       <!-- 知识库配置卡片 -->
-      <el-card class="section-card">
+      <el-card v-if="configStore.aiKnowledgeBaseEnabled" class="section-card">
         <template #header>
           <div class="card-header">
             <span class="card-title">知识库配置 ({{ knowledgeBases.length }})</span>
@@ -318,7 +321,7 @@
       <div class="template-list">
         <el-card
           v-for="template in promptTemplates"
-          :key="template.id"
+          :key="template.uuid"
           class="template-card"
           shadow="hover"
           @click="useTemplate(template)"
@@ -371,27 +374,37 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Plus, Delete, Search, QuestionFilled } from '@element-plus/icons-vue'
-import { getAgent, updateAgent } from '@device/api/agent'
-import { getPlugins } from '@device/api/plugin'
-import { getActiveLLMModels } from '@device/api/llm-model'
-import { getPromptTemplates } from '@device/api/prompt-template'
+import { useConfigStore } from '@/stores/config'
+import { getAgent, createAgent, updateAgent } from '../api/agent'
+import { getPlugins } from '../api/plugin'
+import { getActiveLLMModels } from '../api/llm-model'
+import { getPromptTemplates } from '../api/prompt-template'
 import { 
   getAvailableKnowledgeBases,
   getAgentKnowledgeBases, 
   batchAddAgentKnowledgeBases,
   updateAgentKnowledgeBase,
   removeAgentKnowledgeBase
-} from '@device/api/knowledgeBases'
+} from '../api/knowledgeBases'
+import { debounce } from 'lodash-es'
 
 const route = useRoute()
 const router = useRouter()
+const configStore = useConfigStore()
 
 const loading = ref(false)
 const saving = ref(false)
+const autoSaveStatus = ref('') // 'saving', 'saved', ''
+const autoSaveStatusText = computed(() => {
+  if (autoSaveStatus.value === 'saving') return '正在保存...'
+  if (autoSaveStatus.value === 'saved') return '已自动保存'
+  return ''
+})
+const isInitialLoad = ref(true) // 标记是否为初始加载
 const formRef = ref(null)
 const pluginSelectorVisible = ref(false)
 const templateDialogVisible = ref(false)
@@ -452,7 +465,7 @@ const filteredPlugins = computed(() => {
 
 // 返回上一页
 const goBack = () => {
-  router.push('/agents')
+  router.push('/ai/agents')
 }
 
 // 加载智能体详情
@@ -525,6 +538,59 @@ const saveAgent = async () => {
     saving.value = false
   }
 }
+
+// 自动保存智能体（静默保存，不显示成功提示）
+const autoSaveAgent = async () => {
+  // 跳过初始加载
+  if (isInitialLoad.value) return
+  // 如果正在手动保存，跳过
+  if (saving.value) return
+  
+  // 验证表单
+  if (formRef.value) {
+    try {
+      await formRef.value.validate()
+    } catch {
+      // 表单验证失败，不自动保存
+      return
+    }
+  }
+  
+  autoSaveStatus.value = 'saving'
+  try {
+    if (!agentUuid.value) {
+      // 新建模式：首次自动保存时创建智能体
+      const response = await createAgent(agentForm)
+      const newAgent = response.data
+      
+      // 更新agentForm的id和uuid
+      agentForm.id = newAgent.id
+      agentForm.uuid = newAgent.uuid
+      
+      // 更新路由，切换到编辑模式（不刷新页面）
+      router.replace(`/ai/agents/${newAgent.uuid}/edit`)
+      
+      autoSaveStatus.value = 'saved'
+      console.log('✅ 智能体已创建并自动保存')
+    } else {
+      // 编辑模式：更新智能体
+      await updateAgent(agentUuid.value, agentForm)
+      autoSaveStatus.value = 'saved'
+    }
+    
+    // 2秒后清除"已保存"提示
+    setTimeout(() => {
+      autoSaveStatus.value = ''
+    }, 2000)
+  } catch (error) {
+    autoSaveStatus.value = ''
+    console.error('自动保存失败:', error)
+    // 自动保存失败不显示错误提示，避免打扰用户
+  }
+}
+
+// 使用防抖包装自动保存函数（2秒后触发）
+const debouncedAutoSave = debounce(autoSaveAgent, 2000)
 
 // 显示插件选择器
 const showPluginSelector = () => {
@@ -615,6 +681,8 @@ const scopeTypeLabel = (scopeType) => {
 
 // 加载智能体的知识库列表
 const loadKnowledgeBases = async () => {
+  // 如果知识库功能未启用，不加载
+  if (!configStore.aiKnowledgeBaseEnabled) return
   if (!agentUuid.value) return
   
   try {
@@ -719,18 +787,58 @@ const removeKnowledgeBase = (kbUuid) => {
   }).catch(() => {})
 }
 
-onMounted(() => {
-  loadAgent()
+onMounted(async () => {
+  // 只有编辑模式才加载智能体数据
+  if (agentUuid.value) {
+    await loadAgent()
+    loadKnowledgeBases()
+  }
+  
+  // 新建和编辑模式都需要加载这些基础数据
   loadPlugins()
   loadModels()
   loadPromptTemplates()
-  loadKnowledgeBases()
+  
+  // 等待下一个tick，确保数据完全加载后再开始监听变化
+  await nextTick()
+  isInitialLoad.value = false
 })
+
+// 监听表单变化，触发自动保存
+watch(
+  () => ({
+    name: agentForm.name,
+    description: agentForm.description,
+    system_prompt: agentForm.system_prompt,
+    plugin_ids: JSON.stringify(agentForm.plugin_ids), // 转为字符串以便深度比较
+    llm_model_id: agentForm.llm_model_id,
+    is_active: agentForm.is_active
+  }),
+  () => {
+    debouncedAutoSave()
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped>
 .agent-editor {
   padding: 20px;
+}
+
+.auto-save-status {
+  margin-right: 12px;
+  font-size: 13px;
+  color: #909399;
+  transition: all 0.3s ease;
+}
+
+.auto-save-status.saving {
+  color: #409EFF;
+}
+
+.auto-save-status.saved {
+  color: #67C23A;
 }
 
 .editor-content {

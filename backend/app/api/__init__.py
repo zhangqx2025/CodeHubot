@@ -24,7 +24,7 @@ api_router.include_router(device_groups.router, tags=["设备分组管理"])
 # PBL学校管理路由已在PBL模块中注册，不再重复注册
 
 # 系统配置管理路由
-api_router.include_router(system_config.router, prefix="/system", tags=["系统配置"])
+api_router.include_router(system_config.router, prefix="/system-config", tags=["系统配置"])
 
 # AI系统路由
 api_router.include_router(ai_router, prefix="/ai", tags=["AI智能系统"])

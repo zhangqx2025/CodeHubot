@@ -2,12 +2,12 @@
 系统配置管理 API
 用于管理系统级别的配置项
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
 
-from app.db.session import get_db
+from app.core.database import get_db
 from app.models.system_config import SystemConfig
 from app.schemas.system_config import (
     SystemConfigCreate,
@@ -86,12 +86,27 @@ async def get_all_configs(
 
 
 @router.get("/configs/public", response_model=List[SystemConfigPublic])
-async def get_public_configs(db: Session = Depends(get_db)):
+async def get_public_configs(
+    exclude_policies: bool = Query(True, description="是否排除用户协议和隐私政策（默认true以节省流量）"),
+    db: Session = Depends(get_db)
+):
     """
     获取公开的系统配置（无需认证）
     用于前端判断是否显示某些功能模块
+    
+    参数:
+        exclude_policies: 是否排除用户协议和隐私政策（默认true）
+                         这些大体积内容可通过 /policies 接口单独获取
     """
-    configs = db.query(SystemConfig).filter(SystemConfig.is_public == True).all()
+    query = db.query(SystemConfig).filter(SystemConfig.is_public == True)
+    
+    # 默认排除大体积的协议配置，以节省网络流量
+    if exclude_policies:
+        query = query.filter(
+            ~SystemConfig.config_key.in_(['user_agreement', 'privacy_policy'])
+        )
+    
+    configs = query.all()
     return configs
 
 
@@ -319,10 +334,17 @@ async def init_module_config(
 # ==================== 平台配置专用接口 ====================
 
 @router.get("/platform", response_model=PlatformConfigResponse)
-async def get_platform_config(db: Session = Depends(get_db)):
+async def get_platform_config(
+    include_policies: bool = Query(False, description="是否包含用户协议和隐私政策（默认false以节省流量）"),
+    db: Session = Depends(get_db)
+):
     """
     获取平台配置（公开接口，无需认证）
-    返回平台名称、描述、注册开关、用户协议和隐私政策等基础信息
+    返回平台名称、描述、注册开关等基础信息
+    
+    参数:
+        include_policies: 是否包含用户协议和隐私政策（默认false）
+                         如需获取协议内容，请使用 /policies 接口或设置此参数为true
     """
     def get_string_config(key: str, default: str = "") -> str:
         value = get_config_value(db, key, default)
@@ -332,13 +354,18 @@ async def get_platform_config(db: Session = Depends(get_db)):
         value = get_config_value(db, key, str(default).lower())
         return value.lower() in ('true', '1', 'yes') if value else default
     
-    return PlatformConfigResponse(
-        platform_name=get_string_config("platform_name", "CodeHubot"),
-        platform_description=get_string_config("platform_description", "智能物联网管理平台"),
-        enable_user_registration=get_bool_config("enable_user_registration", False),
-        user_agreement=get_string_config("user_agreement", ""),
-        privacy_policy=get_string_config("privacy_policy", "")
-    )
+    response_data = {
+        "platform_name": get_string_config("platform_name", "CodeHubot"),
+        "platform_description": get_string_config("platform_description", "智能物联网管理平台"),
+        "enable_user_registration": get_bool_config("enable_user_registration", False)
+    }
+    
+    # 只有明确请求时才返回协议内容，以节省网络流量
+    if include_policies:
+        response_data["user_agreement"] = get_string_config("user_agreement", "")
+        response_data["privacy_policy"] = get_string_config("privacy_policy", "")
+    
+    return PlatformConfigResponse(**response_data)
 
 
 @router.put("/platform", response_model=PlatformConfigResponse)

@@ -168,7 +168,7 @@ import {
   createKnowledgeBase,
   updateKnowledgeBase,
   deleteKnowledgeBase
-} from '@device/api/knowledgeBases'
+} from '../api/knowledgeBases'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()

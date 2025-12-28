@@ -161,7 +161,7 @@ def get_llm_models(
     current_user: User = Depends(get_current_user)
 ):
     """获取大模型配置列表"""
-    query = db.query(LLMModel)
+    query = db.query(LLMModel).filter(LLMModel.is_deleted == 0)
     
     # 搜索过滤
     if search:
@@ -226,7 +226,8 @@ def get_active_llm_models(
 ):
     """获取所有激活的大模型配置（用于智能体选择）"""
     models = db.query(LLMModel).filter(
-        LLMModel.is_active == 1
+        LLMModel.is_active == 1,
+        LLMModel.is_deleted == 0
     ).order_by(
         LLMModel.sort_order.asc(),
         LLMModel.created_at.desc()
@@ -243,13 +244,15 @@ def get_default_llm_model(
     """获取默认的大模型配置"""
     model = db.query(LLMModel).filter(
         LLMModel.is_default == 1,
-        LLMModel.is_active == 1
+        LLMModel.is_active == 1,
+        LLMModel.is_deleted == 0
     ).first()
     
     if not model:
         # 如果没有设置默认模型，返回第一个激活的模型
         model = db.query(LLMModel).filter(
-            LLMModel.is_active == 1
+            LLMModel.is_active == 1,
+            LLMModel.is_deleted == 0
         ).order_by(LLMModel.sort_order.asc()).first()
     
     if not model:
@@ -265,7 +268,10 @@ def get_llm_model(
     current_user: User = Depends(get_current_user)
 ):
     """获取指定ID的大模型配置"""
-    model = db.query(LLMModel).filter(LLMModel.id == model_id).first()
+    model = db.query(LLMModel).filter(
+        LLMModel.id == model_id,
+        LLMModel.is_deleted == 0
+    ).first()
     if not model:
         raise HTTPException(status_code=404, detail="模型配置不存在")
     
@@ -283,7 +289,10 @@ def update_llm_model(
     if not is_admin_user(current_user):
         raise HTTPException(status_code=403, detail="只有管理员可以修改模型配置")
     
-    db_model = db.query(LLMModel).filter(LLMModel.id == model_id).first()
+    db_model = db.query(LLMModel).filter(
+        LLMModel.id == model_id,
+        LLMModel.is_deleted == 0
+    ).first()
     if not db_model:
         raise HTTPException(status_code=404, detail="模型配置不存在")
     
@@ -313,18 +322,22 @@ def delete_llm_model(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """删除大模型配置（仅管理员，不能删除系统内置）"""
+    """删除大模型配置（软删除，仅管理员，不能删除系统内置）"""
     if not is_admin_user(current_user):
         raise HTTPException(status_code=403, detail="只有管理员可以删除模型配置")
     
-    db_model = db.query(LLMModel).filter(LLMModel.id == model_id).first()
+    db_model = db.query(LLMModel).filter(
+        LLMModel.id == model_id,
+        LLMModel.is_deleted == 0
+    ).first()
     if not db_model:
         raise HTTPException(status_code=404, detail="模型配置不存在")
     
     if db_model.is_system == 1:
         raise HTTPException(status_code=400, detail="系统内置模型不能删除")
     
-    db.delete(db_model)
+    # 软删除：标记为已删除
+    db_model.is_deleted = 1
     db.commit()
     
     return success_response(message="删除成功")
@@ -340,7 +353,10 @@ def set_default_llm_model(
     if not is_admin_user(current_user):
         raise HTTPException(status_code=403, detail="只有管理员可以设置默认模型")
     
-    db_model = db.query(LLMModel).filter(LLMModel.id == model_id).first()
+    db_model = db.query(LLMModel).filter(
+        LLMModel.id == model_id,
+        LLMModel.is_deleted == 0
+    ).first()
     if not db_model:
         raise HTTPException(status_code=404, detail="模型配置不存在")
     

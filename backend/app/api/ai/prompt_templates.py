@@ -30,19 +30,25 @@ def get_prompt_templates(
     category: Optional[str] = Query(None, description="分类筛选"),
     difficulty: Optional[str] = Query(None, description="难度筛选"),
     is_active: Optional[bool] = Query(None, description="是否激活"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
-    获取提示词模板列表
+    获取提示词模板列表（权限隔离）
     
+    - 返回系统模板（is_system=1）和当前用户创建的个人模板
     - **page**: 页码（默认1）
     - **page_size**: 每页数量（默认50，最大100）
     - **category**: 按分类筛选（可选）
     - **difficulty**: 按难度筛选（可选）
     - **is_active**: 按激活状态筛选（可选）
     """
-    # 构建查询
-    query = db.query(PromptTemplate)
+    # 构建查询 - 只返回系统模板或当前用户的模板，并排除已删除的
+    query = db.query(PromptTemplate).filter(
+        PromptTemplate.is_deleted == 0,
+        (PromptTemplate.is_system == True) | 
+        (PromptTemplate.user_id == current_user.id)
+    )
     
     # 应用筛选条件
     if category:
@@ -52,8 +58,12 @@ def get_prompt_templates(
     if is_active is not None:
         query = query.filter(PromptTemplate.is_active == is_active)
     
-    # 排序
-    query = query.order_by(PromptTemplate.sort_order, PromptTemplate.id)
+    # 排序：系统模板优先，然后按sort_order和id排序
+    query = query.order_by(
+        PromptTemplate.is_system.desc(),
+        PromptTemplate.sort_order,
+        PromptTemplate.id
+    )
     
     # 获取总数
     total = query.count()
@@ -69,22 +79,29 @@ def get_prompt_templates(
         "page_size": page_size
     }
 
-@router.get("/{template_id}", response_model=PromptTemplateResponse)
+@router.get("/{template_uuid}", response_model=PromptTemplateResponse)
 def get_prompt_template(
-    template_id: int,
-    db: Session = Depends(get_db)
+    template_uuid: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
-    获取单个提示词模板详情
+    获取单个提示词模板详情（权限隔离）
     
-    - **template_id**: 模板ID
+    - 只能查看系统模板或自己创建的模板
+    - **template_uuid**: 模板UUID
     """
-    template = db.query(PromptTemplate).filter(PromptTemplate.id == template_id).first()
+    template = db.query(PromptTemplate).filter(
+        PromptTemplate.uuid == template_uuid,
+        PromptTemplate.is_deleted == 0,
+        (PromptTemplate.is_system == True) | 
+        (PromptTemplate.user_id == current_user.id)
+    ).first()
     
     if not template:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="模板不存在"
+            detail="模板不存在或无权访问"
         )
     
     return template
@@ -96,46 +113,55 @@ def create_prompt_template(
     current_user: User = Depends(get_current_user)
 ):
     """
-    创建提示词模板（仅管理员）
+    创建提示词模板
     
-    需要管理员权限
+    - 管理员可以创建系统模板（is_system=True）或个人模板
+    - 普通用户只能创建个人模板（is_system=False）
     """
-    # 检查权限
-    if not is_admin_user(current_user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="无权限创建模板"
-        )
+    # 创建模板数据
+    template_dict = template_data.dict()
+    
+    # 权限检查：只有管理员可以创建系统模板
+    if template_dict.get('is_system', False):
+        if not is_admin_user(current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只有管理员可以创建系统模板"
+            )
+        # 系统模板不设置user_id
+        template_dict['user_id'] = None
+    else:
+        # 个人模板设置当前用户ID
+        template_dict['user_id'] = current_user.id
+        template_dict['is_system'] = False
     
     # 创建模板
-    template = PromptTemplate(**template_data.dict())
+    template = PromptTemplate(**template_dict)
     db.add(template)
     db.commit()
     db.refresh(template)
     
     return template
 
-@router.put("/{template_id}", response_model=PromptTemplateResponse)
+@router.put("/{template_uuid}", response_model=PromptTemplateResponse)
 def update_prompt_template(
-    template_id: int,
+    template_uuid: str,
     template_data: PromptTemplateUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    更新提示词模板（仅管理员）
+    更新提示词模板（权限隔离）
     
-    需要管理员权限
+    - 管理员可以更新所有模板
+    - 普通用户只能更新自己创建的个人模板
+    - 普通用户不能将个人模板改为系统模板
     """
-    # 检查权限
-    if not is_admin_user(current_user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="无权限更新模板"
-        )
-    
-    # 查找模板
-    template = db.query(PromptTemplate).filter(PromptTemplate.id == template_id).first()
+    # 查找模板（排除已删除）
+    template = db.query(PromptTemplate).filter(
+        PromptTemplate.uuid == template_uuid,
+        PromptTemplate.is_deleted == 0
+    ).first()
     
     if not template:
         raise HTTPException(
@@ -143,8 +169,33 @@ def update_prompt_template(
             detail="模板不存在"
         )
     
+    # 权限检查
+    is_admin = is_admin_user(current_user)
+    
+    # 系统模板只有管理员可以修改
+    if template.is_system and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无权限修改系统模板"
+        )
+    
+    # 个人模板只能由创建者或管理员修改
+    if not template.is_system and template.user_id != current_user.id and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无权限修改此模板"
+        )
+    
     # 更新字段
     update_data = template_data.dict(exclude_unset=True)
+    
+    # 普通用户不能将个人模板改为系统模板
+    if 'is_system' in update_data and update_data['is_system'] and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有管理员可以创建系统模板"
+        )
+    
     for field, value in update_data.items():
         setattr(template, field, value)
     
@@ -153,26 +204,24 @@ def update_prompt_template(
     
     return template
 
-@router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{template_uuid}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_prompt_template(
-    template_id: int,
+    template_uuid: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    删除提示词模板（仅管理员）
+    删除提示词模板（软删除 + 权限隔离）
     
-    需要管理员权限
+    - 管理员可以删除所有模板
+    - 普通用户只能删除自己创建的个人模板
+    - 采用软删除，不物理删除数据
     """
-    # 检查权限
-    if not is_admin_user(current_user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="无权限删除模板"
-        )
-    
-    # 查找模板
-    template = db.query(PromptTemplate).filter(PromptTemplate.id == template_id).first()
+    # 查找模板（排除已删除）
+    template = db.query(PromptTemplate).filter(
+        PromptTemplate.uuid == template_uuid,
+        PromptTemplate.is_deleted == 0
+    ).first()
     
     if not template:
         raise HTTPException(
@@ -180,8 +229,25 @@ def delete_prompt_template(
             detail="模板不存在"
         )
     
-    # 删除模板
-    db.delete(template)
+    # 权限检查
+    is_admin = is_admin_user(current_user)
+    
+    # 系统模板只有管理员可以删除
+    if template.is_system and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无权限删除系统模板"
+        )
+    
+    # 个人模板只能由创建者或管理员删除
+    if not template.is_system and template.user_id != current_user.id and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无权限删除此模板"
+        )
+    
+    # 软删除：标记为已删除
+    template.is_deleted = 1
     db.commit()
     
     return None

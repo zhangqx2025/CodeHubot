@@ -1,8 +1,9 @@
 <template>
   <div class="ai-dashboard">
+    <!-- 统计卡片 -->
     <el-row :gutter="20">
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card shadow="hover" class="stat-card" @click="$router.push('/ai/agents')">
           <div class="stat-content">
             <div class="stat-icon agent">
               <el-icon :size="32"><Avatar /></el-icon>
@@ -15,8 +16,8 @@
         </el-card>
       </el-col>
       
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+      <el-col v-if="configStore.aiWorkflowEnabled" :span="6">
+        <el-card shadow="hover" class="stat-card" @click="$router.push('/ai/workflows')">
           <div class="stat-content">
             <div class="stat-icon workflow">
               <el-icon :size="32"><Connection /></el-icon>
@@ -29,8 +30,8 @@
         </el-card>
       </el-col>
       
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+      <el-col v-if="configStore.aiKnowledgeBaseEnabled" :span="6">
+        <el-card shadow="hover" class="stat-card" @click="$router.push('/ai/knowledge-bases')">
           <div class="stat-content">
             <div class="stat-icon knowledge">
               <el-icon :size="32"><Collection /></el-icon>
@@ -44,75 +45,15 @@
       </el-col>
       
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card shadow="hover" class="stat-card" @click="$router.push('/ai/prompt-templates')">
           <div class="stat-content">
-            <div class="stat-icon plugin">
-              <el-icon :size="32"><Grid /></el-icon>
+            <div class="stat-icon template">
+              <el-icon :size="32"><Document /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.plugins }}</div>
-              <div class="stat-label">插件</div>
+              <div class="stat-value">{{ stats.templates }}</div>
+              <div class="stat-label">提示词模板</div>
             </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span>快速访问</span>
-          </template>
-          <div class="quick-actions">
-            <el-button type="primary" @click="$router.push('/ai/chat')">
-              <el-icon><ChatDotRound /></el-icon> 开始对话
-            </el-button>
-            <el-button @click="$router.push('/ai/agents/create')">
-              <el-icon><Plus /></el-icon> 创建智能体
-            </el-button>
-            <el-button @click="$router.push('/ai/workflows/create')">
-              <el-icon><Plus /></el-icon> 创建工作流
-            </el-button>
-            <el-button @click="$router.push('/ai/knowledge-bases')">
-              <el-icon><Collection /></el-icon> 管理知识库
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span>系统状态</span>
-          </template>
-          <div class="system-status">
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <div class="status-item">
-                  <el-tag type="success">LLM服务</el-tag>
-                  <span class="status-value">正常</span>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="status-item">
-                  <el-tag type="success">向量数据库</el-tag>
-                  <span class="status-value">正常</span>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="status-item">
-                  <el-tag type="info">队列服务</el-tag>
-                  <span class="status-value">运行中</span>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="status-item">
-                  <el-tag type="warning">API调用</el-tag>
-                  <span class="status-value">{{ stats.apiCalls }} 次/小时</span>
-                </div>
-              </el-col>
-            </el-row>
           </div>
         </el-card>
       </el-col>
@@ -122,28 +63,41 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Avatar, Connection, Collection, Grid, ChatDotRound, Plus } from '@element-plus/icons-vue'
+import { Avatar, Connection, Collection, Document } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { getAIStats } from '../api/dashboard'
+import { useConfigStore } from '@/stores/config'
+
+const configStore = useConfigStore()
 
 const stats = ref({
   agents: 0,
   workflows: 0,
   knowledgeBases: 0,
-  plugins: 0,
-  apiCalls: 0
+  templates: 0
 })
+
+const loading = ref(false)
 
 onMounted(() => {
   loadStats()
 })
 
 async function loadStats() {
-  // TODO: 从API加载统计数据
-  stats.value = {
-    agents: 12,
-    workflows: 8,
-    knowledgeBases: 5,
-    plugins: 15,
-    apiCalls: 1248
+  try {
+    loading.value = true
+    const response = await getAIStats()
+    stats.value = {
+      agents: response.data.agents || 0,
+      workflows: response.data.workflows || 0,
+      knowledgeBases: response.data.knowledge_bases || 0,
+      templates: response.data.templates || 0
+    }
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+    ElMessage.error('加载统计数据失败')
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -151,6 +105,13 @@ async function loadStats() {
 <style scoped lang="scss">
 .ai-dashboard {
   .stat-card {
+    cursor: pointer;
+    transition: all 0.3s;
+    
+    &:hover {
+      transform: translateY(-5px);
+    }
+    
     .stat-content {
       display: flex;
       align-items: center;
@@ -177,7 +138,7 @@ async function loadStats() {
           background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
         
-        &.plugin {
+        &.template {
           background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
         }
       }
@@ -197,26 +158,6 @@ async function loadStats() {
           color: #909399;
           margin-top: 8px;
         }
-      }
-    }
-  }
-  
-  .quick-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  
-  .system-status {
-    .status-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      
-      .status-value {
-        font-weight: 500;
-        color: #2c3e50;
       }
     }
   }

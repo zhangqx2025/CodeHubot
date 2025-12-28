@@ -44,6 +44,7 @@ class KnowledgeBase(Base):
     # 状态
     is_active = Column(Boolean, default=True, comment="是否激活")
     is_system = Column(Boolean, default=False, comment="是否系统内置")
+    is_deleted = Column(Integer, default=0, comment="是否删除（0=未删除，1=已删除，软删除）")
     
     # 扩展
     tags = Column(JSON, comment="标签")
@@ -52,7 +53,7 @@ class KnowledgeBase(Base):
     # 时间戳
     created_at = Column(DateTime, default=get_beijing_time_naive, comment="创建时间")
     updated_at = Column(DateTime, default=get_beijing_time_naive, onupdate=get_beijing_time_naive, comment="更新时间")
-    deleted_at = Column(DateTime, nullable=True, comment="删除时间")
+    deleted_at = Column(DateTime, nullable=True, comment="删除时间（保留兼容）")
     
     # 关系
     documents = relationship("Document", back_populates="knowledge_base", cascade="all, delete-orphan")

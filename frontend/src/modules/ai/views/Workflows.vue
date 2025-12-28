@@ -180,7 +180,7 @@ import {
   executeWorkflow as executeWorkflowAPI,
   getExecutions,
   getExecution
-} from '@device/api/workflow'
+} from '../api/workflow'
 
 const router = useRouter()
 

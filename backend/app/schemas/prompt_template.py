@@ -19,6 +19,7 @@ class PromptTemplateBase(BaseModel):
     recommended_temperature: Optional[Decimal] = Field(0.70, description="推荐Temperature参数")
     sort_order: int = Field(0, description="排序顺序")
     is_active: bool = Field(True, description="是否激活")
+    is_system: bool = Field(False, description="是否系统模板")
 
 class PromptTemplateCreate(PromptTemplateBase):
     """创建提示词模板Schema"""
@@ -37,10 +38,14 @@ class PromptTemplateUpdate(BaseModel):
     recommended_temperature: Optional[Decimal] = None
     sort_order: Optional[int] = None
     is_active: Optional[bool] = None
+    is_system: Optional[bool] = None
 
 class PromptTemplateResponse(PromptTemplateBase):
     """提示词模板响应Schema"""
     id: int
+    uuid: str
+    user_id: Optional[int] = None
+    is_deleted: bool = Field(False, description="是否删除")
     created_at: datetime
     updated_at: datetime
     

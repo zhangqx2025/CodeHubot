@@ -699,7 +699,7 @@ import {
   previewDocumentChunks,
   searchInKnowledgeBase,
   updateKnowledgeBase
-} from '@device/api/knowledgeBases'
+} from '../api/knowledgeBases'
 
 const route = useRoute()
 const router = useRouter()

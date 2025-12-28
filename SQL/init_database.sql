@@ -219,6 +219,13 @@ INSERT INTO `core_system_config` (`config_key`, `config_value`, `config_type`, `
 ('enable_ai_module', 'true', 'boolean', '是否开启AI模块', 'module', 1),
 ('enable_pbl_module', 'true', 'boolean', '是否开启PBL模块', 'module', 1);
 
+-- AI模块功能开关配置
+INSERT INTO `core_system_config` (`config_key`, `config_value`, `config_type`, `description`, `category`, `is_public`) VALUES
+('ai_module_agent_enabled', 'true', 'boolean', 'AI模块-智能体功能是否启用', 'feature', 1),
+('ai_module_workflow_enabled', 'false', 'boolean', 'AI模块-工作流功能是否启用（暂未开放）', 'feature', 1),
+('ai_module_knowledge_base_enabled', 'false', 'boolean', 'AI模块-知识库功能是否启用（暂未开放）', 'feature', 1),
+('ai_module_prompt_template_enabled', 'true', 'boolean', 'AI模块-提示词模板功能是否启用', 'feature', 1);
+
 -- 用户协议和隐私政策
 INSERT INTO `core_system_config` (`config_key`, `config_value`, `config_type`, `description`, `category`, `is_public`) VALUES
 ('user_agreement', '', 'text', '用户协议内容', 'policy', 1),
@@ -448,8 +455,10 @@ CREATE TABLE `agent_main` (
   `user_id` int(11) NOT NULL COMMENT '创建用户 ID',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
   `is_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否系统内置',
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除（软删除）',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  KEY `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=1 COMMENT='智能体表';
 
 --
@@ -504,11 +513,13 @@ CREATE TABLE `kb_main` (
   `retrieval_config` json DEFAULT NULL COMMENT '检索配置（相似度阈值、返回数量等）',
   `is_active` tinyint(1) DEFAULT '1' COMMENT '是否激活',
   `is_system` tinyint(1) DEFAULT '0' COMMENT '是否系统内置',
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除（软删除）',
   `tags` json DEFAULT NULL COMMENT '标签（便于分类）',
   `meta_data` json DEFAULT NULL COMMENT '扩展元数据',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `deleted_at` datetime DEFAULT NULL COMMENT '删除时间（软删除）'
+  `deleted_at` datetime DEFAULT NULL COMMENT '删除时间（保留兼容）',
+  KEY `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=1 COMMENT='知识库表';
 
 --
@@ -689,9 +700,11 @@ CREATE TABLE `llm_models` (
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
   `is_default` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否默认模型',
   `is_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否系统内置',
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除（软删除）',
   `sort_order` int(11) NOT NULL DEFAULT '0' COMMENT '排序顺序',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  KEY `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=1 COMMENT='LLM模型表';
 
 --
@@ -730,6 +743,7 @@ CREATE TABLE `llm_providers` (
 
 CREATE TABLE `llm_prompt_templates` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `uuid` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '唯一标识符',
   `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '模板名称',
   `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '模板描述',
   `content` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '提示词内容',
@@ -741,8 +755,15 @@ CREATE TABLE `llm_prompt_templates` (
   `recommended_temperature` decimal(3,2) DEFAULT '0.70' COMMENT '推荐的Temperature参数',
   `sort_order` int(11) DEFAULT '0' COMMENT '排序顺序',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除（软删除）',
+  `is_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否系统模板',
+  `user_id` int(11) DEFAULT NULL COMMENT '创建用户ID（系统模板为NULL）',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  UNIQUE KEY `uk_uuid` (`uuid`),
+  KEY `idx_is_deleted` (`is_deleted`),
+  KEY `idx_user_id` (`user_id`),
+  CONSTRAINT `fk_prompt_template_user` FOREIGN KEY (`user_id`) REFERENCES `core_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=1 COMMENT='提示词模板表';
 
 
@@ -765,8 +786,10 @@ CREATE TABLE `plugin_main` (
   `user_id` int(11) NOT NULL COMMENT '创建用户 ID',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活',
   `is_system` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否系统内置',
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除（软删除）',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  KEY `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=1 COMMENT='插件表';
 
 
@@ -791,6 +814,7 @@ CREATE TABLE `workflow_main` (
   `config` json DEFAULT NULL COMMENT '工作流配置（超时、重试等）',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否激活（1=激活，0=禁用）',
   `is_public` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否公开（1=公开，0=私有）',
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除（软删除）',
   `execution_count` int(11) NOT NULL DEFAULT '0' COMMENT '执行次数',
   `success_count` int(11) NOT NULL DEFAULT '0' COMMENT '成功次数',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -799,6 +823,7 @@ CREATE TABLE `workflow_main` (
   UNIQUE KEY `idx_uuid` (`uuid`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_is_active` (`is_active`),
+  KEY `idx_is_deleted` (`is_deleted`),
   KEY `idx_created_at` (`created_at`),
   CONSTRAINT `fk_workflow_user` FOREIGN KEY (`user_id`) REFERENCES `core_users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=1 COMMENT='工作流表';

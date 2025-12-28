@@ -267,7 +267,7 @@ async def chat_with_agent(
     # 6. 构建消息列表
     messages = []
     
-    # 添加系统提示词
+    # 添加系统提示词（必须添加，不管是否有知识库）
     system_content = agent.system_prompt if agent.system_prompt else "你是一个智能助手。"
     
     # 如果有知识库检索结果，添加到系统提示词中
@@ -275,10 +275,11 @@ async def chat_with_agent(
         system_content += knowledge_context
         system_content += "\n\n请基于以上参考内容回答用户问题。如果参考内容中没有相关信息，可以使用你的知识进行回答，但请说明这不是来自参考资料。"
     
-        messages.append({
-            "role": "system",
+    # 始终添加系统提示词
+    messages.append({
+        "role": "system",
         "content": system_content
-        })
+    })
     
     # 添加插件能力说明
     if functions:

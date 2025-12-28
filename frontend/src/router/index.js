@@ -116,6 +116,15 @@ router.beforeEach(async (to, from, next) => {
     }
   }
   
+  // 检查管理员权限（admin/super_admin/platform_admin）
+  if (to.meta.requiresAdmin) {
+    if (!authStore.isAdmin) {
+      ElMessage.error('只有管理员可以访问该页面')
+      next('/')
+      return
+    }
+  }
+  
   // 检查平台管理员权限
   if (to.meta.requiresPlatformAdmin) {
     const userRole = authStore.userInfo?.role

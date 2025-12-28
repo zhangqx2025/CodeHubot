@@ -62,7 +62,7 @@ def get_workflows(
     current_user: User = Depends(get_current_user)
 ):
     """获取工作流列表"""
-    query = db.query(Workflow)
+    query = db.query(Workflow).filter(Workflow.is_deleted == 0)
     
     # 权限过滤：普通用户只能看到自己创建的或公开的工作流
     if not is_admin_user(current_user):
@@ -135,7 +135,10 @@ def get_workflow(
     current_user: User = Depends(get_current_user)
 ):
     """获取工作流详情"""
-    workflow = db.query(Workflow).filter(Workflow.uuid == workflow_uuid).first()
+    workflow = db.query(Workflow).filter(
+        Workflow.uuid == workflow_uuid,
+        Workflow.is_deleted == 0
+    ).first()
     
     if not workflow:
         raise HTTPException(
@@ -161,7 +164,10 @@ def update_workflow(
     current_user: User = Depends(get_current_user)
 ):
     """更新工作流"""
-    workflow = db.query(Workflow).filter(Workflow.uuid == workflow_uuid).first()
+    workflow = db.query(Workflow).filter(
+        Workflow.uuid == workflow_uuid,
+        Workflow.is_deleted == 0
+    ).first()
     
     if not workflow:
         raise HTTPException(
@@ -220,8 +226,11 @@ def delete_workflow(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """删除工作流"""
-    workflow = db.query(Workflow).filter(Workflow.uuid == workflow_uuid).first()
+    """删除工作流（软删除）"""
+    workflow = db.query(Workflow).filter(
+        Workflow.uuid == workflow_uuid,
+        Workflow.is_deleted == 0
+    ).first()
     
     if not workflow:
         raise HTTPException(
@@ -236,7 +245,8 @@ def delete_workflow(
             detail="无权删除该工作流"
         )
     
-    db.delete(workflow)
+    # 软删除：标记为已删除
+    workflow.is_deleted = 1
     db.commit()
     
     return success_response(message="工作流删除成功")
@@ -249,7 +259,10 @@ def validate_workflow(
     current_user: User = Depends(get_current_user)
 ):
     """验证工作流（DAG验证）"""
-    workflow = db.query(Workflow).filter(Workflow.uuid == workflow_uuid).first()
+    workflow = db.query(Workflow).filter(
+        Workflow.uuid == workflow_uuid,
+        Workflow.is_deleted == 0
+    ).first()
     
     if not workflow:
         raise HTTPException(
@@ -282,7 +295,10 @@ async def execute_workflow(
     current_user: User = Depends(get_current_user)
 ):
     """执行工作流（同步执行，后续可改为异步）"""
-    workflow = db.query(Workflow).filter(Workflow.uuid == workflow_uuid).first()
+    workflow = db.query(Workflow).filter(
+        Workflow.uuid == workflow_uuid,
+        Workflow.is_deleted == 0
+    ).first()
     
     if not workflow:
         raise HTTPException(

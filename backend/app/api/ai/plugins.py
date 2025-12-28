@@ -106,7 +106,7 @@ def get_plugins(
     current_user: User = Depends(get_current_user)
 ):
     """获取插件列表"""
-    query = db.query(Plugin)
+    query = db.query(Plugin).filter(Plugin.is_deleted == 0)
     
     # 权限过滤
     if is_admin_user(current_user):
@@ -147,7 +147,10 @@ def get_plugin(
     current_user: User = Depends(get_current_user)
 ):
     """获取插件详情（通过UUID）"""
-    plugin = db.query(Plugin).filter(Plugin.uuid == plugin_uuid).first()
+    plugin = db.query(Plugin).filter(
+        Plugin.uuid == plugin_uuid,
+        Plugin.is_deleted == 0
+    ).first()
     
     if not plugin:
         raise HTTPException(status_code=404, detail="插件不存在")
@@ -166,7 +169,10 @@ def update_plugin(
     current_user: User = Depends(get_current_user)
 ):
     """更新插件（通过UUID）"""
-    plugin = db.query(Plugin).filter(Plugin.uuid == plugin_uuid).first()
+    plugin = db.query(Plugin).filter(
+        Plugin.uuid == plugin_uuid,
+        Plugin.is_deleted == 0
+    ).first()
     
     if not plugin:
         raise HTTPException(status_code=404, detail="插件不存在")
@@ -199,8 +205,11 @@ def delete_plugin(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """删除插件（通过UUID）"""
-    plugin = db.query(Plugin).filter(Plugin.uuid == plugin_uuid).first()
+    """删除插件（软删除，通过UUID）"""
+    plugin = db.query(Plugin).filter(
+        Plugin.uuid == plugin_uuid,
+        Plugin.is_deleted == 0
+    ).first()
     
     if not plugin:
         raise HTTPException(status_code=404, detail="插件不存在")
@@ -215,7 +224,8 @@ def delete_plugin(
     # 检查是否有智能体在使用此插件
     from app.models.agent import Agent
     agents_using_plugin = db.query(Agent).filter(
-        Agent.plugin_ids.contains([plugin.id])
+        Agent.plugin_ids.contains([plugin.id]),
+        Agent.is_deleted == 0
     ).count()
     
     if agents_using_plugin > 0:
@@ -224,7 +234,8 @@ def delete_plugin(
             detail=f"无法删除：有 {agents_using_plugin} 个智能体正在使用此插件"
         )
     
-    db.delete(plugin)
+    # 软删除：标记为已删除
+    plugin.is_deleted = 1
     db.commit()
     
     return success_response(message="插件已删除")

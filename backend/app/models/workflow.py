@@ -27,6 +27,7 @@ class Workflow(Base):
     # 状态
     is_active = Column(Integer, default=1, comment="是否激活（1=激活，0=禁用）")
     is_public = Column(Integer, default=0, comment="是否公开（1=公开，0=私有）")
+    is_deleted = Column(Integer, default=0, comment="是否删除（0=未删除，1=已删除，软删除）")
     
     # 统计信息
     execution_count = Column(Integer, default=0, comment="执行次数")

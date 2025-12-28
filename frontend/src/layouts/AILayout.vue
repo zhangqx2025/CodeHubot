@@ -17,34 +17,35 @@
           <span>控制台</span>
         </el-menu-item>
         
-        <el-menu-item index="/ai/agents">
+        <el-menu-item index="/ai/agents" v-if="configStore.aiAgentEnabled">
           <el-icon><Avatar /></el-icon>
           <span>智能体</span>
         </el-menu-item>
         
-        <el-menu-item index="/ai/workflows">
+        <el-menu-item index="/ai/workflows" v-if="configStore.aiWorkflowEnabled">
           <el-icon><Connection /></el-icon>
           <span>工作流</span>
         </el-menu-item>
         
-        <el-menu-item index="/ai/knowledge-bases">
+        <el-menu-item index="/ai/knowledge-bases" v-if="configStore.aiKnowledgeBaseEnabled">
           <el-icon><Collection /></el-icon>
           <span>知识库</span>
         </el-menu-item>
         
-        <el-menu-item index="/ai/plugins">
+        <el-menu-item index="/ai/prompt-templates">
+          <el-icon><Document /></el-icon>
+          <span>提示词模板</span>
+        </el-menu-item>
+        
+        <el-menu-item v-if="authStore.isAdmin" index="/ai/plugins">
           <el-icon><Grid /></el-icon>
           <span>插件管理</span>
         </el-menu-item>
         
-        <el-sub-menu index="config">
-          <template #title>
-            <el-icon><Setting /></el-icon>
-            <span>配置管理</span>
-          </template>
-          <el-menu-item index="/ai/llm-models">LLM模型</el-menu-item>
-          <el-menu-item index="/ai/prompt-templates">提示词模板</el-menu-item>
-        </el-sub-menu>
+        <el-menu-item v-if="authStore.isAdmin" index="/ai/llm-models">
+          <el-icon><Setting /></el-icon>
+          <span>LLM模型配置</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
@@ -114,16 +115,18 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useConfigStore } from '@/stores/config'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   HomeFilled, MagicStick, ChatDotRound, Avatar, Connection, Collection,
-  Expand, Fold, Grid, Setting, User, Lock, SwitchButton
+  Expand, Fold, Grid, Setting, User, Lock, SwitchButton, Document
 } from '@element-plus/icons-vue'
 import UserProfileDialog from '@/components/UserProfileDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const configStore = useConfigStore()
 
 const isCollapse = ref(false)
 const activeMenu = computed(() => route.path)
@@ -134,7 +137,10 @@ const profileDialogTab = ref('profile')
 const forceChangePassword = ref(false)
 
 // 检查是否需要强制修改密码
-onMounted(() => {
+onMounted(async () => {
+  // 加载系统配置
+  await configStore.loadPublicConfigs()
+  // 检查强制修改密码
   checkForceChangePassword()
 })
 

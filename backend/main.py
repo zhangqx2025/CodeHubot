@@ -114,6 +114,10 @@ async def response_middleware(request: Request, call_next):
     
     response = await call_next(request)
     
+    # 204 No Content 直接返回，不需要包装
+    if response.status_code == 204:
+        return response
+    
     # 只处理成功的 JSON 响应（200-299）
     if 200 <= response.status_code < 300:
         # 检查 content-type 是否为 JSON

@@ -3,7 +3,7 @@
  * 用于管理平台名称、描述等全局配置
  */
 import { defineStore } from 'pinia'
-import { getPlatformConfig } from '@/modules/device/api/systemConfig'
+import { getPlatformConfig, getPoliciesConfig } from '@/modules/device/api/systemConfig'
 
 export const usePlatformStore = defineStore('platform', {
   state: () => ({
@@ -34,7 +34,7 @@ export const usePlatformStore = defineStore('platform', {
 
   actions: {
     /**
-     * 加载平台配置
+     * 加载平台配置（不包含用户协议和隐私政策，以节省流量）
      */
     async loadConfig() {
       try {
@@ -44,8 +44,6 @@ export const usePlatformStore = defineStore('platform', {
         this.platformName = data.platform_name || 'CodeHubot'
         this.platformDescription = data.platform_description || '智能物联网管理平台'
         this.enableUserRegistration = data.enable_user_registration || false
-        this.userAgreement = data.user_agreement || ''
-        this.privacyPolicy = data.privacy_policy || ''
         this.isLoaded = true
 
         // 更新页面标题
@@ -56,6 +54,24 @@ export const usePlatformStore = defineStore('platform', {
         console.error('加载平台配置失败:', error)
         // 使用默认值
         this.isLoaded = true
+        return null
+      }
+    },
+
+    /**
+     * 加载用户协议和隐私政策（仅在需要时调用，如登录页面）
+     */
+    async loadPolicies() {
+      try {
+        const response = await getPoliciesConfig()
+        const data = response.data
+
+        this.userAgreement = data.user_agreement || ''
+        this.privacyPolicy = data.privacy_policy || ''
+
+        return data
+      } catch (error) {
+        console.error('加载协议配置失败:', error)
         return null
       }
     },

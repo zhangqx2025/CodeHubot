@@ -137,51 +137,12 @@
 
     <!-- 输入区域 -->
     <div class="input-container">
-      <!-- 设备选择工具栏 -->
-      <div class="input-toolbar">
-        <div class="device-selector">
-          <el-icon><Monitor /></el-icon>
-          <span class="toolbar-label">控制设备：</span>
-          <el-select
-            v-model="selectedDeviceUuid"
-            placeholder="选择要控制的设备"
-            clearable
-            filterable
-            style="width: 300px;"
-            :filter-method="filterDevices"
-            @change="handleDeviceSelect"
-          >
-            <el-option
-              v-for="device in filteredDevices"
-              :key="device.uuid"
-              :label="`${device.name}`"
-              :value="device.uuid"
-            >
-              <div class="device-option">
-                <span class="device-name">{{ device.name }}</span>
-                <el-tag 
-                  :type="device.is_online ? 'success' : 'info'" 
-                  size="small"
-                  style="margin-left: 8px;"
-                >
-                  {{ device.is_online ? '在线' : '离线' }}
-                </el-tag>
-              </div>
-            </el-option>
-          </el-select>
-          <span class="device-hint" v-if="selectedDevice">
-            <el-icon><CircleCheck /></el-icon>
-            已选择: {{ selectedDevice.name }}
-          </span>
-        </div>
-      </div>
-
       <div class="input-wrapper">
         <el-input
           v-model="inputMessage"
           type="textarea"
           :rows="3"
-          :placeholder="selectedDevice ? `向 ${selectedDevice.name} 发送指令... (Ctrl+Enter 发送)` : '输入消息... (Ctrl+Enter 发送)'"
+          placeholder="输入消息... (Ctrl+Enter 发送)"
           @keydown.ctrl.enter="handleSend"
           :disabled="isThinking"
           class="message-input"
@@ -218,13 +179,11 @@ import {
   Close,
   TrendCharts,
   Promotion,
-  Monitor,
-  CircleCheck,
   DataAnalysis,
   Reading
 } from '@element-plus/icons-vue'
-import { getAgent } from '@device/api/agent'
-import { chatWithAgent, getMyDevices } from '@device/api/chat'
+import { getAgent } from '../api/agent'
+import { chatWithAgent } from '../api/chat'
 import { marked } from 'marked'
 
 const route = useRoute()
@@ -237,14 +196,6 @@ const messages = ref([])
 const inputMessage = ref('')
 const isThinking = ref(false)
 const messagesContainer = ref(null)
-
-// 设备选择相关
-const devices = ref([])
-const filteredDevices = ref([])
-const selectedDeviceUuid = ref('')
-const selectedDevice = computed(() => {
-  return devices.value.find(d => d.uuid === selectedDeviceUuid.value)
-})
 
 // 建议问题
 const suggestedQuestions = ref([
@@ -279,14 +230,7 @@ const sendMessage = async (content) => {
   let messageText = content || inputMessage.value.trim()
   if (!messageText) return
 
-  // 如果选择了设备，自动拼接设备UUID到消息中
-  let finalMessage = messageText
-  if (selectedDeviceUuid.value) {
-    // 在消息前面添加设备标识，让智能体知道要操作哪个设备
-    finalMessage = `[设备UUID: ${selectedDeviceUuid.value}] ${messageText}`
-  }
-
-  // 添加用户消息（显示原始消息，不显示UUID）
+  // 添加用户消息
   const userMessage = {
     role: 'user',
     content: messageText,
@@ -299,12 +243,12 @@ const sendMessage = async (content) => {
   await nextTick()
   scrollToBottom()
 
-  // 调用 API（发送拼接了UUID的消息）
+  // 调用 API
   isThinking.value = true
   try {
     const response = await chatWithAgent({
       agent_uuid: agentUuid.value,
-      message: finalMessage,  // 发送拼接了UUID的消息
+      message: messageText,
       history: messages.value.slice(0, -1).map(msg => ({
         role: msg.role,
         content: msg.content
@@ -373,7 +317,7 @@ const clearHistory = () => {
 
 // 返回
 const goBack = () => {
-  router.push('/agents')
+  router.push('/ai/agents')
 }
 
 // 滚动到底部
@@ -422,68 +366,9 @@ const getSimilarityType = (similarity) => {
   return 'info'
 }
 
-// 加载用户设备列表（使用聊天专用接口）
-const loadDevices = async () => {
-  // 确保已登录才加载设备列表
-  if (!userStore.token) {
-    console.warn('未找到token，跳过设备列表加载')
-    return
-  }
-  
-  try {
-    console.log('🔄 开始加载设备列表（使用聊天专用接口）')
-    const response = await getMyDevices()
-    const data = response.data || response
-    devices.value = data || []
-    filteredDevices.value = devices.value
-    
-    if (devices.value.length > 0) {
-      console.log(`✅ 成功加载 ${devices.value.length} 个设备`)
-    } else {
-      console.log('📭 设备列表为空')
-    }
-  } catch (error) {
-    // 静默失败，不影响聊天功能
-    console.warn('设备列表加载失败，您仍可手动输入设备UUID:', error.response?.status)
-    devices.value = []
-    filteredDevices.value = []
-  }
-}
-
-// 过滤设备
-const filterDevices = (query) => {
-  if (!query) {
-    filteredDevices.value = devices.value
-  } else {
-    const lowerQuery = query.toLowerCase()
-    filteredDevices.value = devices.value.filter(device => 
-      device.name.toLowerCase().includes(lowerQuery) ||
-      device.uuid.toLowerCase().includes(lowerQuery) ||
-      (device.device_id && device.device_id.toLowerCase().includes(lowerQuery))
-    )
-  }
-}
-
-// 选择设备
-const handleDeviceSelect = (uuid) => {
-  selectedDeviceUuid.value = uuid
-  
-  if (uuid) {
-    const device = devices.value.find(d => d.uuid === uuid)
-    const deviceName = device ? device.name : '设备'
-    ElMessage.success(`已选择${deviceName}`)
-  }
-}
-
 onMounted(async () => {
-  // 先加载智能体信息
+  // 加载智能体信息
   await loadAgent()
-  
-  // 延迟一小段时间，确保token已经准备好
-  // 这样可以避免初始化时的竞争条件
-  setTimeout(() => {
-    loadDevices()
-  }, 100)
 })
 </script>
 
@@ -916,50 +801,6 @@ onMounted(async () => {
 
 .send-button:active:not(:disabled) {
   transform: translateY(0);
-}
-
-.input-toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e4e7ed;
-  margin-bottom: 12px;
-}
-
-.device-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.toolbar-label {
-  font-size: 14px;
-  color: #606266;
-  white-space: nowrap;
-}
-
-.device-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.device-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.device-hint {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 12px;
-  color: #67c23a;
-  font-size: 14px;
 }
 
 /* 知识库来源样式 */

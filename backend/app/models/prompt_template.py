@@ -1,15 +1,18 @@
 """
 提示词模板模型
 """
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, DECIMAL, JSON
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, DECIMAL, JSON, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.core.database import Base
+import uuid as uuid_lib
 
 class PromptTemplate(Base):
     """提示词模板模型"""
     __tablename__ = "llm_prompt_templates"
     
     id = Column(Integer, primary_key=True, index=True, comment="模板ID")
+    uuid = Column(String(36), unique=True, nullable=False, default=lambda: str(uuid_lib.uuid4()), comment="唯一标识符")
     name = Column(String(100), nullable=False, comment="模板名称")
     description = Column(String(255), comment="模板描述")
     content = Column(Text, nullable=False, comment="提示词内容")
@@ -21,6 +24,12 @@ class PromptTemplate(Base):
     recommended_temperature = Column(DECIMAL(3, 2), default=0.70, comment="推荐Temperature")
     sort_order = Column(Integer, default=0, comment="排序顺序")
     is_active = Column(Boolean, default=True, nullable=False, comment="是否激活")
+    is_deleted = Column(Integer, default=0, nullable=False, comment="是否删除（0=未删除，1=已删除，软删除）")
+    is_system = Column(Boolean, default=False, nullable=False, comment="是否系统模板")
+    user_id = Column(Integer, ForeignKey('core_users.id'), nullable=True, comment="创建用户ID（系统模板为NULL）")
     created_at = Column(DateTime, server_default=func.now(), nullable=False, comment="创建时间")
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False, comment="更新时间")
+    
+    # 关联关系
+    user = relationship("User", foreign_keys=[user_id])
 
