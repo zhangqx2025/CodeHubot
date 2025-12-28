@@ -165,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick, computed } from 'vue'
+import { ref, reactive, onMounted, nextTick, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/store/user'
@@ -370,6 +370,20 @@ onMounted(async () => {
   // 加载智能体信息
   await loadAgent()
 })
+
+// 监听路由参数变化，切换智能体时重新加载
+watch(
+  () => agentUuid.value,
+  (newUuid, oldUuid) => {
+    // 只有当 UUID 真正变化时才重新加载（避免初始化时触发）
+    if (oldUuid !== undefined && newUuid !== oldUuid) {
+      // 清空消息历史
+      messages.value = []
+      // 重新加载智能体信息
+      loadAgent()
+    }
+  }
+)
 </script>
 
 <style scoped>

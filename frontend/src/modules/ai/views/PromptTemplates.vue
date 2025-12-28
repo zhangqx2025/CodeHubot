@@ -26,7 +26,8 @@
           style="width: 150px; margin-right: 10px;"
           @change="loadTemplates"
         />
-        <el-checkbox v-model="showActiveOnly" @change="loadTemplates">仅显示激活</el-checkbox>
+        <!-- 激活状态筛选暂时隐藏 -->
+        <el-checkbox v-model="showActiveOnly" @change="loadTemplates" v-if="false">仅显示激活</el-checkbox>
       </div>
       
       <el-table v-loading="loading" :data="templates" style="margin-top: 20px;">
@@ -45,7 +46,8 @@
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" min-width="250" show-overflow-tooltip />
-        <el-table-column prop="is_active" label="状态" width="80" align="center">
+        <!-- 状态列暂时隐藏 -->
+        <el-table-column prop="is_active" label="状态" width="80" align="center" v-if="false">
           <template #default="{ row }">
             <el-tag :type="row.is_active ? 'success' : 'info'" size="small">
               {{ row.is_active ? '激活' : '禁用' }}
@@ -147,7 +149,8 @@
           />
         </el-form-item>
         
-        <el-form-item label="是否激活">
+        <!-- 激活状态功能暂时隐藏 -->
+        <el-form-item label="是否激活" v-if="false">
           <el-switch v-model="form.is_active" :disabled="dialogMode === 'view'" />
           <span style="margin-left: 10px; font-size: 12px; color: #909399;">
             关闭后该模板将不会显示在智能体配置中
@@ -182,7 +185,7 @@ const loading = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
 const categoryFilter = ref('')
-const showActiveOnly = ref(true)
+const showActiveOnly = ref(false) // 修改为默认显示所有模板（包括禁用的）
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)

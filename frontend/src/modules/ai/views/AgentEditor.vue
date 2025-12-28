@@ -57,7 +57,8 @@
               选择智能体使用的大语言模型，留空则使用系统默认模型
             </div>
           </el-form-item>
-          <el-form-item label="状态" prop="is_active">
+          <!-- 状态功能暂时隐藏 -->
+          <el-form-item label="状态" prop="is_active" v-if="false">
             <el-radio-group v-model="agentForm.is_active">
               <el-radio :label="1">激活</el-radio>
               <el-radio :label="0">禁用</el-radio>
@@ -468,9 +469,43 @@ const goBack = () => {
   router.push('/ai/agents')
 }
 
+// 重置表单数据
+const resetForm = () => {
+  Object.assign(agentForm, {
+    id: null,
+    uuid: null,
+    name: '',
+    description: '',
+    system_prompt: '',
+    plugin_ids: [],
+    llm_model_id: null,
+    is_active: 1
+  })
+  knowledgeBases.value = []
+}
+
 // 加载智能体详情
-const loadAgent = async () => {
-  if (!agentUuid.value) return
+const loadAgent = async (initialData = null) => {
+  if (!agentUuid.value) {
+    // 如果没有 UUID，说明是新建模式，清空表单
+    resetForm()
+    return
+  }
+  
+  // 如果有初始数据（刚创建时传递过来的），直接使用
+  if (initialData) {
+    Object.assign(agentForm, {
+      id: initialData.id,
+      uuid: initialData.uuid,
+      name: initialData.name,
+      description: initialData.description || '',
+      system_prompt: initialData.system_prompt || '',
+      plugin_ids: initialData.plugin_ids || [],
+      llm_model_id: initialData.llm_model_id || null,
+      is_active: initialData.is_active
+    })
+    return
+  }
   
   loading.value = true
   try {
@@ -788,10 +823,18 @@ const removeKnowledgeBase = (kbUuid) => {
 }
 
 onMounted(async () => {
+  // 检查路由 state 中是否有刚创建的智能体数据
+  const agentData = history.state?.agentData
+  
   // 只有编辑模式才加载智能体数据
   if (agentUuid.value) {
-    await loadAgent()
-    loadKnowledgeBases()
+    // 如果有初始数据（刚创建），直接使用，否则从后端加载
+    await loadAgent(agentData)
+    
+    // 知识库只在非初始数据时加载（新创建的智能体没有知识库）
+    if (!agentData) {
+      loadKnowledgeBases()
+    }
   }
   
   // 新建和编辑模式都需要加载这些基础数据
@@ -803,6 +846,30 @@ onMounted(async () => {
   await nextTick()
   isInitialLoad.value = false
 })
+
+// 监听路由参数变化，重新加载数据
+watch(
+  () => agentUuid.value,
+  async (newUuid, oldUuid) => {
+    // 只有当 UUID 真正变化时才重新加载（避免初始化时触发）
+    if (oldUuid !== undefined && newUuid !== oldUuid) {
+      isInitialLoad.value = true
+      
+      if (newUuid) {
+        // 编辑模式：加载智能体数据
+        await loadAgent()
+        loadKnowledgeBases()
+      } else {
+        // 新建模式：清空表单
+        resetForm()
+      }
+      
+      // 等待下一个tick后恢复自动保存监听
+      await nextTick()
+      isInitialLoad.value = false
+    }
+  }
+)
 
 // 监听表单变化，触发自动保存
 watch(

@@ -19,7 +19,8 @@
             </template>
           </el-input>
         </el-col>
-        <el-col :span="6">
+        <!-- 状态筛选暂时隐藏 -->
+        <el-col :span="6" v-if="false">
           <el-select v-model="filterStatus" placeholder="状态筛选" clearable @change="loadAgents" style="width: 100%;">
             <el-option label="激活" :value="1" />
             <el-option label="禁用" :value="0" />
@@ -63,7 +64,8 @@
               </div>
             </div>
             <div class="header-right">
-              <el-tag :type="agent.is_active === 1 ? 'success' : 'info'" size="small" effect="plain">
+              <!-- 状态标签暂时隐藏 -->
+              <el-tag :type="agent.is_active === 1 ? 'success' : 'info'" size="small" effect="plain" v-if="false">
                 {{ agent.is_active === 1 ? '激活' : '禁用' }}
               </el-tag>
               <el-tag v-if="agent.is_system === 1" type="warning" size="small" effect="plain">系统</el-tag>
@@ -176,7 +178,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onActivated, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, ChatDotRound, Connection, Clock, Edit, Delete, User } from '@element-plus/icons-vue'
@@ -312,11 +314,15 @@ const handleSubmit = async () => {
       name: form.name,
       description: form.description
     })
-      const newAgentUuid = response.data.uuid
-      ElMessage.success('创建成功，正在跳转到编排页面...')
-      dialogVisible.value = false
-      // 跳转到编排页面
-      router.push(`/device/agents/${newAgentUuid}/edit`)
+    const newAgent = response.data
+    ElMessage.success('创建成功，正在跳转到编排页面...')
+    dialogVisible.value = false
+    
+    // 跳转到编排页面，通过 state 携带刚创建的智能体数据
+    router.push({
+      path: `/device/agents/${newAgent.uuid}/edit`,
+      state: { agentData: newAgent }
+    })
   } catch (error) {
     ElMessage.error(error.response?.data?.detail || '操作失败')
     console.error(error)
@@ -365,6 +371,11 @@ const getOwnerDisplayName = (agent) => {
 }
 
 onMounted(() => {
+  loadAgents()
+})
+
+// 当从其他页面返回时刷新列表
+onActivated(() => {
   loadAgents()
 })
 </script>
