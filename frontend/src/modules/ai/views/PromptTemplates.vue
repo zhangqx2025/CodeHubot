@@ -111,13 +111,24 @@
           />
         </el-form-item>
         
-        <el-form-item label="模板类型" v-if="dialogMode !== 'view'">
-          <el-radio-group v-model="form.is_system" :disabled="!authStore.isAdmin || dialogMode === 'edit'">
+        <!-- 模板类型：只有管理员在创建时才显示 -->
+        <el-form-item label="模板类型" v-if="dialogMode !== 'view' && authStore.isAdmin && dialogMode === 'create'">
+          <el-radio-group v-model="form.is_system">
             <el-radio :label="false">个人模板</el-radio>
             <el-radio :label="true">系统模板</el-radio>
           </el-radio-group>
           <div style="font-size: 12px; color: #909399; margin-top: 5px;">
             {{ form.is_system ? '系统模板对所有用户可见，只有管理员可创建' : '个人模板仅自己可见' }}
+          </div>
+        </el-form-item>
+        
+        <!-- 编辑模式下显示当前模板类型（只读） -->
+        <el-form-item label="模板类型" v-if="dialogMode === 'edit'">
+          <el-tag :type="form.is_system ? 'warning' : 'info'">
+            {{ form.is_system ? '系统模板' : '个人模板' }}
+          </el-tag>
+          <div style="font-size: 12px; color: #909399; margin-top: 5px;">
+            模板类型创建后不可修改
           </div>
         </el-form-item>
         
