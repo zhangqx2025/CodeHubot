@@ -87,7 +87,7 @@ main() {
     print_info "检查 Celery Worker 当前状态..."
     print_separator
     
-    docker-compose -f docker/docker-compose.external-db.yml ps codehubot-celery-worker
+    docker-compose -f docker/docker-compose.external-db.yml ps celery_worker
     echo ""
 
     # 5. 重启 Celery Worker 服务
@@ -97,11 +97,11 @@ main() {
     print_info "注意：重启期间异步任务（如文档向量化）会暂停"
     print_separator
     
-    docker-compose -f docker/docker-compose.external-db.yml restart codehubot-celery-worker
+    docker-compose -f docker/docker-compose.external-db.yml restart celery_worker
     
     if [ $? -ne 0 ]; then
         print_error "Celery Worker 重启失败"
-        print_error "请检查日志: docker-compose -f docker/docker-compose.external-db.yml logs codehubot-celery-worker"
+        print_error "请检查日志: docker-compose -f docker/docker-compose.external-db.yml logs celery_worker"
         exit 1
     fi
     
@@ -118,14 +118,14 @@ main() {
     print_info "检查 Celery Worker 服务状态..."
     print_separator
     
-    docker-compose -f docker/docker-compose.external-db.yml ps codehubot-celery-worker
+    docker-compose -f docker/docker-compose.external-db.yml ps celery_worker
     echo ""
 
     # 8. 显示服务日志
     print_separator
     print_info "Celery Worker 服务日志（最后 20 行）:"
     print_separator
-    docker-compose -f docker/docker-compose.external-db.yml logs --tail=20 codehubot-celery-worker
+    docker-compose -f docker/docker-compose.external-db.yml logs --tail=20 celery_worker
     echo ""
 
     # 9. 完成
@@ -148,8 +148,8 @@ main() {
     echo ""
     
     print_info "验证更新:"
-    echo "  - 查看实时日志: docker-compose -f docker/docker-compose.external-db.yml logs -f codehubot-celery-worker"
-    echo "  - 查看服务状态: docker-compose -f docker/docker-compose.external-db.yml ps codehubot-celery-worker"
+    echo "  - 查看实时日志: docker-compose -f docker/docker-compose.external-db.yml logs -f celery_worker"
+    echo "  - 查看服务状态: docker-compose -f docker/docker-compose.external-db.yml ps celery_worker"
     echo "  - 测试文档上传: 访问知识库页面，上传测试文档"
     echo ""
     
@@ -161,15 +161,15 @@ main() {
     echo ""
     echo "  2. 如果 Celery Worker 无法启动:"
     echo "     - 检查 Redis 连接: docker-compose -f docker/docker-compose.external-db.yml ps redis"
-    echo "     - 查看详细日志: docker-compose -f docker/docker-compose.external-db.yml logs --tail=50 codehubot-celery-worker"
+    echo "     - 查看详细日志: docker-compose -f docker/docker-compose.external-db.yml logs --tail=50 celery_worker"
     echo "     - 检查环境变量配置是否正确"
     echo ""
     
     print_info "其他 Celery Worker 管理命令:"
-    echo "  - 停止服务: docker-compose -f docker/docker-compose.external-db.yml stop codehubot-celery-worker"
-    echo "  - 启动服务: docker-compose -f docker/docker-compose.external-db.yml start codehubot-celery-worker"
-    echo "  - 查看日志: docker-compose -f docker/docker-compose.external-db.yml logs -f codehubot-celery-worker"
-    echo "  - 重启服务: docker-compose -f docker/docker-compose.external-db.yml restart codehubot-celery-worker"
+    echo "  - 停止服务: docker-compose -f docker/docker-compose.external-db.yml stop celery_worker"
+    echo "  - 启动服务: docker-compose -f docker/docker-compose.external-db.yml start celery_worker"
+    echo "  - 查看日志: docker-compose -f docker/docker-compose.external-db.yml logs -f celery_worker"
+    echo "  - 重启服务: docker-compose -f docker/docker-compose.external-db.yml restart celery_worker"
     echo ""
 }
 
