@@ -397,7 +397,7 @@
     </el-dialog>
 
     <!-- 上传对话框 -->
-    <el-dialog v-model="showUploadDialog" title="上传文档" width="600px">
+    <el-dialog v-model="showUploadDialog" title="上传文档" width="600px" @close="handleUploadDialogClose">
       <el-form :model="uploadForm" label-width="120px">
         <el-form-item label="选择文件" required>
           <el-upload
@@ -405,15 +405,49 @@
             :auto-upload="false"
             :limit="1"
             :accept="'.txt,.md'"
+            :file-list="fileList"
             :on-change="handleFileChange"
+            :on-remove="handleFileRemove"
           >
             <el-button type="primary">选择文件</el-button>
             <template #tip>
               <div class="el-upload__tip">
-                只支持 TXT 和 Markdown 格式，文件大小不超过 1MB
+                只支持 TXT 和 Markdown 格式，文件大小不超过 100KB
               </div>
             </template>
           </el-upload>
+          
+          <!-- 文件大小说明 -->
+          <el-alert 
+            type="info" 
+            :closable="false" 
+            style="margin-top: 10px;"
+            show-icon
+          >
+            <template #title>
+              <div style="font-size: 13px; line-height: 1.6;">
+                <div style="font-weight: 500; margin-bottom: 5px;">📏 100KB 可以容纳：</div>
+                <div style="margin-left: 20px;">
+                  • 约 <strong>5万个汉字</strong>（20页 A4 纸）<br>
+                  • 约 <strong>1.5万个英文单词</strong><br>
+                  • 适合单篇文章、FAQ、知识点总结
+                </div>
+              </div>
+            </template>
+          </el-alert>
+          
+          <!-- 显示已选文件信息 -->
+          <div v-if="selectedFile" style="margin-top: 10px; padding: 10px; background: var(--el-fill-color-light); border-radius: 4px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <el-icon color="var(--el-color-success)"><DocumentChecked /></el-icon>
+              <div style="flex: 1;">
+                <div style="font-size: 14px; font-weight: 500;">{{ selectedFile.name }}</div>
+                <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 2px;">
+                  大小: {{ formatSize(selectedFile.size) }}
+                </div>
+              </div>
+            </div>
+          </div>
         </el-form-item>
 
         <el-form-item label="标题">
@@ -428,6 +462,12 @@
                 适合大部分文档
               </span>
             </el-option>
+            <el-option label="按分隔符切分（--- 或 ***）" value="separator">
+              <span>按分隔符切分（--- 或 ***）</span>
+              <span style="color: var(--el-text-color-secondary); font-size: 12px; margin-left: 10px">
+                适合 Q&A 文档
+              </span>
+            </el-option>
             <el-option label="按段落切分（单换行）" value="paragraph">
               <span>按段落切分（单换行）</span>
               <span style="color: var(--el-text-color-secondary); font-size: 12px; margin-left: 10px">
@@ -438,12 +478,6 @@
               <span>按段落切分（双换行）</span>
               <span style="color: var(--el-text-color-secondary); font-size: 12px; margin-left: 10px">
                 以双换行为分隔符
-              </span>
-            </el-option>
-            <el-option label="按句子切分" value="sentence">
-              <span>按句子切分</span>
-              <span style="color: var(--el-text-color-secondary); font-size: 12px; margin-left: 10px">
-                适合短文本
               </span>
             </el-option>
             <el-option label="自定义大小" value="custom">
@@ -495,14 +529,14 @@
                 <div v-if="uploadForm.split_mode === 'fixed'">
                   <strong>固定大小切分：</strong>按照固定字符数切分（500字符/块，重叠50字符）
                 </div>
+                <div v-else-if="uploadForm.split_mode === 'separator'">
+                  <strong>按分隔符切分：</strong>以 Markdown 分隔符（---、*** 或 ___）为界切分，非常适合 Q&A 格式的文档，保持每个问答对的完整性
+                </div>
                 <div v-else-if="uploadForm.split_mode === 'paragraph'">
                   <strong>按段落切分（单换行）：</strong>以单换行符（\n）为分隔符切分，保持段落完整性
                 </div>
                 <div v-else-if="uploadForm.split_mode === 'paragraph_double'">
                   <strong>按段落切分（双换行）：</strong>以双换行符（\n\n）为分隔符切分，保持段落完整性
-                </div>
-                <div v-else-if="uploadForm.split_mode === 'sentence'">
-                  <strong>按句子切分：</strong>在句子边界处切分，适合问答场景
                 </div>
               </div>
             </template>
@@ -687,7 +721,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Upload, View, Check, Back, QuestionFilled, Search, Document, EditPen, Coin } from '@element-plus/icons-vue'
+import { Upload, View, Check, Back, QuestionFilled, Search, Document, EditPen, Coin, DocumentChecked } from '@element-plus/icons-vue'
 import {
   getKnowledgeBase,
   getDocuments,
@@ -714,6 +748,7 @@ const showChunksDialog = ref(false)
 const knowledgeBase = ref({})
 const documents = ref([])
 const selectedFile = ref(null)
+const fileList = ref([])  // 用于 el-upload 的文件列表显示
 const currentDocument = ref(null)
 const documentChunks = ref([])
 const chunksLoading = ref(false)
@@ -851,31 +886,74 @@ const formatTime = (dateStr) => {
   return date.toLocaleString('zh-CN')
 }
 
-const handleFileChange = (file) => {
-  // 检查文件大小（1MB = 1048576 bytes）
-  const MAX_SIZE = 1 * 1024 * 1024
+const handleFileChange = (file, uploadFiles) => {
+  console.log('[文件选择] 原始参数:', { 
+    file, 
+    'file.raw': file.raw, 
+    'file.size': file.size,
+    'file.name': file.name,
+    uploadFiles 
+  })
+  
+  // 检查文件大小（100KB = 102400 bytes）
+  const MAX_SIZE = 100 * 1024
   
   if (file.size > MAX_SIZE) {
-    ElMessage.error(`文件大小超过限制，最大支持 1MB（当前文件：${(file.size / 1024 / 1024).toFixed(2)}MB）`)
+    ElMessage.error(`文件大小超过限制，最大支持 100KB（当前文件：${(file.size / 1024).toFixed(2)}KB）`)
+    // 手动移除超大文件
+    fileList.value = []
+    selectedFile.value = null
     return false
   }
   
-  selectedFile.value = file.raw
+  // 更新文件列表和选中文件
+  fileList.value = uploadFiles.slice(-1)  // 只保留最后一个文件（limit=1）
+  
+  // 确保获取原始的 File 对象
+  const rawFile = file.raw || file
+  selectedFile.value = rawFile
+  
+  console.log('[文件选择成功]', {
+    'selectedFile.value': selectedFile.value,
+    'selectedFile 类型': selectedFile.value?.constructor.name,
+    '是否为 File': selectedFile.value instanceof File,
+    'selectedFile.name': selectedFile.value?.name,
+    'selectedFile.size': selectedFile.value?.size
+  })
+  
+  // 自动填充标题
   if (!uploadForm.title) {
     uploadForm.title = file.name
   }
 }
 
+const handleFileRemove = () => {
+  selectedFile.value = null
+  fileList.value = []
+  console.log('[文件移除]')
+}
+
 const handlePreview = async () => {
+  console.log('[预览切分] 开始，selectedFile:', selectedFile.value)
+  
+  // 详细检查文件是否存在
   if (!selectedFile.value) {
-    ElMessage.warning('请选择文件')
+    ElMessage.warning('请先选择文件')
+    console.error('[预览切分] selectedFile 为空')
+    return
+  }
+  
+  // 检查文件对象是否有效
+  if (!(selectedFile.value instanceof File) && !(selectedFile.value instanceof Blob)) {
+    ElMessage.error('文件对象无效，请重新选择文件')
+    console.error('[预览切分] selectedFile 不是有效的 File/Blob 对象:', selectedFile.value)
     return
   }
 
   previewing.value = true
   try {
     const formData = new FormData()
-    formData.append('file', selectedFile.value)
+    formData.append('file', selectedFile.value, selectedFile.value.name || 'document.txt')
     formData.append('split_mode', uploadForm.split_mode)
     
     // 如果是自定义模式，添加切分参数
@@ -883,15 +961,35 @@ const handlePreview = async () => {
       formData.append('chunk_size', uploadForm.chunk_size)
       formData.append('chunk_overlap', uploadForm.chunk_overlap)
     }
+    
+    // 详细打印 FormData 内容
+    console.log('[预览切分] FormData 构建完成:', {
+      file: {
+        name: selectedFile.value.name,
+        size: selectedFile.value.size,
+        type: selectedFile.value.type,
+        lastModified: selectedFile.value.lastModified
+      },
+      split_mode: uploadForm.split_mode,
+      formData_entries: Array.from(formData.entries()).map(([key, value]) => {
+        if (value instanceof File) {
+          return [key, `File(${value.name}, ${value.size} bytes)`]
+        }
+        return [key, value]
+      })
+    })
 
     const res = await previewDocumentChunks(route.params.uuid, formData)
     previewData.value = res.data
+    
+    console.log('[预览切分] 成功，结果:', previewData.value)
     
     // 关闭上传对话框，打开预览对话框
     showUploadDialog.value = false
     showPreviewDialog.value = true
     
   } catch (error) {
+    console.error('[预览切分] 失败:', error)
     ElMessage.error('预览失败：' + (error.response?.data?.message || error.message))
   } finally {
     previewing.value = false
@@ -919,12 +1017,14 @@ const confirmUpload = async () => {
     // 关闭所有对话框
     showUploadDialog.value = false
     showPreviewDialog.value = false
-    // 重置表单
+    // 重置表单和文件
     selectedFile.value = null
+    fileList.value = []
     uploadForm.title = ''
     uploadForm.split_mode = 'fixed'
     uploadForm.chunk_size = 500
     uploadForm.chunk_overlap = 50
+    uploadForm.auto_embedding = true
     previewData.value = null
     // 刷新数据
     loadDocuments()
@@ -934,6 +1034,12 @@ const confirmUpload = async () => {
   } finally {
     uploading.value = false
   }
+}
+
+const handleUploadDialogClose = () => {
+  // 对话框关闭时不清空文件，保留用户选择
+  // 这样用户可以先关闭对话框，稍后再打开继续操作
+  console.log('[上传对话框关闭]')
 }
 
 const cancelPreview = () => {
@@ -1032,9 +1138,9 @@ const showPreviewChunkDetail = (chunk) => {
 const getSplitModeLabel = (mode) => {
   const labels = {
     'fixed': '固定大小',
+    'separator': '按分隔符（---）',
     'paragraph': '按段落（单换行）',
     'paragraph_double': '按段落（双换行）',
-    'sentence': '按句子',
     'custom': '自定义大小'
   }
   return labels[mode] || mode

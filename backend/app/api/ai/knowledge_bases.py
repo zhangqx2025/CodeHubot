@@ -59,7 +59,11 @@ def get_kb_school_id(kb: KnowledgeBase, db: Session) -> Optional[int]:
 
 def check_kb_permission(user: User, kb: KnowledgeBase, required_permission: str, db: Session) -> bool:
     """
-    检查用户对知识库的权限
+    严格版知识库权限检查
+    
+    只支持两种类型：
+    1. personal（私有知识库）：只有所有者可以访问和管理
+    2. system（系统知识库）：只有平台管理员可以访问和管理
     
     Args:
         user: 当前用户
@@ -74,103 +78,20 @@ def check_kb_permission(user: User, kb: KnowledgeBase, required_permission: str,
     if user.role == 'platform_admin':
         return True
     
-    # 2. 检查是否是所有者
-    if kb.owner_id == user.id:
-        return True
-    
-    # 2.1 检查个人知识库权限（scope_id是用户ID）
-    if kb.scope_type == 'personal':
-        # 个人知识库：只有scope_id对应的用户有完全权限
-        if kb.scope_id == user.id:
-            return True
-        # 简化：只有public才允许其他人只读访问
-        if kb.access_level == 'public' and required_permission == 'read':
-            return True
-        # private则完全不可访问
+    # 2. 系统知识库（system）
+    if kb.scope_type == 'system':
+        # 系统知识库只有平台管理员可以访问（已在上面检查，这里返回 False）
         return False
     
-    # 2.2 检查智能体知识库权限
-    if kb.scope_type == 'agent' and kb.scope_id:
-        agent = db.query(Agent).filter(Agent.id == kb.scope_id).first()
-        if agent and agent.user_id == user.id:
-            return True
+    # 3. 私有知识库（personal）
+    if kb.scope_type == 'personal':
+        # 私有知识库：只有所有者可以访问
+        return kb.owner_id == user.id
     
-    # 3. 检查学校管理员权限
-    if user.role == 'school_admin':
-        if kb.scope_type == 'system':
-            # 学校管理员对系统级知识库只有只读权限
-            return required_permission == 'read'
-        elif kb.scope_type in ['school', 'course']:
-            # 学校管理员对本校知识库有管理权限
-            kb_school_id = get_kb_school_id(kb, db)
-            if kb_school_id and user.school_id == kb_school_id:
-                return True
-    
-    # 4. 检查教师权限
-    if user.role == 'teacher':
-        if kb.scope_type == 'course':
-            # 检查是否是该课程的任课教师
-            from app.models.course_model import CourseTeacher
-            is_teacher = db.query(CourseTeacher).filter(
-                CourseTeacher.course_id == kb.scope_id,
-                CourseTeacher.teacher_id == user.id,
-                CourseTeacher.deleted_at.is_(None)
-            ).first()
-            if is_teacher and required_permission in ['read', 'write']:
-                return True
-    
-    # 5. 检查访问级别
-    if kb.access_level == 'public' and required_permission == 'read':
-        return True
-    
-    # 6. 检查显式授权
-    permission = db.query(KBPermission).filter(
-        KBPermission.knowledge_base_id == kb.id,
-        or_(
-            KBPermission.user_id == user.id,
-            KBPermission.role == user.role
-        ),
-        or_(
-            KBPermission.expires_at.is_(None),
-            KBPermission.expires_at > get_beijing_time_naive()
-        )
-    ).first()
-    
-    if permission:
-        # 权限等级：admin > manage > write > read
-        permission_levels = {'read': 1, 'write': 2, 'manage': 3, 'admin': 4, 'delete': 4}
-        user_level = permission_levels.get(permission.permission_type, 0)
-        required_level = permission_levels.get(required_permission, 0)
-        if user_level >= required_level:
-            return True
-    
-    # 7. 检查共享权限
-    sharing = db.query(KBSharing).filter(
-        KBSharing.knowledge_base_id == kb.id,
-        or_(
-            KBSharing.user_id == user.id,
-            and_(KBSharing.school_id == user.school_id, user.school_id.isnot(None)),
-            and_(KBSharing.course_id.in_(
-                db.query(Course.id).join(
-                    CourseTeacher, Course.id == CourseTeacher.course_id
-                ).filter(CourseTeacher.teacher_id == user.id)
-            ) if user.role == 'teacher' else False)
-        ),
-        KBSharing.is_active == True,
-        or_(
-            KBSharing.expires_at.is_(None),
-            KBSharing.expires_at > get_beijing_time_naive()
-        )
-    ).first()
-    
-    if sharing:
-        if sharing.share_type == 'editable':
-            return required_permission in ['read', 'write']
-        elif sharing.share_type in ['read_only', 'reference']:
-            return required_permission == 'read'
-    
-    # 默认：无权限
-    return False
+    # 4. 其他类型的知识库（兼容旧数据，视为私有）
+    # school, course, agent 等旧类型，现在都视为私有知识库
+    # 只有所有者可以访问
+    return kb.owner_id == user.id
 
 
 # ============================================================================
@@ -184,61 +105,25 @@ async def create_knowledge_base(
     current_user: User = Depends(get_current_user)
 ):
     """创建知识库"""
-    # 权限检查
+    # 简化的权限检查：只支持 personal 和 system
     if kb_data.scope_type == 'system':
+        # 只有平台管理员可以创建系统知识库
         if current_user.role != 'platform_admin':
             return error_response(message="只有平台管理员可以创建系统级知识库", code=403)
-    elif kb_data.scope_type == 'school':
-        if current_user.role not in ['platform_admin', 'school_admin']:
-            return error_response(message="只有平台管理员或学校管理员可以创建学校级知识库", code=403)
-        if current_user.role == 'school_admin':
-            # 学校管理员只能为自己的学校创建
-            if kb_data.scope_id != current_user.school_id:
-                return error_response(message="只能为本校创建知识库", code=403)
-    elif kb_data.scope_type == 'course':
-        if current_user.role not in ['platform_admin', 'school_admin', 'teacher']:
-            return error_response(message="只有管理员或教师可以创建课程级知识库", code=403)
-        # 验证课程归属
-        if kb_data.scope_id:
-            course = db.query(Course).filter(Course.id == kb_data.scope_id).first()
-            if not course:
-                return error_response(message="课程不存在", code=404)
-            if current_user.role == 'school_admin' and course.school_id != current_user.school_id:
-                return error_response(message="只能为本校课程创建知识库", code=403)
-            elif current_user.role == 'teacher':
-                # 检查是否是任课教师
-                from app.models.course_model import CourseTeacher
-                is_teacher = db.query(CourseTeacher).filter(
-                    CourseTeacher.course_id == course.id,
-                    CourseTeacher.teacher_id == current_user.id,
-                    CourseTeacher.deleted_at.is_(None)
-                ).first()
-                if not is_teacher:
-                    return error_response(message="只能为自己任教的课程创建知识库", code=403)
-    elif kb_data.scope_type == 'agent':
-        # 验证智能体归属
-        if kb_data.scope_id:
-            agent = db.query(Agent).filter(Agent.id == kb_data.scope_id).first()
-            if not agent:
-                return error_response(message="智能体不存在", code=404)
-            if agent.user_id != current_user.id and current_user.role != 'platform_admin':
-                return error_response(message="只能为自己的智能体创建知识库", code=403)
+        # 系统知识库的 access_level 固定为 public
+        kb_data.access_level = 'public'
+        kb_data.scope_id = None  # 系统知识库不需要 scope_id
     elif kb_data.scope_type == 'personal':
-        # 个人知识库：scope_id必须是当前用户ID
-        if kb_data.scope_id and kb_data.scope_id != current_user.id:
-            return error_response(message="个人知识库只能创建给自己", code=403)
+        # 所有认证用户都可以创建私有知识库
         # 自动设置为当前用户ID
         kb_data.scope_id = current_user.id
-    
-    # 自动设置访问级别（简化：根据scope_type自动决定）
-    if not kb_data.access_level:
-        access_level_map = {
-            'system': 'public',    # 系统级 → 所有人可见
-            'school': 'protected', # 学校级 → 本校可见
-            'course': 'protected', # 课程级 → 课程可见
-            'personal': 'private'  # 个人级 → 仅自己可见
-        }
-        kb_data.access_level = access_level_map.get(kb_data.scope_type, 'private')
+        kb_data.access_level = 'private'
+    else:
+        # 不支持其他类型（school, course, agent等）
+        return error_response(
+            message=f"不支持的知识库类型: {kb_data.scope_type}，仅支持 'personal'（私有知识库）和 'system'（系统知识库）",
+            code=400
+        )
     
     # 创建知识库
     kb = KnowledgeBase(
@@ -282,71 +167,14 @@ async def list_knowledge_bases(
     # 构建查询
     query = db.query(KnowledgeBase).filter(KnowledgeBase.deleted_at.is_(None))
     
-    # 权限过滤
+    # 严格的权限过滤
     if current_user.role != 'platform_admin':
-        # 获取用户可访问的知识库ID列表
-        accessible_kb_ids = []
-        
-        # 用户自己创建的
-        owned_kbs = db.query(KnowledgeBase.id).filter(
-            KnowledgeBase.owner_id == current_user.id,
-            KnowledgeBase.deleted_at.is_(None)
-        ).all()
-        accessible_kb_ids.extend([kb_id for kb_id, in owned_kbs])
-        
-        # 公开的
-        public_kbs = db.query(KnowledgeBase.id).filter(
-            KnowledgeBase.access_level == 'public',
-            KnowledgeBase.deleted_at.is_(None)
-        ).all()
-        accessible_kb_ids.extend([kb_id for kb_id, in public_kbs])
-        
-        # 学校管理员：本校的
-        if current_user.role == 'school_admin' and current_user.school_id:
-            school_kbs = db.query(KnowledgeBase.id).filter(
-                or_(
-                    and_(
-                        KnowledgeBase.scope_type == 'school',
-                        KnowledgeBase.scope_id == current_user.school_id
-                    ),
-                    and_(
-                        KnowledgeBase.scope_type == 'course',
-                        KnowledgeBase.scope_id.in_(
-                            db.query(Course.id).filter(Course.school_id == current_user.school_id)
-                        )
-                    )
-                ),
-                KnowledgeBase.deleted_at.is_(None)
-            ).all()
-            accessible_kb_ids.extend([kb_id for kb_id, in school_kbs])
-        
-        # 教师：任课课程的
-        if current_user.role == 'teacher':
-            from app.models.course_model import CourseTeacher
-            teacher_course_ids = db.query(CourseTeacher.course_id).filter(
-                CourseTeacher.teacher_id == current_user.id,
-                CourseTeacher.deleted_at.is_(None)
-            ).all()
-            course_ids = [cid for cid, in teacher_course_ids]
-            if course_ids:
-                course_kbs = db.query(KnowledgeBase.id).filter(
-                    KnowledgeBase.scope_type == 'course',
-                    KnowledgeBase.scope_id.in_(course_ids),
-                    KnowledgeBase.deleted_at.is_(None)
-                ).all()
-                accessible_kb_ids.extend([kb_id for kb_id, in course_kbs])
-        
-        # 应用权限过滤
-        if accessible_kb_ids:
-            query = query.filter(KnowledgeBase.id.in_(list(set(accessible_kb_ids))))
-        else:
-            # 没有可访问的知识库
-            return success_response(data={
-                "total": 0,
-                "page": page,
-                "page_size": page_size,
-                "knowledge_bases": []
-            })
+        # 非平台管理员只能看到自己的私有知识库
+        # 不显示系统知识库（安全考虑）
+        query = query.filter(
+            KnowledgeBase.scope_type == 'personal',
+            KnowledgeBase.owner_id == current_user.id
+        )
     
     # 筛选条件
     if scope_type:
@@ -707,59 +535,30 @@ async def get_available_knowledge_bases_for_agent(
         if associated_kb_ids:
             query = query.filter(~KnowledgeBase.id.in_(associated_kb_ids))
         
-        # 根据用户权限过滤
+        # 根据用户权限过滤（严格版：非平台管理员看不到系统知识库）
         accessible_kb_ids = []
         
-        # 1. 用户创建的知识库
+        # 1. 用户创建的私有知识库
         try:
-            owner_kbs = query.filter(KnowledgeBase.owner_id == current_user.id).all()
+            owner_kbs = query.filter(
+                KnowledgeBase.owner_id == current_user.id,
+                KnowledgeBase.scope_type == 'personal'
+            ).all()
             accessible_kb_ids.extend([kb.id for kb in owner_kbs])
         except Exception as e:
             logger.error(f"[可用知识库] 查询用户创建的知识库失败: {e}")
         
-        # 2. 公开知识库
-        try:
-            public_kbs = query.filter(KnowledgeBase.access_level == 'public').all()
-            accessible_kb_ids.extend([kb.id for kb in public_kbs])
-        except Exception as e:
-            logger.error(f"[可用知识库] 查询公开知识库失败: {e}")
-        
-        # 3. 学校级/课程级知识库（根据用户学校）
-        if current_user.school_id:
+        # 2. 系统知识库（仅平台管理员可见）
+        if current_user.role == 'platform_admin':
             try:
-                school_kbs = query.filter(
-                    KnowledgeBase.scope_type == 'school',
-                    KnowledgeBase.scope_id == current_user.school_id
+                system_kbs = query.filter(
+                    KnowledgeBase.scope_type == 'system'
                 ).all()
-                accessible_kb_ids.extend([kb.id for kb in school_kbs])
+                accessible_kb_ids.extend([kb.id for kb in system_kbs])
             except Exception as e:
-                logger.error(f"[可用知识库] 查询学校级知识库失败: {e}")
-            
-            # 课程级知识库（用户有权限的课程）
-            if current_user.role == 'teacher':
-                try:
-                    from app.models.course_model import CourseTeacher
-                    course_ids = db.query(CourseTeacher.course_id).filter(
-                        CourseTeacher.teacher_id == current_user.id,
-                        CourseTeacher.deleted_at.is_(None)
-                    ).all()
-                    course_ids = [item[0] for item in course_ids]
-                    
-                    if course_ids:
-                        course_kbs = query.filter(
-                            KnowledgeBase.scope_type == 'course',
-                            KnowledgeBase.scope_id.in_(course_ids)
-                        ).all()
-                        accessible_kb_ids.extend([kb.id for kb in course_kbs])
-                except Exception as e:
-                    logger.error(f"[可用知识库] 查询课程级知识库失败: {e}")
+                logger.error(f"[可用知识库] 查询系统知识库失败: {e}")
         
-        # 4. 系统级知识库
-        try:
-            system_kbs = query.filter(KnowledgeBase.scope_type == 'system').all()
-            accessible_kb_ids.extend([kb.id for kb in system_kbs])
-        except Exception as e:
-            logger.error(f"[可用知识库] 查询系统级知识库失败: {e}")
+        # 注：已移除学校级/课程级知识库查询（系统已简化为只支持 personal 和 system）
         
         # 去重并获取知识库详情
         accessible_kb_ids = list(set(accessible_kb_ids))

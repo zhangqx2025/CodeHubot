@@ -225,11 +225,31 @@
               <span>多轮对话上下文理解</span>
             </div>
           </div>
+          
+          <!-- AI合规性声明 -->
+          <div class="ai-disclaimer-welcome">
+            <div class="disclaimer-icon">
+              <el-icon><InfoFilled /></el-icon>
+            </div>
+            <div class="disclaimer-content">
+              <div class="disclaimer-title">关于AI生成内容</div>
+              <div class="disclaimer-text">
+                本学习助手由人工智能技术提供支持，所有回答内容仅供参考。
+                请结合课程资料、教师指导和个人思考进行学习，培养独立思考能力。
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- 对话界面 -->
       <div v-else class="chat-container">
+        <!-- AI声明横幅 -->
+        <div class="ai-disclaimer-banner">
+          <el-icon><WarnTriangleFilled /></el-icon>
+          <span>AI生成内容仅供参考，请结合课程资料和老师指导进行学习</span>
+        </div>
+        
         <!-- 对话头部 -->
         <div class="chat-header">
           <div class="header-left">
@@ -350,7 +370,9 @@ import {
   User,
   Cpu,
   Promotion,
-  Loading
+  Loading,
+  InfoFilled,
+  WarnTriangleFilled
 } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -447,17 +469,17 @@ const createNewConversation = () => {
 }
 
 // 选择对话
-// ✅ 选择会话，从后端加载消息
+// ✅ 选择会话，从后端加载消息（禁用缓存，每次都重新加载）
 const selectConversation = async (conv) => {
   try {
-    // 如果会话已经有消息，直接切换
-    if (conv.messages && conv.messages.length > 0) {
-      currentConversation.value = conv
-      nextTick(() => {
-        scrollToBottom()
-      })
-      return
-    }
+    // 【已禁用缓存】总是从后端重新加载最新消息，确保看到最新的AI回复
+    // if (conv.messages && conv.messages.length > 0) {
+    //   currentConversation.value = conv
+    //   nextTick(() => {
+    //     scrollToBottom()
+    //   })
+    //   return
+    // }
     
     // 从后端加载会话消息
     loading.value = true
@@ -1174,6 +1196,73 @@ watch(() => currentConversation.value, () => {
   gap: 8px;
   font-size: 14px;
   color: #606266;
+}
+
+/* AI合规性声明（欢迎界面） */
+.ai-disclaimer-welcome {
+  margin-top: 48px;
+  padding: 24px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 16px;
+  border: 2px solid #fbbf24;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.1);
+  display: flex;
+  gap: 16px;
+  text-align: left;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 6px 16px rgba(251, 191, 36, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  .disclaimer-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f59e0b;
+    font-size: 20px;
+  }
+  
+  .disclaimer-content {
+    flex: 1;
+  }
+  
+  .disclaimer-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 8px;
+  }
+  
+  .disclaimer-text {
+    font-size: 14px;
+    color: #78350f;
+    line-height: 1.6;
+  }
+}
+
+/* AI声明横幅（对话界面顶部） */
+.ai-disclaimer-banner {
+  background: #fef3c7;
+  border-bottom: 1px solid #fbbf24;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #92400e;
+  
+  .el-icon {
+    color: #f59e0b;
+    font-size: 16px;
+  }
 }
 
 /* 对话容器 */

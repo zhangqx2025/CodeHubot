@@ -31,6 +31,12 @@
               </div>
             </div>
             <p class="cta-text">有什么问题尽管问我吧！</p>
+            
+            <!-- AI声明 -->
+            <div class="ai-disclaimer">
+              <el-icon style="margin-right: 4px;"><InfoFilled /></el-icon>
+              <span>本服务由AI提供，回答内容仅供参考，请结合课程资料和老师指导进行学习</span>
+            </div>
           </div>
         </div>
 
@@ -90,6 +96,12 @@
 
       <!-- 输入区域 -->
       <div class="input-area">
+        <!-- AI声明（固定显示） -->
+        <div class="ai-disclaimer-input">
+          <el-icon style="font-size: 12px;"><WarnTriangleFilled /></el-icon>
+          <span>AI生成内容仅供参考，请结合课程资料和老师指导学习</span>
+        </div>
+        
         <div class="input-hint" v-if="showHint">
           <el-icon><InfoFilled /></el-icon>
           <span>按 Enter 发送，Shift+Enter 换行</span>
@@ -136,7 +148,8 @@ import {
   DocumentCopy, 
   Promotion, 
   Loading,
-  InfoFilled 
+  InfoFilled,
+  WarnTriangleFilled
 } from '@element-plus/icons-vue'
 import { chatWithAssistant } from '../api/learningAssistant'
 
@@ -345,16 +358,30 @@ const sendMessage = async () => {
       throw new Error(response.message || 'AI助手服务异常')
     }
   } catch (error) {
-    console.error('发送消息失败:', error)
-    ElMessage.error('发送消息失败，请稍后再试。')
-    
-    messages.value.push({
-      id: Date.now() + 1,
-      type: 'ai',
-      content: '抱歉，我暂时无法回复。请稍后再试或联系老师。',
-      timestamp: Date.now(),
-      isError: true
+    console.error('❌ 发送消息失败:', error)
+    console.error('❌ 错误详情:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      response: error.response
     })
+    
+    // 如果已经成功保存了会话ID，说明请求实际上成功了
+    // 这种情况不应该显示错误（可能是401自动重试的中间状态）
+    if (currentConversationId.value) {
+      console.log('⚠️ 检测到会话ID已保存，可能是401自动重试，等待结果...')
+      // 不显示错误消息
+    } else {
+      ElMessage.error('发送消息失败，请稍后再试。')
+      
+      messages.value.push({
+        id: Date.now() + 1,
+        type: 'ai',
+        content: '抱歉，我暂时无法回复。请稍后再试或联系老师。',
+        timestamp: Date.now(),
+        isError: true
+      })
+    }
   } finally {
     isTyping.value = false
     scrollToBottom()
@@ -487,6 +514,27 @@ defineExpose({
   h3 { margin: 0 0 8px; color: #1e293b; }
   .intro-text { color: #64748b; font-size: 14px; margin-bottom: 20px; }
   .cta-text { color: #667eea; font-size: 14px; margin-top: 20px; }
+  
+  .ai-disclaimer {
+    margin-top: 24px;
+    padding: 12px 16px;
+    background: #fef3c7;
+    border-left: 3px solid #f59e0b;
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: #92400e;
+    line-height: 1.6;
+    
+    .el-icon {
+      color: #f59e0b;
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
 }
 
 .feature-grid {
@@ -581,6 +629,23 @@ defineExpose({
   background: white;
   border-top: 1px solid #e5e7eb;
   padding: 16px 20px;
+}
+
+.ai-disclaimer-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fef3c7;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #92400e;
+  
+  .el-icon {
+    color: #f59e0b;
+    flex-shrink: 0;
+  }
 }
 
 .input-container {

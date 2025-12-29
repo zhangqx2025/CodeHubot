@@ -42,8 +42,8 @@ if not UPLOAD_DIR.is_absolute():
     UPLOAD_DIR = backend_dir / UPLOAD_DIR
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# 文件大小限制（1MB）- 防止消耗过多系统资源
-MAX_FILE_SIZE = 1 * 1024 * 1024
+# 文件大小限制（100KB）- 防止消耗过多系统资源
+MAX_FILE_SIZE = 100 * 1024
 
 
 # ============================================================================
@@ -203,7 +203,7 @@ async def preview_document_chunks(
     file_size = len(file_content)
     
     if file_size > MAX_FILE_SIZE:
-        return error_response(message=f"文件大小超过限制（最大1MB）", code=400)
+        return error_response(message=f"文件大小超过限制（最大100KB）", code=400)
     
     if file_size == 0:
         return error_response(message="文件内容为空", code=400)
@@ -341,7 +341,7 @@ async def upload_document(
     
     # 检查文件大小
     if file_size > MAX_FILE_SIZE:
-        return error_response(message=f"文件大小超过限制（最大1MB）", code=400)
+        return error_response(message=f"文件大小超过限制（最大100KB）", code=400)
     
     if file_size == 0:
         return error_response(message="文件内容为空", code=400)

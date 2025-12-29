@@ -15,11 +15,10 @@ SET time_zone = "+00:00";
 
 -- 1. 友好的学习助手（通用入门）
 INSERT IGNORE INTO `llm_prompt_templates` (
-    `id`, `uuid`, `name`, `description`, `content`, `category`, `tags`, 
+    ``uuid`, `name`, `description`, `content`, `category`, `tags`, 
     `difficulty`, `suitable_for`, `requires_plugin`, 
     `recommended_temperature`, `sort_order`, `is_active`, `is_deleted`, `is_system`, `user_id`
 ) VALUES (
-    100,
     'prompt-template-friendly-assistant',
     '友好的学习助手',
     '适合初学者的通用智能助手，能够回答各类学习问题',
@@ -52,11 +51,10 @@ INSERT IGNORE INTO `llm_prompt_templates` (
 
 -- 2. 猪猪侠聊天助手（小学生友好聊天）
 INSERT IGNORE INTO `llm_prompt_templates` (
-    `id`, `uuid`, `name`, `description`, `content`, `category`, `tags`, 
+    `uuid`, `name`, `description`, `content`, `category`, `tags`, 
     `difficulty`, `suitable_for`, `requires_plugin`, 
     `recommended_temperature`, `sort_order`, `is_active`, `is_deleted`, `is_system`, `user_id`
 ) VALUES (
-    101,
     'prompt-template-zhuzuxia-chat',
     '猪猪侠聊天助手',
     '友好的聊天伙伴，适合小学生使用',
@@ -101,11 +99,10 @@ INSERT IGNORE INTO `llm_prompt_templates` (
 
 -- 3. LED控制与温湿度读取助手（物联网入门）
 INSERT IGNORE INTO `llm_prompt_templates` (
-    `id`, `uuid`, `name`, `description`, `content`, `category`, `tags`, 
+    `uuid`, `name`, `description`, `content`, `category`, `tags`, 
     `difficulty`, `suitable_for`, `requires_plugin`, 
     `recommended_temperature`, `sort_order`, `is_active`, `is_deleted`, `is_system`, `user_id`
 ) VALUES (
-    102,
     'prompt-template-led-temp-humidity',
     'LED控制与温湿度读取助手',
     '简单的LED开关控制和温湿度数据读取助手',

@@ -37,7 +37,7 @@ class DocumentParser:
         
         Args:
             text: 文本内容
-            mode: 切分模式 ('fixed'|'paragraph'|'sentence'|'custom')
+            mode: 切分模式 ('fixed'|'paragraph'|'paragraph_double'|'sentence'|'separator'|'custom')
         
         Returns:
             List[Dict]: 文本块列表，每个块包含content、index、char_count等
@@ -49,6 +49,8 @@ class DocumentParser:
             return self._split_by_paragraph(text)  # 单换行
         elif mode == 'paragraph_double':
             return self._split_by_paragraph_double(text)  # 双换行
+        elif mode == 'separator':
+            return self._split_by_separator(text)  # --- 分隔符
         elif mode == 'sentence':
             return self._split_by_sentence(text)
         else:  # fixed 或 custom
@@ -163,6 +165,43 @@ class DocumentParser:
                 }
             })
             start_pos += len(line) + 1  # 内容长度 + 换行符
+        
+        return chunks
+    
+    def _split_by_separator(self, text: str) -> List[Dict[str, Any]]:
+        """按分隔符切分（使用 --- 或 *** 等 Markdown 分隔符）
+        
+        每个分隔符分隔的部分作为一个独立的chunk
+        适合 Q&A 格式的文档
+        """
+        # 匹配 Markdown 分隔符：--- 或 *** 或 ___ （3个或更多）
+        # 允许前后有空格，独占一行
+        parts = re.split(r'\n\s*[-*_]{3,}\s*\n', text)
+        chunks = []
+        chunk_index = 0
+        
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            
+            # 如果部分太长，按固定大小切分
+            if len(part) > self.chunk_size * 2:  # 允许比普通chunk大一倍
+                sub_chunks = self._split_long_paragraph(part, chunk_index, 0)
+                chunks.extend(sub_chunks)
+                chunk_index += len(sub_chunks)
+            else:
+                # 作为一个完整的chunk
+                chunks.append({
+                    'content': part,
+                    'chunk_index': chunk_index,
+                    'char_count': len(part),
+                    'token_count': self.estimate_token_count(part),
+                    'metadata': {
+                        'split_mode': 'separator'
+                    }
+                })
+                chunk_index += 1
         
         return chunks
     
@@ -529,20 +568,30 @@ class MarkdownParser(DocumentParser):
         
         return text.strip()
     
-    def split_into_chunks(self, text: str) -> List[Dict[str, Any]]:
+    def split_into_chunks(self, text: str, mode: str = 'fixed') -> List[Dict[str, Any]]:
         """
         Markdown智能切分
-        优先按标题层级切分，其次按段落
+        
+        如果指定了特定的切分模式，则使用父类的通用切分方法
+        否则优先按标题层级切分，其次按段落
+        
+        Args:
+            text: 文本内容
+            mode: 切分模式（'fixed'|'paragraph'|'paragraph_double'|'sentence'|'separator'|'custom'）
         """
         if not text or not text.strip():
             return []
         
-        # 尝试按标题切分
+        # 如果指定了特定切分模式（非 fixed），直接使用父类方法
+        if mode != 'fixed':
+            return super().split_into_chunks(text, mode=mode)
+        
+        # fixed 模式下，尝试 Markdown 智能切分（按标题）
         chunks = self._split_by_headers(text)
         
-        # 如果没有标题或者块太大，使用默认切分
+        # 如果没有标题或者块太大，使用父类的默认切分
         if not chunks or any(len(c['content']) > self.chunk_size * 2 for c in chunks):
-            return super().split_into_chunks(text)
+            return super().split_into_chunks(text, mode=mode)
         
         return chunks
     

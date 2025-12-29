@@ -42,7 +42,12 @@ export function chatWithAssistant(data) {
   return request({
     url: '/pbl/learning-assistant/chat',
     method: 'post',
-    data
+    data,
+    // 禁用缓存，确保每次对话都获取最新的AI回复
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
   })
 }
 
@@ -57,7 +62,12 @@ export function getConversations(params) {
   return request({
     url: '/pbl/learning-assistant/conversations',
     method: 'get',
-    params
+    params,
+    // 禁用缓存，确保看到最新的会话列表
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
   })
 }
 
@@ -81,7 +91,12 @@ export function getConversation(conversationUuid) {
 export function getConversationMessages(conversationUuid) {
   return request({
     url: `/pbl/learning-assistant/conversations/${conversationUuid}/messages`,
-    method: 'get'
+    method: 'get',
+    // 禁用缓存，每次都从服务器获取最新数据
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
   })
 }
 

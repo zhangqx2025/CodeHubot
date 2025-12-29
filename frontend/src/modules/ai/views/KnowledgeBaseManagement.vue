@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span><el-icon><Collection /></el-icon> 知识库管理</span>
-          <el-button type="primary" @click="showCreateDialog = true">
+          <el-button type="primary" @click="openCreateDialog">
             <el-icon><Plus /></el-icon>
             创建知识库
           </el-button>
@@ -27,16 +27,15 @@
 
         <el-select
           v-model="searchParams.scope_type"
-          placeholder="作用域类型"
+          placeholder="知识库类型"
           clearable
           style="width: 150px; margin-left: 10px"
           @change="loadKnowledgeBases"
+          v-if="userRole === 'platform_admin'"
         >
           <el-option label="全部" value="" />
-          <el-option label="系统级" value="system" />
-          <el-option label="学校级" value="school" />
-          <el-option label="课程级" value="course" />
-          <el-option label="智能体级" value="agent" />
+          <el-option label="系统知识库" value="system" />
+          <el-option label="私有知识库" value="personal" />
         </el-select>
       </div>
 
@@ -106,6 +105,7 @@
       v-model="showCreateDialog"
       :title="editingKb ? '编辑知识库' : '创建知识库'"
       width="600px"
+      @close="handleDialogClose"
     >
       <el-form :model="formData" label-width="100px">
         <el-form-item label="名称" required>
@@ -121,29 +121,32 @@
           />
         </el-form-item>
 
-        <el-form-item label="作用域类型" required>
-          <el-select 
-            v-model="formData.scope_type" 
-            placeholder="请选择" 
-            style="width: 100%"
-            @change="handleScopeTypeChange"
-          >
-            <el-option label="系统级" value="system" v-if="userRole === 'platform_admin'" />
-            <el-option label="学校级" value="school" v-if="['platform_admin', 'school_admin'].includes(userRole)" />
-            <el-option label="课程级" value="course" v-if="['platform_admin', 'school_admin', 'teacher'].includes(userRole)" />
-            <!-- 暂时隐藏智能体级，未来如有多智能体需求再开放 -->
-            <!-- <el-option label="智能体级" value="agent" /> -->
-            <el-option label="个人级" value="personal" />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="可见范围">
-          <el-alert :title="getScopeHint()" type="info" :closable="false" />
+        <el-form-item label="知识库类型" required>
+          <el-radio-group v-model="formData.scope_type" @change="handleScopeTypeChange" class="kb-type-radio-group">
+            <el-radio label="personal" class="kb-type-radio">
+              <div class="radio-content">
+                <el-icon class="radio-icon"><User /></el-icon>
+                <div class="radio-text">
+                  <span class="radio-title">私有知识库</span>
+                  <span class="radio-desc">- 仅您本人可见和管理</span>
+                </div>
+              </div>
+            </el-radio>
+            <el-radio label="system" v-if="userRole === 'platform_admin'" class="kb-type-radio">
+              <div class="radio-content">
+                <el-icon class="radio-icon"><Connection /></el-icon>
+                <div class="radio-text">
+                  <span class="radio-title">系统知识库</span>
+                  <span class="radio-desc">- 所有人可见，管理员和教师可编辑</span>
+                </div>
+              </div>
+            </el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
 
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button @click="handleCancel">取消</el-button>
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
@@ -161,7 +164,8 @@ import {
   Document,
   School,
   Grid,
-  User
+  User,
+  Connection
 } from '@element-plus/icons-vue'
 import {
   getKnowledgeBases,
@@ -207,20 +211,11 @@ const formData = reactive({
   tags: []
 })
 
-// 初始化默认scope_type
+// 初始化默认scope_type（简化版）
 const initDefaultScopeType = () => {
-  if (userRole.value === 'platform_admin') {
-    formData.scope_type = 'system'
-  } else if (userRole.value === 'school_admin') {
-    formData.scope_type = 'school'
-    formData.scope_id = schoolId.value
-  } else if (userRole.value === 'teacher') {
-    formData.scope_type = 'personal'
-    formData.scope_id = userId.value
-  } else {
-    formData.scope_type = 'personal'
-    formData.scope_id = userId.value
-  }
+  // 所有用户默认创建私有知识库
+  formData.scope_type = 'personal'
+  formData.scope_id = userId.value
 }
 
 // 方法
@@ -246,33 +241,15 @@ const loadKnowledgeBases = async () => {
 }
 
 const getScopeIcon = (scopeType) => {
-  const iconMap = {
-    system: Grid,
-    school: School,
-    course: Document,
-    agent: User
-  }
-  return iconMap[scopeType] || Document
+  return scopeType === 'system' ? Grid : User
 }
 
 const getScopeTagType = (scopeType) => {
-  const typeMap = {
-    system: 'danger',
-    school: 'warning',
-    course: 'success',
-    agent: 'info'
-  }
-  return typeMap[scopeType] || 'info'
+  return scopeType === 'system' ? 'danger' : 'info'
 }
 
 const getScopeLabel = (scopeType) => {
-  const labelMap = {
-    system: '系统',
-    school: '学校',
-    course: '课程',
-    agent: '智能体'
-  }
-  return labelMap[scopeType] || scopeType
+  return scopeType === 'system' ? '系统知识库' : '私有知识库'
 }
 
 const formatSize = (bytes) => {
@@ -290,37 +267,34 @@ const formatTime = (dateStr) => {
 }
 
 const handleScopeTypeChange = (scopeType) => {
-  // 根据scope_type自动设置scope_id
-  switch (scopeType) {
-    case 'system':
-      formData.scope_id = null
-      break
-    case 'school':
-      formData.scope_id = schoolId.value
-      break
-    case 'personal':
-      formData.scope_id = userId.value
-      break
-    case 'course':
-    case 'agent':
-      // 这些需要用户后续选择，暂时设为null
-      formData.scope_id = null
-      break
+  // 根据类型自动设置scope_id
+  if (scopeType === 'system') {
+    formData.scope_id = null
+  } else {
+    formData.scope_id = userId.value
   }
-}
-
-const getScopeHint = () => {
-  const hints = {
-    system: '✅ 所有人可见 | 仅平台管理员可创建',
-    school: `✅ 本校师生可见${schoolId.value ? ' | 自动关联到您所在的学校' : ''}`,
-    course: '✅ 课程师生可见 | 需要选择具体课程',
-    personal: '✅ 仅您本人可见 | 其他人无法访问'
-  }
-  return hints[formData.scope_type] || '请选择作用域类型'
 }
 
 const viewKnowledgeBase = (kb) => {
   router.push(`/ai/knowledge-bases/${kb.uuid}`)
+}
+
+// 重置表单数据
+const resetFormData = () => {
+  formData.name = ''
+  formData.description = ''
+  formData.scope_type = 'personal'
+  formData.scope_id = userId.value
+  formData.chunk_size = 500
+  formData.chunk_overlap = 50
+  formData.tags = []
+}
+
+// 打开创建对话框
+const openCreateDialog = () => {
+  editingKb.value = null
+  resetFormData()
+  showCreateDialog.value = true
 }
 
 const editKnowledgeBase = (kb) => {
@@ -335,36 +309,30 @@ const editKnowledgeBase = (kb) => {
   showCreateDialog.value = true
 }
 
+// 对话框关闭时的处理
+const handleDialogClose = () => {
+  editingKb.value = null
+  resetFormData()
+}
+
+// 取消按钮
+const handleCancel = () => {
+  showCreateDialog.value = false
+}
+
 const handleSubmit = async () => {
   if (!formData.name) {
     ElMessage.warning('请输入知识库名称')
     return
   }
 
-  // 自动设置scope_id（根据scope_type）
+  // 简化：自动设置scope_id
   const submitData = { ...formData }
   
-  switch (submitData.scope_type) {
-    case 'system':
-      submitData.scope_id = null
-      break
-    case 'school':
-      submitData.scope_id = schoolId.value
-      if (!submitData.scope_id) {
-        ElMessage.warning('您未归属任何学校，无法创建学校级知识库')
-        return
-      }
-      break
-    case 'personal':
-      submitData.scope_id = userId.value
-      break
-    case 'course':
-    case 'agent':
-      if (!submitData.scope_id) {
-        ElMessage.warning(`请选择具体的${submitData.scope_type === 'course' ? '课程' : '智能体'}`)
-        return
-      }
-      break
+  if (submitData.scope_type === 'system') {
+    submitData.scope_id = null
+  } else {
+    submitData.scope_id = userId.value
   }
 
   try {
@@ -377,7 +345,6 @@ const handleSubmit = async () => {
     }
 
     showCreateDialog.value = false
-    editingKb.value = null
     loadKnowledgeBases()
   } catch (error) {
     ElMessage.error(editingKb.value ? '更新失败' : '创建失败')
@@ -541,6 +508,67 @@ onMounted(() => {
 .el-pagination {
   margin-top: 20px;
   justify-content: center;
+}
+
+/* 知识库类型单选框组样式 */
+.kb-type-radio-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kb-type-radio {
+  width: 100%;
+  margin: 0 !important;
+  padding: 14px 18px;
+  border: 2px solid #e4e7ed;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  height: auto;
+}
+
+.kb-type-radio:hover {
+  border-color: #409eff;
+  background: #f0f7ff;
+}
+
+.kb-type-radio.is-checked {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.radio-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.radio-icon {
+  font-size: 20px;
+  color: #409eff;
+  flex-shrink: 0;
+}
+
+.radio-text {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1;
+}
+
+.radio-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  white-space: nowrap;
+}
+
+.radio-desc {
+  font-size: 13px;
+  color: #909399;
+  line-height: 1.5;
 }
 </style>
 
