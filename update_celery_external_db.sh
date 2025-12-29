@@ -82,7 +82,25 @@ main() {
     echo ""
     echo ""
 
-    # 4. 检查 Celery Worker 服务状态
+    # 4. 重新构建 Celery Worker 镜像（包含最新代码）
+    print_separator
+    print_info "正在重新构建 Celery Worker 镜像..."
+    print_warning "这可能需要几分钟时间，请耐心等待..."
+    print_info "注意：构建期间 Celery Worker 继续运行，不会中断"
+    print_separator
+    
+    docker-compose -f docker/docker-compose.external-db.yml build --no-cache celery_worker
+    
+    if [ $? -ne 0 ]; then
+        print_error "Celery Worker 镜像构建失败，服务继续使用旧版本"
+        print_error "请检查错误信息后重试"
+        exit 1
+    fi
+    
+    print_success "Celery Worker 镜像构建成功"
+    echo ""
+
+    # 5. 检查 Celery Worker 服务状态
     print_separator
     print_info "检查 Celery Worker 当前状态..."
     print_separator
@@ -90,30 +108,43 @@ main() {
     docker-compose -f docker/docker-compose.external-db.yml ps celery_worker
     echo ""
 
-    # 5. 重启 Celery Worker 服务
+    # 6. 停止旧的 Celery Worker 服务
     print_separator
-    print_info "正在重启 Celery Worker 服务..."
-    print_warning "重启 Celery Worker 以加载最新后端代码"
-    print_info "注意：重启期间异步任务（如文档向量化）会暂停"
+    print_info "正在停止旧的 Celery Worker 服务..."
     print_separator
     
-    docker-compose -f docker/docker-compose.external-db.yml restart celery_worker
+    docker-compose -f docker/docker-compose.external-db.yml stop celery_worker
     
     if [ $? -ne 0 ]; then
-        print_error "Celery Worker 重启失败"
+        print_warning "停止 Celery Worker 失败（可能服务未运行）"
+    else
+        print_success "旧的 Celery Worker 已停止"
+    fi
+    echo ""
+
+    # 7. 启动新的 Celery Worker 服务
+    print_separator
+    print_info "正在启动新的 Celery Worker 服务..."
+    print_warning "使用新构建的镜像启动服务"
+    print_separator
+    
+    docker-compose -f docker/docker-compose.external-db.yml up -d celery_worker
+    
+    if [ $? -ne 0 ]; then
+        print_error "Celery Worker 启动失败"
         print_error "请检查日志: docker-compose -f docker/docker-compose.external-db.yml logs celery_worker"
         exit 1
     fi
     
-    print_success "Celery Worker 已重启"
+    print_success "新的 Celery Worker 已启动"
     echo ""
 
-    # 6. 等待服务启动
+    # 8. 等待服务启动
     print_info "等待 Celery Worker 完全启动..."
     sleep 5
     echo ""
 
-    # 7. 检查服务状态
+    # 9. 检查服务状态
     print_separator
     print_info "检查 Celery Worker 服务状态..."
     print_separator
@@ -121,14 +152,14 @@ main() {
     docker-compose -f docker/docker-compose.external-db.yml ps celery_worker
     echo ""
 
-    # 8. 显示服务日志
+    # 10. 显示服务日志
     print_separator
     print_info "Celery Worker 服务日志（最后 20 行）:"
     print_separator
     docker-compose -f docker/docker-compose.external-db.yml logs --tail=20 celery_worker
     echo ""
 
-    # 9. 完成
+    # 11. 完成
     print_separator
     print_success "✅ Celery Worker 更新完成！"
     print_separator
@@ -136,8 +167,9 @@ main() {
     
     print_info "更新流程说明:"
     echo "  - ✅ 拉取最新后端代码"
-    echo "  - ✅ 重启 Celery Worker 服务"
-    echo "  - ✅ Celery Worker 加载最新代码"
+    echo "  - ✅ 重新构建 Docker 镜像（包含最新代码）"
+    echo "  - ✅ 停止旧的 Celery Worker 服务"
+    echo "  - ✅ 启动新的 Celery Worker 服务"
     echo "  - 📊 服务中断时间: 约 5-8 秒"
     echo ""
     
