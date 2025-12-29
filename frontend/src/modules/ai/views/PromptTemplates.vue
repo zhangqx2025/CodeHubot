@@ -19,13 +19,6 @@
           style="width: 300px; margin-right: 10px;"
           @input="handleSearch"
         />
-        <el-input
-          v-model="categoryFilter"
-          placeholder="按分类筛选"
-          clearable
-          style="width: 150px; margin-right: 10px;"
-          @change="loadTemplates"
-        />
         <!-- 激活状态筛选暂时隐藏 -->
         <el-checkbox v-model="showActiveOnly" @change="loadTemplates" v-if="false">仅显示激活</el-checkbox>
       </div>
@@ -38,11 +31,6 @@
               <el-tag v-if="row.is_system" type="warning" size="small">系统</el-tag>
               <el-tag v-else type="info" size="small">个人</el-tag>
             </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="category" label="分类" width="120">
-          <template #default="{ row }">
-            <el-tag>{{ row.category || '未分类' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" min-width="250" show-overflow-tooltip />
@@ -132,14 +120,6 @@
           </div>
         </el-form-item>
         
-        <el-form-item label="分类" prop="category">
-          <el-input 
-            v-model="form.category" 
-            :disabled="dialogMode === 'view'"
-            placeholder="如：通用助手、编程学习、物联网"
-          />
-        </el-form-item>
-        
         <el-form-item label="描述" prop="description">
           <el-input
             v-model="form.description" 
@@ -195,7 +175,6 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
-const categoryFilter = ref('')
 const showActiveOnly = ref(false) // 修改为默认显示所有模板（包括禁用的）
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -207,7 +186,6 @@ const formRef = ref(null)
 
 const form = ref({
   name: '',
-  category: '',
   description: '',
   content: '',
   is_active: true,
@@ -244,7 +222,6 @@ async function loadTemplates() {
     const params = {
       page: currentPage.value,
       page_size: pageSize.value,
-      category: categoryFilter.value || undefined,
       is_active: showActiveOnly.value ? true : undefined
     }
     
@@ -295,7 +272,6 @@ function handleCreate() {
   dialogMode.value = 'create'
   form.value = {
     name: '',
-    category: '',
     description: '',
     content: '',
     is_active: true,
@@ -386,12 +362,12 @@ async function handleSave() {
     // 准备提交的数据，只包含需要的字段
     const submitData = {
       name: form.value.name,
-      category: form.value.category || null,
       description: form.value.description || null,
       content: form.value.content,
       is_active: form.value.is_active,
       is_system: form.value.is_system,
       // 为后端兼容性设置默认值
+      category: null,  // 不再使用分类，设为null
       tags: [],
       difficulty: null,
       suitable_for: null,
