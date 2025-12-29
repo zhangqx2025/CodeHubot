@@ -169,12 +169,12 @@ const getMethodType = (method) => {
 
 // 返回
 const goBack = () => {
-  router.push('/plugins')
+  router.push('/ai/plugins')
 }
 
 // 编辑
 const editPlugin = () => {
-  router.push(`/plugins/${pluginUuid.value}/edit`)
+  router.push(`/ai/plugins/${pluginUuid.value}/edit`)
 }
 
 // 加载插件详情

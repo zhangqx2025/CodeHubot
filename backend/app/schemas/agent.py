@@ -2,7 +2,7 @@
 智能体相关的Pydantic模式定义
 """
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -44,6 +44,9 @@ class AgentResponse(AgentBase):
     # 所有者信息
     owner_nickname: Optional[str] = Field(None, description="所有者昵称")
     owner_username: Optional[str] = Field(None, description="所有者用户名")
+    
+    # 关联的插件详细信息（包括系统内置插件）
+    plugins: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="关联的插件详细信息")
     
     class Config:
         from_attributes = True

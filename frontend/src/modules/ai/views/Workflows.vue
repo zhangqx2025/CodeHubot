@@ -249,12 +249,12 @@ const resetFilters = () => {
 
 // 创建工作流
 const createWorkflow = () => {
-  router.push('/workflows/editor')
+  router.push('/ai/workflows/create')
 }
 
 // 编辑工作流
 const editWorkflow = (workflow) => {
-  router.push(`/workflows/editor/${workflow.uuid}`)
+  router.push(`/ai/workflows/${workflow.uuid}/edit`)
 }
 
 // 执行工作流

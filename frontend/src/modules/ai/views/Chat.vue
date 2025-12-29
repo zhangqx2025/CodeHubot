@@ -249,10 +249,29 @@ const sendMessage = async (content) => {
     const response = await chatWithAgent({
       agent_uuid: agentUuid.value,
       message: messageText,
-      history: messages.value.slice(0, -1).map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      // 【简化方案】不传递历史消息，避免函数调用失效问题
+      // 优点：每次都能正确调用函数，Token消耗低，实现简单
+      // 缺点：AI无法记住上一轮对话
+      // 适用场景：物联网设备控制（每个指令都是独立的）
+      history: []
+      
+      // 【完整方案】如需启用多轮对话，取消下面注释，注释掉上面的 history: []
+      // history: messages.value.slice(0, -1).map(msg => {
+      //   const historyMsg = {
+      //     role: msg.role,
+      //     content: msg.content
+      //   }
+      //   if (msg.function_call) {
+      //     historyMsg.function_call = msg.function_call
+      //   }
+      //   if (msg.tool_calls) {
+      //     historyMsg.tool_calls = msg.tool_calls
+      //   }
+      //   if (msg.name) {
+      //     historyMsg.name = msg.name
+      //   }
+      //   return historyMsg
+      // })
     })
 
     const data = response.data || response

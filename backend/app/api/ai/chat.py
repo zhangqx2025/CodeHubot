@@ -25,8 +25,11 @@ router = APIRouter()
 # ============================================================================
 
 class ChatMessage(BaseModel):
-    role: str = Field(..., description="角色: user, assistant, system")
-    content: str = Field(..., description="消息内容")
+    role: str = Field(..., description="角色: user, assistant, system, function, tool")
+    content: Optional[str] = Field(None, description="消息内容")
+    function_call: Optional[Dict[str, Any]] = Field(None, description="函数调用信息（仅assistant角色）")
+    name: Optional[str] = Field(None, description="函数名称（仅function/tool角色）")
+    tool_calls: Optional[List[Dict[str, Any]]] = Field(None, description="工具调用列表（OpenAI新格式）")
 
 
 class ChatRequest(BaseModel):
@@ -302,12 +305,40 @@ async def chat_with_agent(
                 "content": "你是一个智能助手。" + plugin_prompt
             })
     
-    # 添加历史消息
-    for msg in request.history:
-        messages.append({
+    # 添加历史消息（保留function_call等完整信息）
+    # 重要：当历史消息中包含function_call时，我们需要重建完整的函数调用流程
+    # 这样大模型才能看到"调用函数"的模式，而不是直接返回文本的模式
+    for i, msg in enumerate(request.history):
+        message_dict = {
             "role": msg.role,
             "content": msg.content
-        })
+        }
+        
+        # 保留tool_calls信息（OpenAI新格式）
+        if msg.tool_calls:
+            message_dict["tool_calls"] = msg.tool_calls
+        
+        # 处理function_call信息（OpenAI旧格式）
+        if msg.function_call:
+            # 助手消息带function_call：添加助手消息（带function_call）
+            message_dict["function_call"] = msg.function_call
+            messages.append(message_dict)
+            
+            # 添加模拟的函数执行结果消息
+            # 这样大模型能看到完整的函数调用流程
+            function_name = msg.function_call.get("name", "unknown")
+            messages.append({
+                "role": "function",
+                "name": function_name,
+                "content": "函数已执行（历史记录）"
+            })
+            continue
+        
+        # 保留name字段（function/tool角色需要）
+        if msg.name:
+            message_dict["name"] = msg.name
+        
+        messages.append(message_dict)
     
     # 添加当前用户消息
     messages.append({

@@ -140,6 +140,7 @@
                 <div class="plugin-card-header">
                   <span class="plugin-name">{{ plugin.name }}</span>
                   <el-button
+                    v-if="!plugin.is_system"
                     type="danger"
                     size="small"
                     text
@@ -148,6 +149,7 @@
                     <el-icon><Delete /></el-icon>
                     移除
                   </el-button>
+                  <el-tag v-else type="warning" size="small">系统内置</el-tag>
                 </div>
               </template>
               <div class="plugin-description">{{ plugin.description || '暂无描述' }}</div>
@@ -156,6 +158,7 @@
                 <el-tag size="small" :type="plugin.is_active ? 'success' : 'info'">
                   {{ plugin.is_active ? '激活' : '禁用' }}
                 </el-tag>
+                <el-tag v-if="plugin.is_system" type="info" size="small">由管理员管理</el-tag>
               </div>
             </el-card>
           </div>
@@ -410,7 +413,8 @@ const formRef = ref(null)
 const pluginSelectorVisible = ref(false)
 const templateDialogVisible = ref(false)
 const pluginSearchQuery = ref('')
-const availablePlugins = ref([])
+const availablePlugins = ref([]) // 可选插件列表（用户自己创建的）
+const agentPlugins = ref([]) // 智能体已关联的插件详情（包括系统内置）
 const availableModels = ref([])
 const selectedPluginIds = ref([])
 
@@ -445,11 +449,28 @@ const rules = {
 // 提示词模板（从后端动态加载）
 const promptTemplates = ref([])
 
-// 已选中的插件详情
+// 已选中的插件详情（包括系统内置插件）
 const selectedPlugins = computed(() => {
-  return availablePlugins.value.filter(plugin => 
-    agentForm.plugin_ids.includes(plugin.id)
-  )
+  // 优先使用后端返回的插件详情（agentPlugins）
+  // 同时合并 availablePlugins 中新选择的插件
+  const pluginMap = new Map()
+  
+  // 添加已关联的插件（包括系统内置）
+  agentPlugins.value.forEach(plugin => {
+    pluginMap.set(plugin.id, plugin)
+  })
+  
+  // 添加可选插件中已选中的
+  availablePlugins.value.forEach(plugin => {
+    if (agentForm.plugin_ids.includes(plugin.id)) {
+      pluginMap.set(plugin.id, plugin)
+    }
+  })
+  
+  // 按 plugin_ids 的顺序返回
+  return agentForm.plugin_ids
+    .map(id => pluginMap.get(id))
+    .filter(plugin => plugin !== undefined)
 })
 
 // 筛选后的插件列表
@@ -482,6 +503,7 @@ const resetForm = () => {
     is_active: 1
   })
   knowledgeBases.value = []
+  agentPlugins.value = [] // 清空已关联的插件详情
 }
 
 // 加载智能体详情
@@ -521,6 +543,8 @@ const loadAgent = async (initialData = null) => {
       llm_model_id: agent.llm_model_id || null,
       is_active: agent.is_active
     })
+    // 保存已关联的插件详情（包括系统内置插件）
+    agentPlugins.value = agent.plugins || []
   } catch (error) {
     ElMessage.error('加载智能体信息失败')
     console.error(error)

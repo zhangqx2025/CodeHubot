@@ -22,14 +22,14 @@
           <span>智能体</span>
         </el-menu-item>
         
-        <el-menu-item index="/ai/workflows" v-if="configStore.aiWorkflowEnabled">
-          <el-icon><Connection /></el-icon>
-          <span>工作流</span>
-        </el-menu-item>
-        
         <el-menu-item index="/ai/knowledge-bases" v-if="configStore.aiKnowledgeBaseEnabled">
           <el-icon><Collection /></el-icon>
           <span>知识库</span>
+        </el-menu-item>
+        
+        <el-menu-item index="/ai/workflows" v-if="configStore.aiWorkflowEnabled">
+          <el-icon><Connection /></el-icon>
+          <span>工作流</span>
         </el-menu-item>
         
         <el-menu-item index="/ai/prompt-templates">

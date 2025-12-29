@@ -2281,9 +2281,9 @@ const goBack = () => {
       confirmButtonText: '离开',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(() => router.push('/workflows')).catch(() => {})
+    }).then(() => router.push('/ai/workflows')).catch(() => {})
   } else {
-    router.push('/workflows')
+    router.push('/ai/workflows')
   }
 }
 

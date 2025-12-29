@@ -165,11 +165,31 @@ def get_agent(
     if not can_access_agent(agent, current_user):
         raise HTTPException(status_code=403, detail="无权访问此智能体")
     
-    # 构建响应，添加所有者信息
+    # 获取关联的插件详细信息
+    plugins_detail = []
+    if agent.plugin_ids:
+        plugins = db.query(Plugin).filter(
+            Plugin.id.in_(agent.plugin_ids),
+            Plugin.is_deleted == 0
+        ).all()
+        plugins_detail = [
+            {
+                'id': p.id,
+                'uuid': p.uuid,
+                'name': p.name,
+                'description': p.description,
+                'is_system': p.is_system,
+                'is_active': p.is_active
+            }
+            for p in plugins
+        ]
+    
+    # 构建响应，添加所有者信息和插件详情
     agent_dict = {
         **{c.name: getattr(agent, c.name) for c in agent.__table__.columns},
         'owner_nickname': owner_nickname,
-        'owner_username': owner_username
+        'owner_username': owner_username,
+        'plugins': plugins_detail  # 添加插件详细信息
     }
     
     return AgentResponse(**agent_dict)

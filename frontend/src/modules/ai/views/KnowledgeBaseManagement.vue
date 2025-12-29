@@ -320,7 +320,7 @@ const getScopeHint = () => {
 }
 
 const viewKnowledgeBase = (kb) => {
-  router.push(`/knowledge-bases/${kb.uuid}`)
+  router.push(`/ai/knowledge-bases/${kb.uuid}`)
 }
 
 const editKnowledgeBase = (kb) => {
