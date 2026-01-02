@@ -328,6 +328,116 @@ CREATE TABLE IF NOT EXISTS `pbl_ai_conversations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='PBL AI对话记录表';
 
 -- ----------------------------
+-- Table structure for pbl_ai_chat_sessions
+-- AI对话会话表：用于分析学生学习行为和AI交互情况（结构化存储）
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_ai_chat_sessions` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `uuid` VARCHAR(36) NOT NULL COMMENT '会话唯一标识',
+  
+  -- 关联信息
+  `user_id` BIGINT(20) NOT NULL COMMENT '用户ID',
+  `student_id` BIGINT(20) DEFAULT NULL COMMENT '学生ID（如果是学生）',
+  `course_id` BIGINT(20) DEFAULT NULL COMMENT '课程ID',
+  `course_uuid` VARCHAR(36) DEFAULT NULL COMMENT '课程UUID',
+  `unit_id` BIGINT(20) DEFAULT NULL COMMENT '单元ID',
+  `unit_uuid` VARCHAR(36) DEFAULT NULL COMMENT '单元UUID',
+  
+  -- 会话统计
+  `message_count` INT(11) DEFAULT 0 COMMENT '消息总数',
+  `user_message_count` INT(11) DEFAULT 0 COMMENT '用户消息数',
+  `ai_message_count` INT(11) DEFAULT 0 COMMENT 'AI回复数',
+  `helpful_count` INT(11) DEFAULT 0 COMMENT '有帮助的回复数（被点赞）',
+  
+  -- 会话时长
+  `started_at` DATETIME NOT NULL COMMENT '会话开始时间',
+  `ended_at` DATETIME DEFAULT NULL COMMENT '会话结束时间',
+  `duration_seconds` INT(11) DEFAULT 0 COMMENT '会话时长（秒）',
+  
+  -- 会话状态
+  `status` VARCHAR(20) DEFAULT 'active' COMMENT '会话状态: active-进行中, completed-已完成, abandoned-已放弃',
+  `is_anonymous` TINYINT(1) DEFAULT 0 COMMENT '是否匿名（隐私模式）',
+  
+  -- 设备和环境信息
+  `device_type` VARCHAR(50) DEFAULT NULL COMMENT '设备类型',
+  `browser_type` VARCHAR(50) DEFAULT NULL COMMENT '浏览器类型',
+  `ip_address` VARCHAR(50) DEFAULT NULL COMMENT 'IP地址',
+  
+  -- 通用字段
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_uuid` (`uuid`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_student_id` (`student_id`),
+  KEY `idx_unit_uuid` (`unit_uuid`),
+  KEY `idx_course_uuid` (`course_uuid`),
+  KEY `idx_started_at` (`started_at`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='PBL-AI对话会话表（结构化存储，用于数据分析）';
+
+-- ----------------------------
+-- Table structure for pbl_ai_chat_messages
+-- AI对话消息表：详细记录每条对话消息
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_ai_chat_messages` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `uuid` VARCHAR(36) NOT NULL COMMENT '消息唯一标识',
+  
+  -- 关联信息
+  `session_id` BIGINT(20) NOT NULL COMMENT '会话ID',
+  `session_uuid` VARCHAR(36) NOT NULL COMMENT '会话UUID',
+  `user_id` BIGINT(20) NOT NULL COMMENT '用户ID',
+  `unit_uuid` VARCHAR(36) DEFAULT NULL COMMENT '单元UUID',
+  
+  -- 消息内容
+  `message_type` VARCHAR(20) NOT NULL COMMENT '消息类型: user-用户消息, ai-AI回复, system-系统消息',
+  `content` TEXT NOT NULL COMMENT '消息内容',
+  `content_length` INT(11) DEFAULT 0 COMMENT '内容长度（字符数）',
+  
+  -- 消息顺序和时间
+  `sequence_number` INT(11) NOT NULL COMMENT '消息序号（会话内）',
+  `sent_at` DATETIME NOT NULL COMMENT '发送时间',
+  `response_time_ms` INT(11) DEFAULT NULL COMMENT 'AI响应时长（毫秒）',
+  
+  -- AI相关信息（仅AI消息）
+  `ai_model` VARCHAR(50) DEFAULT NULL COMMENT 'AI模型名称',
+  `ai_provider` VARCHAR(50) DEFAULT NULL COMMENT 'AI服务提供商',
+  `ai_tokens_used` INT(11) DEFAULT NULL COMMENT '使用的token数',
+  `ai_confidence` DECIMAL(5,2) DEFAULT NULL COMMENT 'AI回复置信度',
+  
+  -- 用户反馈
+  `is_helpful` TINYINT(1) DEFAULT NULL COMMENT '是否有帮助（用户点赞）',
+  `feedback_at` DATETIME DEFAULT NULL COMMENT '反馈时间',
+  
+  -- 分类和标签
+  `category` VARCHAR(50) DEFAULT NULL COMMENT '问题分类: concept-概念, task-任务, resource-资源, debug-调试, other-其他',
+  `tags` VARCHAR(255) DEFAULT NULL COMMENT '标签（JSON数组或逗号分隔）',
+  `intent` VARCHAR(50) DEFAULT NULL COMMENT '用户意图',
+  
+  -- 上下文信息
+  `context_data` TEXT DEFAULT NULL COMMENT '上下文数据（JSON格式）',
+  `knowledge_sources` TEXT DEFAULT NULL COMMENT '引用的知识点UUID列表（JSON数组）',
+  
+  -- 通用字段
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_uuid` (`uuid`),
+  KEY `idx_session_id` (`session_id`),
+  KEY `idx_session_uuid` (`session_uuid`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_unit_uuid` (`unit_uuid`),
+  KEY `idx_message_type` (`message_type`),
+  KEY `idx_sent_at` (`sent_at`),
+  KEY `idx_category` (`category`),
+  KEY `idx_is_helpful` (`is_helpful`),
+  KEY `idx_sequence` (`session_id`, `sequence_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='PBL-AI对话消息表（结构化存储，用于数据分析）';
+
+-- ----------------------------
 -- Table structure for pbl_learning_logs
 -- ----------------------------
 -- DROP TABLE IF EXISTS (Removed for safety) `pbl_learning_logs`;
@@ -1501,6 +1611,372 @@ CREATE TABLE IF NOT EXISTS `pbl_feedback_templates` (
 -- ==========================================
 -- 视频观看统计和权限管理
 -- ==========================================
+
+-- ==========================================
+-- 单元知识库与AI学习助手
+-- ==========================================
+
+-- ----------------------------
+-- Table structure for pbl_unit_knowledge_base
+-- 单元知识库表：支持RAG检索增强生成
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_unit_knowledge_base` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `uuid` VARCHAR(36) NOT NULL COMMENT '知识点唯一标识',
+  
+  -- 关联信息
+  `unit_id` BIGINT(20) DEFAULT NULL COMMENT '单元ID',
+  `unit_uuid` VARCHAR(36) NOT NULL COMMENT '单元UUID',
+  `course_id` BIGINT(20) DEFAULT NULL COMMENT '课程ID',
+  `course_uuid` VARCHAR(36) DEFAULT NULL COMMENT '课程UUID',
+  
+  -- 知识内容
+  `title` VARCHAR(255) NOT NULL COMMENT '知识点标题',
+  `content` TEXT NOT NULL COMMENT '知识点内容',
+  `content_type` VARCHAR(50) DEFAULT 'text' COMMENT '内容类型: text-文本, markdown-Markdown, code-代码, faq-FAQ',
+  `summary` VARCHAR(500) DEFAULT NULL COMMENT '内容摘要',
+  
+  -- 分类和标签
+  `category` VARCHAR(50) DEFAULT NULL COMMENT '知识分类: concept-概念, task-任务, resource-资源, example-案例, faq-常见问题',
+  `tags` VARCHAR(255) DEFAULT NULL COMMENT '标签（逗号分隔或JSON）',
+  `keywords` TEXT DEFAULT NULL COMMENT '关键词（用于检索，逗号分隔）',
+  
+  -- 来源信息
+  `source_type` VARCHAR(50) DEFAULT NULL COMMENT '来源类型: lesson-课程, video-视频, document-文档, manual-人工编写',
+  `source_id` BIGINT(20) DEFAULT NULL COMMENT '来源ID',
+  `source_url` VARCHAR(500) DEFAULT NULL COMMENT '来源URL',
+  
+  -- 优先级和质量
+  `priority` INT(11) DEFAULT 0 COMMENT '优先级（用于排序，数值越大越优先）',
+  `quality_score` DECIMAL(5,2) DEFAULT 0.00 COMMENT '质量评分（0-100）',
+  `usage_count` INT(11) DEFAULT 0 COMMENT '使用次数',
+  `helpful_count` INT(11) DEFAULT 0 COMMENT '有帮助次数',
+  
+  -- 状态管理
+  `status` VARCHAR(20) DEFAULT 'active' COMMENT '状态: active-启用, draft-草稿, archived-归档',
+  `is_public` TINYINT(1) DEFAULT 1 COMMENT '是否公开',
+  
+  -- 扩展信息
+  `extra_metadata` TEXT DEFAULT NULL COMMENT '元数据（JSON格式）',
+  
+  -- 创建和更新
+  `created_by` BIGINT(20) DEFAULT NULL COMMENT '创建人ID',
+  `updated_by` BIGINT(20) DEFAULT NULL COMMENT '更新人ID',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_uuid` (`uuid`),
+  KEY `idx_unit_uuid` (`unit_uuid`),
+  KEY `idx_course_uuid` (`course_uuid`),
+  KEY `idx_category` (`category`),
+  KEY `idx_status` (`status`),
+  KEY `idx_priority` (`priority`),
+  KEY `idx_quality_score` (`quality_score`),
+  KEY `idx_created_at` (`created_at`),
+  FULLTEXT KEY `ft_content` (`content`),
+  FULLTEXT KEY `ft_title_keywords` (`title`, `keywords`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='PBL-单元知识库表';
+
+-- ----------------------------
+-- Table structure for pbl_knowledge_embeddings
+-- 知识向量表：用于语义检索
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_knowledge_embeddings` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `knowledge_id` BIGINT(20) NOT NULL COMMENT '知识点ID',
+  `knowledge_uuid` VARCHAR(36) NOT NULL COMMENT '知识点UUID',
+  
+  -- 向量信息
+  `embedding_model` VARCHAR(50) NOT NULL COMMENT '向量模型名称: text-embedding-ada-002, m3e-base等',
+  `embedding_dimension` INT(11) NOT NULL COMMENT '向量维度',
+  `embedding_data` TEXT NOT NULL COMMENT '向量数据（JSON数组或Base64编码）',
+  
+  -- 文本信息
+  `text_chunk` TEXT NOT NULL COMMENT '文本块（用于生成向量的原始文本）',
+  `chunk_index` INT(11) DEFAULT 0 COMMENT '文本块索引（如果知识点被分块）',
+  
+  -- 元数据
+  `metadata` TEXT DEFAULT NULL COMMENT '元数据（JSON格式）',
+  
+  -- 时间戳
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`id`),
+  KEY `idx_knowledge_id` (`knowledge_id`),
+  KEY `idx_knowledge_uuid` (`knowledge_uuid`),
+  KEY `idx_embedding_model` (`embedding_model`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='PBL-知识向量表';
+
+-- ----------------------------
+-- Table structure for pbl_knowledge_usage_logs
+-- 知识点使用记录表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_knowledge_usage_logs` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  
+  -- 关联信息
+  `knowledge_id` BIGINT(20) NOT NULL COMMENT '知识点ID',
+  `knowledge_uuid` VARCHAR(36) NOT NULL COMMENT '知识点UUID',
+  `message_id` BIGINT(20) DEFAULT NULL COMMENT '消息ID',
+  `message_uuid` VARCHAR(36) DEFAULT NULL COMMENT '消息UUID',
+  `session_id` BIGINT(20) DEFAULT NULL COMMENT '会话ID',
+  `user_id` BIGINT(20) NOT NULL COMMENT '用户ID',
+  
+  -- 检索信息
+  `query_text` VARCHAR(500) DEFAULT NULL COMMENT '查询文本',
+  `relevance_score` DECIMAL(5,2) DEFAULT NULL COMMENT '相关度评分（0-100）',
+  `match_type` VARCHAR(50) DEFAULT NULL COMMENT '匹配类型: keyword-关键词, semantic-语义, exact-精确',
+  
+  -- 反馈信息
+  `is_helpful` TINYINT(1) DEFAULT NULL COMMENT '是否有帮助',
+  `feedback_at` DATETIME DEFAULT NULL COMMENT '反馈时间',
+  
+  -- 时间戳
+  `used_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '使用时间',
+  
+  PRIMARY KEY (`id`),
+  KEY `idx_knowledge_id` (`knowledge_id`),
+  KEY `idx_message_id` (`message_id`),
+  KEY `idx_session_id` (`session_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_used_at` (`used_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='PBL-知识点使用记录表';
+
+-- ==========================================
+-- AI学习助手模块
+-- ==========================================
+
+-- ----------------------------
+-- Table structure for pbl_learning_assistant_conversations
+-- AI学习助手会话表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_learning_assistant_conversations` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `uuid` VARCHAR(36) NOT NULL UNIQUE COMMENT '会话UUID',
+  `user_id` INT(11) NOT NULL COMMENT '学生用户ID',
+  `title` VARCHAR(200) DEFAULT '新的对话' COMMENT '会话标题',
+  
+  -- 学习上下文
+  `course_uuid` VARCHAR(36) DEFAULT NULL COMMENT '关联课程UUID',
+  `course_name` VARCHAR(200) DEFAULT NULL COMMENT '课程名称（冗余）',
+  `unit_uuid` VARCHAR(36) DEFAULT NULL COMMENT '关联单元UUID',
+  `unit_name` VARCHAR(200) DEFAULT NULL COMMENT '单元名称（冗余）',
+  `current_resource_id` VARCHAR(36) DEFAULT NULL COMMENT '当前资源ID',
+  `current_resource_type` VARCHAR(50) DEFAULT NULL COMMENT '资源类型',
+  `current_resource_title` VARCHAR(200) DEFAULT NULL COMMENT '资源标题',
+  
+  -- 会话来源
+  `source` ENUM('manual', 'course_learning', 'homework_help') 
+    DEFAULT 'manual' COMMENT '来源：manual=手动新建，course_learning=课程学习，homework_help=作业帮助',
+  
+  -- 统计信息
+  `message_count` INT(11) DEFAULT 0 COMMENT '消息总数',
+  `user_message_count` INT(11) DEFAULT 0 COMMENT '用户消息数',
+  `ai_message_count` INT(11) DEFAULT 0 COMMENT 'AI消息数',
+  
+  -- 质量指标
+  `helpful_count` INT(11) DEFAULT 0 COMMENT '有帮助的回复数',
+  `avg_response_time` INT(11) DEFAULT NULL COMMENT '平均响应时间(ms)',
+  
+  -- 教师关注
+  `teacher_reviewed` TINYINT(1) DEFAULT 0 COMMENT '教师是否已查看',
+  `teacher_flagged` TINYINT(1) DEFAULT 0 COMMENT '教师是否标记关注',
+  `teacher_comment` TEXT DEFAULT NULL COMMENT '教师备注',
+  
+  -- 内容审核
+  `moderation_status` ENUM('pending', 'approved', 'flagged', 'blocked') 
+    DEFAULT 'approved' COMMENT '审核状态',
+  `moderation_flags` JSON DEFAULT NULL COMMENT '审核标记',
+  
+  -- 时间记录
+  `started_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '开始时间',
+  `last_message_at` DATETIME DEFAULT NULL COMMENT '最后消息时间',
+  `ended_at` DATETIME DEFAULT NULL COMMENT '结束时间',
+  
+  `is_active` TINYINT(1) DEFAULT 1 COMMENT '是否活跃',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_course_uuid` (`course_uuid`),
+  KEY `idx_unit_uuid` (`unit_uuid`),
+  KEY `idx_source` (`source`),
+  KEY `idx_last_message_at` (`last_message_at`),
+  KEY `idx_teacher_flagged` (`teacher_flagged`),
+  KEY `idx_moderation_status` (`moderation_status`),
+  KEY `idx_user_course` (`user_id`, `course_uuid`),
+  KEY `idx_active_recent` (`is_active`, `last_message_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+COMMENT='AI学习助手-会话表';
+
+-- ----------------------------
+-- Table structure for pbl_learning_assistant_messages
+-- AI学习助手消息表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_learning_assistant_messages` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `uuid` VARCHAR(36) NOT NULL UNIQUE COMMENT '消息UUID',
+  `conversation_id` BIGINT(20) NOT NULL COMMENT '会话ID',
+  `role` ENUM('user', 'assistant', 'system') NOT NULL COMMENT '角色：user=用户，assistant=AI，system=系统',
+  `content` TEXT NOT NULL COMMENT '消息内容',
+  `content_hash` VARCHAR(64) DEFAULT NULL COMMENT '内容哈希(用于去重)',
+  
+  -- 上下文快照（发送时的学习上下文）
+  `context_snapshot` JSON DEFAULT NULL COMMENT '上下文快照',
+  
+  -- AI回复扩展信息
+  `knowledge_sources` JSON DEFAULT NULL COMMENT '知识库来源',
+  `token_usage` JSON DEFAULT NULL COMMENT 'Token使用量 {"prompt":100,"completion":50,"total":150}',
+  `model_used` VARCHAR(100) DEFAULT NULL COMMENT '使用的LLM模型',
+  `response_time_ms` INT(11) DEFAULT NULL COMMENT '响应时间(毫秒)',
+  
+  -- 内容审核
+  `moderation_result` JSON DEFAULT NULL COMMENT '审核结果',
+  `was_blocked` TINYINT(1) DEFAULT 0 COMMENT '是否被拦截(1=是,0=否)',
+  `original_content` TEXT DEFAULT NULL COMMENT '原始内容(如被过滤)',
+  
+  -- 用户反馈
+  `was_helpful` TINYINT(1) DEFAULT NULL COMMENT '是否有帮助(1=是,0=否,NULL=未评价)',
+  `user_feedback` TEXT DEFAULT NULL COMMENT '用户反馈文本',
+  
+  -- 教师干预
+  `teacher_corrected` TINYINT(1) DEFAULT 0 COMMENT '教师是否修正',
+  `teacher_correction` TEXT DEFAULT NULL COMMENT '教师修正内容',
+  
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  KEY `idx_conversation_id` (`conversation_id`),
+  KEY `idx_role` (`role`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_was_helpful` (`was_helpful`),
+  KEY `idx_teacher_corrected` (`teacher_corrected`),
+  KEY `idx_conv_role_created` (`conversation_id`, `role`, `created_at`),
+  CONSTRAINT `fk_pbl_message_conversation` 
+    FOREIGN KEY (`conversation_id`) 
+    REFERENCES `pbl_learning_assistant_conversations`(`id`) 
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+COMMENT='AI学习助手-消息表';
+
+-- ----------------------------
+-- Table structure for pbl_student_learning_profiles
+-- 学生学习档案表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_student_learning_profiles` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT(11) NOT NULL UNIQUE COMMENT '学生用户ID',
+  
+  -- 基础统计
+  `total_conversations` INT(11) DEFAULT 0 COMMENT '总对话数',
+  `total_messages` INT(11) DEFAULT 0 COMMENT '总消息数',
+  `total_questions` INT(11) DEFAULT 0 COMMENT '总提问数',
+  
+  -- 学习统计
+  `courses_learned` JSON DEFAULT NULL COMMENT '学习过的课程列表 [{"uuid":"xxx","name":"xxx","last_active":"2024-01-01"}]',
+  `units_learned` JSON DEFAULT NULL COMMENT '学习过的单元列表',
+  `total_learning_time` INT(11) DEFAULT 0 COMMENT '总学习时长(分钟)',
+  
+  -- 知识掌握（简化，JSON存储）
+  `knowledge_map` JSON DEFAULT NULL COMMENT '知识掌握地图 {"knowledge_point_id": {"mastery":0.8,"last_practiced":"2024-01-01"}}',
+  `weak_points` JSON DEFAULT NULL COMMENT '薄弱知识点列表 ["知识点1","知识点2"]',
+  `strong_points` JSON DEFAULT NULL COMMENT '擅长知识点列表',
+  
+  -- 学习特征
+  `learning_style` VARCHAR(50) DEFAULT NULL COMMENT '学习风格(visual/auditory/kinesthetic)',
+  `avg_questions_per_session` DECIMAL(10,2) DEFAULT 0 COMMENT '平均每次提问数',
+  `preferred_question_types` JSON DEFAULT NULL COMMENT '偏好的问题类型 {"concept":30,"example":50,"practice":20}',
+  
+  -- 最近活动
+  `last_active_at` DATETIME DEFAULT NULL COMMENT '最后活跃时间',
+  `last_course_uuid` VARCHAR(36) DEFAULT NULL COMMENT '最近学习课程UUID',
+  `last_unit_uuid` VARCHAR(36) DEFAULT NULL COMMENT '最近学习单元UUID',
+  
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_last_active` (`last_active_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+COMMENT='学生学习档案表';
+
+-- ----------------------------
+-- Table structure for pbl_content_moderation_logs
+-- 内容审核日志表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_content_moderation_logs` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `message_id` BIGINT(20) DEFAULT NULL COMMENT '关联消息ID',
+  `conversation_id` BIGINT(20) DEFAULT NULL COMMENT '关联会话ID',
+  `user_id` INT(11) NOT NULL COMMENT '用户ID',
+  
+  `content_type` ENUM('user_message', 'ai_response') COMMENT '内容类型',
+  `original_content` TEXT NOT NULL COMMENT '原始内容',
+  `filtered_content` TEXT DEFAULT NULL COMMENT '过滤后内容',
+  
+  -- 审核结果
+  `status` ENUM('pass', 'warning', 'blocked') COMMENT '审核状态：pass=通过，warning=警告，blocked=拦截',
+  `flags` JSON DEFAULT NULL COMMENT '触发的标记 ["sensitive_words","asking_for_answers"]',
+  `risk_score` DECIMAL(5,2) DEFAULT NULL COMMENT '风险分数(0-100)',
+  
+  -- 审核详情
+  `sensitive_words` JSON DEFAULT NULL COMMENT '敏感词列表',
+  `moderation_service` VARCHAR(50) DEFAULT NULL COMMENT '审核服务(local/aliyun/baidu)',
+  `moderation_response` JSON DEFAULT NULL COMMENT '审核服务原始响应',
+  
+  -- 处理
+  `action_taken` VARCHAR(100) DEFAULT NULL COMMENT '采取的措施',
+  `notified_teacher` TINYINT(1) DEFAULT 0 COMMENT '是否通知教师',
+  
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  
+  KEY `idx_message_id` (`message_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_conversation_id` (`conversation_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+COMMENT='内容审核日志表';
+
+-- ----------------------------
+-- Table structure for pbl_teacher_view_logs
+-- 教师查看日志表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_teacher_view_logs` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `teacher_id` INT(11) NOT NULL COMMENT '教师用户ID',
+  `student_id` INT(11) NOT NULL COMMENT '学生用户ID',
+  `conversation_id` BIGINT(20) DEFAULT NULL COMMENT '查看的会话ID',
+  
+  `action` VARCHAR(50) NOT NULL COMMENT '操作类型(view_conversations/view_conversation_detail/correct_message/flag_conversation)',
+  `details` TEXT DEFAULT NULL COMMENT '操作详情',
+  
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  
+  KEY `idx_teacher_id` (`teacher_id`),
+  KEY `idx_student_id` (`student_id`),
+  KEY `idx_conversation_id` (`conversation_id`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_teacher_student` (`teacher_id`, `student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+COMMENT='教师查看日志表';
+
+-- ----------------------------
+-- Table structure for pbl_sensitive_words
+-- 敏感词库表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pbl_sensitive_words` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `word` VARCHAR(100) NOT NULL COMMENT '敏感词',
+  `category` VARCHAR(50) DEFAULT NULL COMMENT '分类',
+  `severity` ENUM('low', 'medium', 'high') DEFAULT 'medium' COMMENT '严重程度',
+  `is_active` TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_word` (`word`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+COMMENT='敏感词库';
 
 -- ==========================================================================================================
 -- 跨模块外键约束

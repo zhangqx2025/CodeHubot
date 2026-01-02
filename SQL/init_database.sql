@@ -253,6 +253,29 @@ CREATE TABLE IF NOT EXISTS `device_access_logs` (
   KEY `idx_mac_address` (`mac_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='设备访问日志表（用于速率限制和安全审计）';
 
+--
+-- 表的结构 `device_sensors`
+-- 设备传感器数据表：存储每个设备每个传感器的最新数据
+--
+
+CREATE TABLE IF NOT EXISTS `device_sensors` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `device_uuid` VARCHAR(36) NOT NULL COMMENT '设备UUID（关联 device_main.uuid）',
+  `sensor_name` VARCHAR(50) NOT NULL COMMENT '传感器名称（如 temperature, humidity, rain）',
+  `sensor_value` VARCHAR(255) NOT NULL COMMENT '传感器值（存储字符串，支持数字、布尔值等）',
+  `sensor_unit` VARCHAR(20) DEFAULT '' COMMENT '单位（如 °C, %, 空字符串）',
+  `sensor_type` VARCHAR(50) DEFAULT '' COMMENT '传感器类型（如 DHT11, DS18B20, RAIN_SENSOR）',
+  `timestamp` DATETIME NOT NULL COMMENT '数据上报时间',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
+  
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_device_sensor` (`device_uuid`, `sensor_name`) COMMENT '设备UUID+传感器唯一约束',
+  KEY `idx_device_uuid` (`device_uuid`) COMMENT '设备UUID索引',
+  KEY `idx_timestamp` (`timestamp`) COMMENT '时间戳索引',
+  KEY `idx_sensor_name` (`sensor_name`) COMMENT '传感器名称索引'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='设备传感器数据表';
+
 
 -- ========================================== 
 -- 设备模块（Device）
