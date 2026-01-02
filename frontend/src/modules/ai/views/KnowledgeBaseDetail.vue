@@ -408,6 +408,7 @@
             :file-list="fileList"
             :on-change="handleFileChange"
             :on-remove="handleFileRemove"
+            :show-file-list="false"
           >
             <el-button type="primary">选择文件</el-button>
             <template #tip>
@@ -416,6 +417,31 @@
               </div>
             </template>
           </el-upload>
+          
+          <!-- 自定义文件显示区域 -->
+          <div v-if="selectedFile" class="selected-file-display">
+            <el-card shadow="hover" style="margin-top: 15px;">
+              <div class="file-info-wrapper">
+                <div class="file-info-left">
+                  <el-icon :size="24" color="#67C23A" style="margin-right: 10px;">
+                    <Document />
+                  </el-icon>
+                  <div>
+                    <div class="file-name">{{ selectedFile.name }}</div>
+                    <div class="file-size">大小: {{ formatSize(selectedFile.size) }}</div>
+                  </div>
+                </div>
+                <el-button 
+                  type="danger" 
+                  size="default"
+                  @click="handleFileRemove"
+                >
+                  <el-icon><Delete /></el-icon>
+                  删除文件
+                </el-button>
+              </div>
+            </el-card>
+          </div>
           
           <!-- 文件大小说明 -->
           <el-alert 
@@ -570,6 +596,7 @@
       title="文档切分预览" 
       width="80%"
       top="5vh"
+      @close="handlePreviewDialogClose"
     >
       <div v-if="previewData">
         <!-- 预览摘要 -->
@@ -718,10 +745,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Upload, View, Check, Back, QuestionFilled, Search, Document, EditPen, Coin, DocumentChecked } from '@element-plus/icons-vue'
+import { Upload, View, Check, Back, QuestionFilled, Search, Document, EditPen, Coin, DocumentChecked, Delete } from '@element-plus/icons-vue'
 import {
   getKnowledgeBase,
   getDocuments,
@@ -745,6 +772,8 @@ const previewing = ref(false)
 const showUploadDialog = ref(false)
 const showPreviewDialog = ref(false)
 const showChunksDialog = ref(false)
+const isReturningToEdit = ref(false)  // 标记是否是"返回修改"操作
+const isNavigatingToPreview = ref(false)  // 标记是否是导航到预览页面
 const knowledgeBase = ref({})
 const documents = ref([])
 const selectedFile = ref(null)
@@ -984,9 +1013,16 @@ const handlePreview = async () => {
     
     console.log('[预览切分] 成功，结果:', previewData.value)
     
-    // 关闭上传对话框，打开预览对话框
+    // 关闭上传对话框，打开预览对话框（设置标志位以避免清空文件状态）
+    isNavigatingToPreview.value = true
     showUploadDialog.value = false
-    showPreviewDialog.value = true
+    
+    // 延迟打开预览对话框，确保上传对话框完全关闭后再打开
+    nextTick(() => {
+      showPreviewDialog.value = true
+      // 重置标志位
+      isNavigatingToPreview.value = false
+    })
     
   } catch (error) {
     console.error('[预览切分] 失败:', error)
@@ -1037,14 +1073,54 @@ const confirmUpload = async () => {
 }
 
 const handleUploadDialogClose = () => {
-  // 对话框关闭时不清空文件，保留用户选择
-  // 这样用户可以先关闭对话框，稍后再打开继续操作
-  console.log('[上传对话框关闭]')
+  // 如果是导航到预览页面，不清空状态
+  if (isNavigatingToPreview.value) {
+    console.log('[上传对话框关闭] 导航到预览页面，保留文件状态')
+    return
+  }
+  
+  // 对话框关闭时清空文件和表单，确保下次打开是干净的状态
+  selectedFile.value = null
+  fileList.value = []
+  uploadForm.title = ''
+  uploadForm.split_mode = 'fixed'
+  uploadForm.chunk_size = 500
+  uploadForm.chunk_overlap = 50
+  uploadForm.auto_embedding = true
+  previewData.value = null
+  console.log('[上传对话框关闭] 已重置表单和文件')
+}
+
+const handlePreviewDialogClose = () => {
+  // 如果是"返回修改"操作，不清空状态
+  if (isReturningToEdit.value) {
+    console.log('[预览对话框关闭] "返回修改"操作，保留文件状态')
+    return
+  }
+  
+  // 预览对话框关闭时清空文件和表单（用户主动关闭预览）
+  selectedFile.value = null
+  fileList.value = []
+  uploadForm.title = ''
+  uploadForm.split_mode = 'fixed'
+  uploadForm.chunk_size = 500
+  uploadForm.chunk_overlap = 50
+  uploadForm.auto_embedding = true
+  previewData.value = null
+  console.log('[预览对话框关闭] 已重置表单和文件')
 }
 
 const cancelPreview = () => {
+  // 点击"返回修改"时，不清空文件，允许用户继续编辑
+  isReturningToEdit.value = true
   showPreviewDialog.value = false
-  showUploadDialog.value = true  // 返回上传对话框
+  
+  // 延迟打开上传对话框，确保预览对话框完全关闭后再打开上传对话框
+  nextTick(() => {
+    showUploadDialog.value = true
+    // 重置标志位
+    isReturningToEdit.value = false
+  })
 }
 
 const viewDocument = async (doc) => {
@@ -1214,6 +1290,38 @@ onMounted(() => {
   font-size: 20px;
   font-weight: bold;
   color: var(--el-text-color-primary);
+}
+
+/* 文件上传显示 */
+.selected-file-display {
+  width: 100%;
+}
+
+.file-info-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.file-info-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  word-break: break-all;
+  margin-bottom: 4px;
+}
+
+.file-size {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
 /* 卡片样式 */

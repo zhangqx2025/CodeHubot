@@ -138,9 +138,11 @@
             >
               <template #header>
                 <div class="plugin-card-header">
-                  <span class="plugin-name">{{ plugin.name }}</span>
+                  <div class="plugin-header-left">
+                    <span class="plugin-name">{{ plugin.name }}</span>
+                    <el-tag v-if="plugin.is_system" type="warning" size="small" style="margin-left: 10px;">系统内置</el-tag>
+                  </div>
                   <el-button
-                    v-if="!plugin.is_system"
                     type="danger"
                     size="small"
                     text
@@ -149,7 +151,6 @@
                     <el-icon><Delete /></el-icon>
                     移除
                   </el-button>
-                  <el-tag v-else type="warning" size="small">系统内置</el-tag>
                 </div>
               </template>
               <div class="plugin-description">{{ plugin.description || '暂无描述' }}</div>
@@ -1005,6 +1006,11 @@ watch(
 .plugin-card-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+}
+
+.plugin-header-left {
+  display: flex;
   align-items: center;
 }
 

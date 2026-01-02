@@ -125,3 +125,5 @@ class ChatAnalytics(BaseModel):
     category_distribution: List[dict]
 
 
+
+
